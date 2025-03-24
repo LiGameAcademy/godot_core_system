@@ -14,6 +14,8 @@ enum Status {
 @export var node_name: String = ""
 ## 节点描述
 @export_multiline var description: String = ""
+## 触发事件列表
+@export var trigger_events: Array[String] = []
 
 ## 当前状态
 var current_status: Status = Status.INVALID
@@ -31,6 +33,31 @@ func initialize(tree_ref: BTTree, parent_node: BTNode = null) -> void:
 	tree = tree_ref
 	parent = parent_node
 	blackboard = tree.blackboard if tree else {}
+	_subscribe_events()
+
+## 订阅事件
+func _subscribe_events() -> void:
+	if not tree or trigger_events.is_empty():
+		return
+	for event in trigger_events:
+		CoreSystem.event_bus.subscribe(event, _on_event, CoreSystem.EventBus.Priority.NORMAL)
+
+## 取消订阅事件
+func _unsubscribe_events() -> void:
+	if not tree or trigger_events.is_empty():
+		return
+	for event in trigger_events:
+		tree.event_bus.unsubscribe(event, _on_event)
+
+## 事件处理
+func _on_event(_event_name: String, _payload: Array) -> void:
+	if not is_active:
+		_on_enter()
+	
+	current_status = _update()
+	
+	if current_status != Status.RUNNING:
+		_on_exit()
 
 ## 执行节点
 ## 返回执行状态
@@ -73,3 +100,7 @@ func abort() -> void:
 	if is_active:
 		_on_exit()
 	reset()
+
+## 释放资源
+func dispose() -> void:
+	_unsubscribe_events()

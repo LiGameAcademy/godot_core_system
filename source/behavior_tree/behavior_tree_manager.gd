@@ -17,10 +17,8 @@ signal tree_stopped(id: StringName)
 ## value: 行为树
 var _behavior_trees: Dictionary[StringName, BTTree] = {}
 
-func _physics_process(_delta: float) -> void:
-	for tree in _behavior_trees.values():
-		if tree.is_active:
-			tree.tick()
+## 事件总线引用
+var _event_bus: CoreSystem.EventBus = CoreSystem.event_bus
 
 ## 注册行为树
 ## [param id] 行为树ID
@@ -46,6 +44,7 @@ func unregister_tree(id: StringName) -> void:
 	if tree.is_active:
 		stop_tree(id)
 	
+	tree.dispose()
 	_behavior_trees.erase(id)
 	tree_unregistered.emit(id)
 
