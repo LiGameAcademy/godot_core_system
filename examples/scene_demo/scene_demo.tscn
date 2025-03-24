@@ -18,6 +18,17 @@ offset_bottom = 79.0
 grow_horizontal = 2
 horizontal_alignment = 1
 
+[node name="PreloadStatus" type="Label" parent="UI"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 46.0
+grow_horizontal = 2
+horizontal_alignment = 1
+
 [node name="Buttons" type="VBoxContainer" parent="UI"]
 anchors_preset = 8
 anchor_left = 0.5
@@ -25,9 +36,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -100.0
-offset_top = -68.0
+offset_top = -100.0
 offset_right = 100.0
-offset_bottom = 68.0
+offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 

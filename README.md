@@ -32,6 +32,7 @@ A highly modular and extensible core system framework designed for Godot 4.4+
 - 🎬 **Scene System** - Scene transition and management made easy
 - 🏷️ **Tag System** - Flexible object tagging and categorization system
 - 🔄 **Trigger System** - Event-driven trigger system with conditions and actions
+- ⚡ **Frame Splitter** - Performance optimization tool for distributing heavy tasks across frames
 - 🔧 **Plugin Architecture** - Easy to extend and customize
 - 📱 **Project Settings Integration** - Configure all systems through Godot's project settings
 - 🛠️ **Development Tools** - Built-in debugging and development tools
@@ -87,6 +88,7 @@ Detailed documentation for each system:
 | Trigger System       | Event-driven triggers and conditions  | [View Docs](docs/trigger_system.md)       |
 | Config System        | Configuration management              | [View Docs](docs/config_system.md)        |
 | Save System          | Game save management                  | [View Docs](docs/save_system.md)          |
+| Frame Splitter       | Performance optimization tool         | [View Docs](docs/frame_splitter.md)       |
 
 ## 🌟 Example Project
 

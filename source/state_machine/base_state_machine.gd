@@ -143,18 +143,33 @@ func switch(state_id: StringName, msg: Dictionary = {}) -> void:
 	current_state.enter(msg)
 	state_changed.emit(from_state, current_state)
 
+
 ## 获取变量
 func get_variable(key: StringName) -> Variant:
 	return values.get(key)
+
 
 ## 设置变量
 func set_variable(key: StringName, value: Variant) -> void:
 	values[key] = value
 
+
 ## 检查变量是否存在
 func has_variable(key: StringName) -> bool:
 	return values.has(key)
 
+
+## 移除变量
+func erase_variable(key: StringName) -> void:
+	values.erase(key)
+
+
 ## 获取当前状态名称
 func get_current_state_name() -> StringName:
 	return current_state.state_id if current_state else &""
+
+
+func _agent_setter(value: Object) -> void:
+	agent = value
+	for state in states.values():
+		state.agent = agent

@@ -72,6 +72,7 @@ func unregister_state_machine(id: StringName) -> void:
 func get_state_machine(id: StringName) -> BaseStateMachine:
 	return _state_machines.get(id)
 
+
 ## 启动状态机
 ## [param id] 状态机ID
 ## [param initial_state] 初始状态
@@ -90,6 +91,7 @@ func start_state_machine(
 	
 	state_machine.start(initial_state, msg)
 	state_machine_started.emit(id)
+
 
 ## 停止状态机
 ## [param id] 状态机ID
@@ -116,3 +118,33 @@ func get_all_state_machine_ids() -> Array[StringName]:
 func clear_state_machines() -> void:
 	for id in _state_machines.keys():
 		unregister_state_machine(id)
+
+func _get_current_state_linked_tree() -> Array[BaseState]:
+	var current_state_linked_tree:  Array[BaseState] = []
+	for each in self.get_all_state_machines():
+		if each.is_active:
+			_recursive_get_active_state_id(each, current_state_linked_tree)
+	return current_state_linked_tree
+
+func _recursive_get_active_state_id(state_machine: BaseStateMachine, state_linked_tree: Array[BaseState]):
+	if state_machine.is_active:
+		state_linked_tree.append(state_machine)
+		if state_machine.current_state is BaseStateMachine:
+			return _recursive_get_active_state_id(state_machine.current_state, state_linked_tree)
+		else:
+			state_linked_tree.append(state_machine.current_state)
+func is_active(state_id: StringName) -> bool:
+	# 判断正处于指定状态机/状态
+	for each in _get_current_state_linked_tree():
+		if each.state_id == state_id:
+			return true
+	return false
+
+func get_current_state() -> BaseState:
+	# 获取当前状态
+	var current_state_linked_tree = _get_current_state_linked_tree()
+	if current_state_linked_tree:
+		return current_state_linked_tree[-1]
+	else:
+		return null 
+		

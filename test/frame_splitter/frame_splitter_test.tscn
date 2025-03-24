@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://riqfmggkqpfd"]
+
+[ext_resource type="Script" uid="uid://darcwvrwiemfg" path="res://addons/godot_core_system/test/frame_splitter/frame_splitter_test.gd" id="1_abcde"]
+
+[node name="FrameSplitterTest" type="Node2D"]
+script = ExtResource("1_abcde")
+
+[node name="NormalBtn" type="Button" parent="."]
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 250.0
+offset_bottom = 100.0
+text = "普通执行测试"
+
+[node name="FrameSplitBtn" type="Button" parent="."]
+offset_left = 300.0
+offset_top = 50.0
+offset_right = 500.0
+offset_bottom = 100.0
+text = "分帧执行测试"
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+offset_left = 50.0
+offset_top = 150.0
+offset_right = 500.0
+offset_bottom = 180.0
+
+[node name="FPSLabel" type="Label" parent="."]
+offset_left = 50.0
+offset_top = 200.0
+offset_right = 200.0
+offset_bottom = 230.0
+text = "FPS: 60"
+
+[node name="TimeLabel" type="Label" parent="."]
+offset_left = 250.0
+offset_top = 200.0
+offset_right = 500.0
+offset_bottom = 230.0
+text = "Time: 0ms"

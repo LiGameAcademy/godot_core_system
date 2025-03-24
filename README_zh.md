@@ -36,6 +36,7 @@
   - 🎬 **场景系统** : 简化场景转换和管理
   - 🏷️ **标签系统** : 灵活的对象标签和分类系统
   - 🔄 **触发器系统** : 事件驱动的触发器系统，支持条件和动作
+  - ⚡ **分帧执行器** : 性能优化工具，将耗时任务分散到多帧执行
 
 ## 🚀 快速开始
 
@@ -75,19 +76,20 @@ func _ready():
 
 每个系统的详细文档：
 
-| 系统       | 说明                   | 文档链接                                    |
-| ---------- | ---------------------- | ------------------------------------------- |
-| 状态机系统 | 游戏状态管理与转换     | [查看文档](docs/state_machine_system_zh.md) |
-| 序列化系统 | 游戏存档与配置管理     | [查看文档](docs/serialization_system_zh.md) |
-| 音频系统   | 音效与音乐管理         | [查看文档](docs/audio_system_zh.md)         |
-| 输入系统   | 输入控制与事件处理     | [查看文档](docs/input_system_zh.md)         |
-| 日志系统   | 日志记录与调试         | [查看文档](docs/logger_system_zh.md)        |
-| 资源系统   | 资源加载与管理         | [查看文档](docs/resource_system_zh.md)      |
-| 场景系统   | 场景切换与管理         | [查看文档](docs/scene_system_zh.md)         |
-| 标签系统   | 对象标签和分类         | [查看文档](docs/tag_system_zh.md)           |
-| 触发器系统 | 事件驱动的触发器和条件 | [查看文档](docs/trigger_system_zh.md)       |
-| 配置系统   | 配置管理               | [查看文档](docs/config_system_zh.md)        |
-| 存档系统   | 游戏存档管理           | [查看文档](docs/save_system_zh.md)          |
+| 系统名称           | 功能描述                           | 文档链接                                |
+|-------------------|----------------------------------|----------------------------------------|
+| 状态机系统         | 游戏逻辑状态管理                   | [查看文档](docs/state_machine_system_zh.md) |
+| 序列化系统         | 游戏存档与配置管理                 | [查看文档](docs/serialization_system_zh.md) |
+| 音频系统           | 音频管理和过渡                     | [查看文档](docs/audio_system_zh.md)       |
+| 输入系统           | 输入处理和事件管理                 | [查看文档](docs/input_system_zh.md)       |
+| 日志系统           | 多通道日志记录                     | [查看文档](docs/logger_system_zh.md)      |
+| 资源系统           | 资源加载和管理                     | [查看文档](docs/resource_system_zh.md)    |
+| 场景系统           | 场景转换和管理                     | [查看文档](docs/scene_system_zh.md)       |
+| 标签系统           | 对象标签和分类                     | [查看文档](docs/tag_system_zh.md)         |
+| 触发器系统         | 事件驱动的触发器                   | [查看文档](docs/trigger_system_zh.md)     |
+| 配置系统           | 配置文件管理                       | [查看文档](docs/config_system_zh.md)      |
+| 存档系统           | 游戏存档管理                       | [查看文档](docs/save_system_zh.md)        |
+| 分帧执行器         | 性能优化工具                       | [查看文档](docs/frame_splitter_zh.md)     |
 
 ## 🌟 示例项目
 

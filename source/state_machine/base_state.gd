@@ -13,7 +13,7 @@ var state_id : StringName = &""
 ## 状态机引用
 var state_machine : BaseStateMachine = null
 ## 代理者
-var agent: Object = null
+var agent: Object = null : set = _agent_setter
 
 ## 是否活跃
 var is_active: bool = false
@@ -128,3 +128,7 @@ func _debug(debug: String) -> void:
 	if not is_debug:
 		return
 	_logger.debug("[State] " + state_id + ": " + debug)
+
+
+func _agent_setter(value: Object) -> void:
+	agent = value
