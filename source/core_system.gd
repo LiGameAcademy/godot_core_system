@@ -15,6 +15,7 @@ const StateMachineManager = preload("res://addons/godot_core_system/source/state
 const EntityManager = preload("res://addons/godot_core_system/source/entity_system/entity_manager.gd")
 const TriggerManager = preload("res://addons/godot_core_system/source/trigger_system/trigger_manager.gd")
 const GameplayTagManager = preload("res://addons/godot_core_system/source/tag_system/gameplay_tag_manager.gd")
+const BehaviorTreeManager = preload("res://addons/godot_core_system/source/behavior_tree/behavior_tree_manager.gd")
 
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
 
@@ -104,6 +105,12 @@ var tag_manager : GameplayTagManager:
 		return _get_module("tag_manager")
 	set(value):
 		push_error("tag_manager is read-only")
+## 行为树管理器
+var behavior_tree_manager: BehaviorTreeManager:
+	get:
+		return _get_module("behavior_tree_manager")
+	set(value):
+		push_error("behavior_tree_manager is read-only")
 
 ## 模块实例
 var _modules: Dictionary[StringName, Node] = {}
@@ -122,6 +129,7 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"entity_manager": EntityManager,
 	"trigger_manager": TriggerManager,
 	"tag_manager": GameplayTagManager,
+	"behavior_tree_manager": BehaviorTreeManager,
 }
 
 ## 检查模块是否启用
