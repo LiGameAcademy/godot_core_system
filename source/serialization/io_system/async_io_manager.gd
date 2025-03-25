@@ -45,7 +45,7 @@ var encryption_provider: EncryptionProvider:
 var _encryption_provider: EncryptionProvider = null
 
 func _init(_data:Dictionary = {}):
-	_thread_pool = ThreadPool.new(4)  # 创建4个线程的线程池
+	_thread_pool = CoreSystem.ThreadPool.new(4)  # 创建4个线程的线程池
 	_thread_pool.task_completed.connect(_on_task_completed)
 	_thread_pool.task_error.connect(_on_task_error)
 
@@ -108,25 +108,23 @@ func write_file_advanced(path: String, data: Variant, use_compression: bool = fa
 func read_file_async(path: String, use_compression: bool = false, encryption_key: String = "", callback: Callable = func(_s, _r): pass) -> String:
 	var task_id = str(_task_counter)
 	_task_counter += 1
-	
-	_thread_pool.submit_task(
-		func():
-			var file = FileAccess.open(path, FileAccess.READ)
-			if not file:
-				push_error("Failed to open file: " + path)
-				return null
-			
-			var content = file.get_buffer(file.get_length())
-			file.close()
-			
-			return _process_data_for_read(content, use_compression, encryption_key)
-		,
-		func(result):
-			if result != null:
-				callback.call(true, result)
-			else:
-				callback.call(false, null)
-	)
+	var work_func : Callable = func():
+		var file = FileAccess.open(path, FileAccess.READ)
+		if not file:
+			push_error("Failed to open file: " + path)
+			return null
+		
+		var content = file.get_buffer(file.get_length())
+		file.close()
+		
+		return _process_data_for_read(content, use_compression, encryption_key)
+	var callback_func : Callable = func(result):
+		if result != null:
+			callback.call(true, result)
+		else:
+			callback.call(false, null)
+
+	_thread_pool.submit_task(work_func, callback_func)
 	
 	return task_id
 
@@ -137,25 +135,31 @@ func read_file_async(path: String, use_compression: bool = false, encryption_key
 ## [param encryption_key] 加密密钥
 ## [param callback] 回调函数
 ## [return] 任务ID
-func write_file_async(path: String, data: Variant, use_compression: bool = false, encryption_key: String = "", callback: Callable = func(_s, _r): pass) -> String:
+func write_file_async(
+		path: String, 
+		data: Variant, 
+		use_compression: bool = false, 
+		encryption_key: String = "", 
+		callback: Callable = Callable()) -> String:
 	var task_id = str(_task_counter)
 	_task_counter += 1
-	
-	_thread_pool.submit_task(
-		func():
-			var processed_data = _process_data_for_write(data, use_compression, encryption_key)
-			var file = FileAccess.open(path, FileAccess.WRITE)
-			if not file:
-				push_error("Failed to open file for writing: " + path)
-				return false
-            
-			file.store_buffer(processed_data)
-			file.close()
-			return true
-		,
-		func(success):
+
+	var work_func : Callable = func():
+		var processed_data = _process_data_for_write(data, use_compression, encryption_key)
+		var file = FileAccess.open(path, FileAccess.WRITE)
+		if not file:
+			push_error("Failed to open file for writing: " + path)
+			return false
+		
+		file.store_buffer(processed_data)
+		file.close()
+		return true
+
+	var callback_func : Callable = func(success):
+		if callback.is_valid():
 			callback.call(success, null)
-	)
+		
+	_thread_pool.submit_task(work_func,callback_func)
 	
 	return task_id
 
@@ -163,23 +167,24 @@ func write_file_async(path: String, data: Variant, use_compression: bool = false
 ## [param path] 文件路径
 ## [param callback] 回调函数
 ## [return] 任务ID
-func delete_file_async(path: String, callback: Callable = func(_s, _r): pass) -> String:
+func delete_file_async(path: String, callback: Callable = Callable()) -> String:
 	var task_id = str(_task_counter)
 	_task_counter += 1
 	
-	_thread_pool.submit_task(
-		func():
-			var dir = DirAccess.open(path.get_base_dir())
-			if not dir:
-				push_error("Failed to access directory: " + path.get_base_dir())
-				return false
-            
-			var err = dir.remove(path)
-			return err == OK
-		,
-		func(success):
+	var work_func : Callable = func():
+		var dir = DirAccess.open(path.get_base_dir())
+		if not dir:
+			push_error("Failed to access directory: " + path.get_base_dir())
+			return false
+		
+		var err = dir.remove(path)
+		return err == OK
+
+	var callback_func : Callable = func(success):
+		if callback.is_valid():
 			callback.call(success, null)
-	)
+
+	_thread_pool.submit_task(work_func, callback_func)
 	
 	return task_id
 
