@@ -72,7 +72,6 @@ func unload_entity(entity_id: StringName) -> void:
 	if not _entity_resource_cache.has(entity_id):
 		push_warning("实体不存在: %s" % entity_id)
 		return
-	_resource_manager.unload_resource(_entity_path_map[entity_id])
 
 ## 创建实体
 ## [param entity_id] 实体ID
