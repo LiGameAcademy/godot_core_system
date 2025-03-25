@@ -19,6 +19,7 @@ const GameplayTagManager = preload("res://addons/godot_core_system/source/tag_sy
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
 
 const FrameSplitter = preload("res://addons/godot_core_system/source/utils/frame_splitter.gd")
+const ThreadPool = preload("res://addons/godot_core_system/source/utils/thread_pool.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:
