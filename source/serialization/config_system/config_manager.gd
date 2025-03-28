@@ -37,10 +37,12 @@ var _io_manager: CoreSystem.AsyncIOManager = CoreSystem.io_manager
 ## 是否已修改
 var _modified: bool = false
 
-
 func _init(_data: Dictionary = {}):
 	_config = DefaultConfig.get_default_config()
 
+func _ready() -> void:
+	# 加载配置
+	load_config()
 
 func _exit() -> void:
 	if auto_save and _modified:
@@ -84,18 +86,14 @@ func save_config(callback: Callable = Callable()) -> void:
 				callback.call(success)
 	)
 
-## 重置配置
-## [param callback] 回调函数
-func reset_config(callback: Callable = Callable()) -> void:
+## 重置为默认配置
+func reset_to_default() -> void:
 	_config = DefaultConfig.get_default_config()
 	_modified = true
 	config_reset.emit()
-
+	
 	if auto_save:
-		save_config(callback)
-	else:
-		if callback.is_valid():
-			callback.call(true)
+		save_config()
 
 ## 设置配置值
 ## [param section] 配置段
@@ -154,6 +152,22 @@ func erase_value(section: String, key: String) -> void:
 ## [return] 配置段
 func get_section(section: String) -> Dictionary:
 	return _config.get(section, {}).duplicate()
+
+## 设置配置段
+## [param section] 配置段
+## [param value] 值
+func set_section(section: String, value: Dictionary) -> void:
+	_config[section] = value.duplicate()
+	_modified = true
+	
+	if auto_save:
+		save_config()
+
+## 检查是否有配置段
+## [param section] 配置段
+## [return] 是否存在
+func has_section(section: String) -> bool:
+	return _config.has(section)
 
 ## 合并配置
 ## [param target] 目标配置

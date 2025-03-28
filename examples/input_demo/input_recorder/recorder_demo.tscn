@@ -1,0 +1,225 @@
+[gd_scene load_steps=2 format=3 uid="uid://4tih0od2yhcn"]
+
+[ext_resource type="Script" uid="uid://dx2xud5fu64d2" path="res://addons/godot_core_system/examples/input_demo/input_recorder/recorder_demo.gd" id="1_yvxu8"]
+
+[node name="RecorderDemo" type="CanvasLayer"]
+script = ExtResource("1_yvxu8")
+
+[node name="Character" type="Node2D" parent="."]
+position = Vector2(512, 300)
+
+[node name="ColorRect" type="ColorRect" parent="Character"]
+offset_left = -16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = 16.0
+color = Color(0, 0.6, 1, 1)
+
+[node name="Label" type="Label" parent="Character"]
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = -16.0
+theme_override_font_sizes/font_size = 10
+text = "玩家"
+horizontal_alignment = 1
+
+[node name="Ghost" type="Node2D" parent="."]
+position = Vector2(512, 300)
+
+[node name="ColorRect" type="ColorRect" parent="Ghost"]
+offset_left = -16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = 16.0
+color = Color(1, 1, 1, 0.5)
+
+[node name="Label" type="Label" parent="Ghost"]
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 32.0
+offset_bottom = -16.0
+theme_override_font_sizes/font_size = 10
+text = "回放"
+horizontal_alignment = 1
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Panel" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_right = 200.0
+offset_bottom = 40.0
+grow_horizontal = 2
+
+[node name="Label" type="Label" parent="UI/Title"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 24
+text = "输入记录器演示"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="RecordIndicator" type="ColorRect" parent="UI/Title"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = -8.0
+offset_right = -16.0
+offset_bottom = 8.0
+grow_horizontal = 0
+grow_vertical = 2
+color = Color(1, 0, 0, 1)
+
+[node name="StatusPanel" type="Panel" parent="UI"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 48.0
+offset_right = 192.0
+offset_bottom = 248.0
+
+[node name="StatusLabel" type="Label" parent="UI/StatusPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 12
+text = "输入记录器就绪"
+
+[node name="PanelTitle" type="Label" parent="UI/StatusPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = -8.0
+offset_bottom = 15.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 12
+text = "状态信息"
+horizontal_alignment = 1
+
+[node name="PlaybackPanel" type="Panel" parent="UI"]
+layout_mode = 0
+offset_left = 200.0
+offset_top = 48.0
+offset_right = 376.0
+offset_bottom = 248.0
+
+[node name="PlaybackDisplay" type="Label" parent="UI/PlaybackPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+
+[node name="PanelTitle" type="Label" parent="UI/PlaybackPanel"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = -8.0
+offset_bottom = 15.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 12
+text = "操作提示"
+horizontal_alignment = 1
+
+[node name="Controls" type="VBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 376.0
+offset_top = -276.0
+offset_right = 576.0
+offset_bottom = 44.0
+grow_vertical = 0
+theme_override_constants/separation = 16
+
+[node name="RecordButtons" type="HBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+alignment = 1
+
+[node name="StartRecord" type="Button" parent="UI/Controls/RecordButtons"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "开始记录"
+
+[node name="StopRecord" type="Button" parent="UI/Controls/RecordButtons"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "停止记录"
+
+[node name="PlaybackButtons" type="HBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+alignment = 1
+
+[node name="StartPlayback" type="Button" parent="UI/Controls/PlaybackButtons"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "开始回放"
+
+[node name="StopPlayback" type="Button" parent="UI/Controls/PlaybackButtons"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "停止回放"
+
+[node name="SaveLoadButtons" type="HBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+alignment = 1
+
+[node name="SaveRecording" type="Button" parent="UI/Controls/SaveLoadButtons"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "保存记录"
+
+[node name="LoadRecording" type="Button" parent="UI/Controls/SaveLoadButtons"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+text = "加载记录"
+
+[node name="ResetButton" type="Button" parent="UI/Controls"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "重置位置"
+
+[node name="Label" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -28.0
+offset_right = 207.0
+offset_bottom = -5.0
+grow_vertical = 0
+text = "有BUG，暂时搁置，欢迎PR"
+
+[connection signal="pressed" from="UI/Controls/RecordButtons/StartRecord" to="." method="_on_start_record_pressed"]
+[connection signal="pressed" from="UI/Controls/RecordButtons/StopRecord" to="." method="_on_stop_record_pressed"]
+[connection signal="pressed" from="UI/Controls/PlaybackButtons/StartPlayback" to="." method="_on_start_playback_pressed"]
+[connection signal="pressed" from="UI/Controls/PlaybackButtons/StopPlayback" to="." method="_on_stop_playback_pressed"]
+[connection signal="pressed" from="UI/Controls/SaveLoadButtons/SaveRecording" to="." method="_on_save_recording_pressed"]
+[connection signal="pressed" from="UI/Controls/SaveLoadButtons/LoadRecording" to="." method="_on_load_recording_pressed"]
+[connection signal="pressed" from="UI/Controls/ResetButton" to="." method="_on_reset_positions_pressed"]

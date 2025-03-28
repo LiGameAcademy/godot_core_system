@@ -54,10 +54,10 @@ func push_event(event_name: String, payload : Variant = [], immediate: bool = tr
 	# 处理事件
 	var valid_subscriptions := []
 	for sub : WeakSubscription in subscribers:
-		if not sub.is_valid(): # 检查回调是否有效
+		if not sub.is_valid():
 			continue
 		valid_subscriptions.append(sub)
-		if sub.filter.call(payload):
+		if sub.filter.is_valid() and sub.filter.call(payload):
 			if immediate:
 				sub.call_subscribed(payload)
 			else:
@@ -95,7 +95,7 @@ func subscribe(
 	
 	# 检查是否已存在相同的回调
 	for sub in _subscriptions[event_name]:
-		if sub.callback == callback:
+		if (sub.is_anonymous and sub.callback == callback) or (not sub.is_anonymous and sub.callback_method == callback.get_method()):
 			if debug_mode:
 				print("[EventBus] Callback already subscribed to event: %s" % event_name)
 			else:
@@ -117,9 +117,14 @@ func unsubscribe(event_name: String, callback: Callable) -> void:
 	
 	var index = -1
 	for i in range(_subscriptions[event_name].size()):
-		if _subscriptions[event_name][i].callback == callback:
-			index = i
-			break
+		if _subscriptions[event_name][i].is_anonymous:
+			if _subscriptions[event_name][i].callback == callback:
+				index = i
+				break
+		else:
+			if _subscriptions[event_name][i].callback_method == callback.get_method():
+				index = i
+				break
 	
 	if index != -1:
 		_subscriptions[event_name].remove_at(index)

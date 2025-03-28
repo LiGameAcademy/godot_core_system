@@ -1,0 +1,129 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8p4u5yqjbqx4"]
+
+[ext_resource type="Script" uid="uid://dfdgghw16y273" path="res://addons/godot_core_system/examples/input_demo/event_processor/processor_demo.gd" id="1_yvxu8"]
+
+[node name="ProcessorDemo" type="CanvasLayer"]
+script = ExtResource("1_yvxu8")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_right = 100.0
+offset_bottom = 34.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "事件处理器演示"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="UI"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 16.0
+offset_right = 208.0
+offset_bottom = 42.0
+text = "事件处理器就绪"
+
+[node name="PriorityDisplay" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = 128.0
+offset_top = 128.0
+offset_right = 280.0
+offset_bottom = 312.0
+grow_horizontal = 2
+text = "事件优先级："
+horizontal_alignment = 1
+
+[node name="EventLog" type="TextEdit" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -112.0
+offset_top = -114.0
+offset_right = 116.0
+offset_bottom = 86.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "事件日志"
+editable = false
+
+[node name="Controls" type="VBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -276.0
+offset_right = 168.0
+offset_bottom = -78.0
+grow_vertical = 0
+metadata/_edit_group_ = true
+
+[node name="FilterSettings" type="VBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/Controls/FilterSettings"]
+layout_mode = 2
+text = "事件过滤设置"
+
+[node name="SystemEvents" type="CheckButton" parent="UI/Controls/FilterSettings"]
+layout_mode = 2
+button_pressed = true
+text = "系统事件"
+
+[node name="UIEvents" type="CheckButton" parent="UI/Controls/FilterSettings"]
+layout_mode = 2
+button_pressed = true
+text = "UI事件"
+
+[node name="GameplayEvents" type="CheckButton" parent="UI/Controls/FilterSettings"]
+layout_mode = 2
+button_pressed = true
+text = "游戏事件"
+
+[node name="DebugEvents" type="CheckButton" parent="UI/Controls/FilterSettings"]
+layout_mode = 2
+button_pressed = true
+text = "调试事件"
+
+[node name="ClearLogButton" type="Button" parent="UI/Controls"]
+layout_mode = 2
+text = "清除日志"
+
+[node name="Instructions" type="Label" parent="UI"]
+layout_mode = 0
+offset_left = 416.0
+offset_top = 8.0
+offset_right = 568.0
+offset_bottom = 124.0
+theme_override_font_sizes/font_size = 10
+text = "操作说明：
+ESC键：系统事件
+鼠标点击：UI事件
+方向键：游戏事件
+F12键：调试事件
+
+使用复选框控制事件过滤"
+autowrap_mode = 1
+
+[connection signal="toggled" from="UI/Controls/FilterSettings/SystemEvents" to="." method="_on_system_events_toggled"]
+[connection signal="toggled" from="UI/Controls/FilterSettings/UIEvents" to="." method="_on_ui_events_toggled"]
+[connection signal="toggled" from="UI/Controls/FilterSettings/GameplayEvents" to="." method="_on_gameplay_events_toggled"]
+[connection signal="toggled" from="UI/Controls/FilterSettings/DebugEvents" to="." method="_on_debug_events_toggled"]
+[connection signal="pressed" from="UI/Controls/ClearLogButton" to="." method="_on_clear_log_pressed"]

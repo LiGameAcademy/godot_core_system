@@ -9,6 +9,7 @@
 - 📊 **输入状态**: 跟踪按下、刚按下和刚释放状态
 - 🎯 **事件处理**: 全面的输入事件处理
 - 🔄 **动态注册**: 在运行时注册和清除输入映射
+- 📈 **配置系统**: 管理输入配置数据，包括动作映射、轴映射、设备映射和输入设置
 
 ## 核心组件
 
@@ -18,6 +19,7 @@
 - 虚拟动作管理
 - 轴映射
 - 输入状态跟踪
+- 配置管理
 
 ```gdscript
 # 注册虚拟动作
@@ -92,6 +94,55 @@ func get_axis_value(axis_name: String) -> Vector2
 ```gdscript
 # 清除所有虚拟输入
 func clear_virtual_inputs() -> void
+
+# 保存输入配置
+func save_config() -> void
+
+# 重置为默认配置
+func reset_to_default() -> void
+```
+
+## 配置系统
+
+输入系统使用专门的配置系统，将输入配置管理与核心输入功能分离。
+
+### 组件
+
+- `InputConfig`: 核心配置数据结构
+- `InputConfigAdapter`: ConfigManager 和 InputConfig 之间的桥梁
+
+### 配置结构
+
+```gdscript
+# 默认配置
+const DEFAULT_CONFIG = {
+    "action_mappings": {},  # 动作到输入事件的映射
+    "axis_mappings": {},    # 虚拟轴映射
+    "device_mappings": {},  # 设备特定映射
+    "input_settings": {     # 通用输入设置
+        "deadzone": 0.2,
+        "axis_sensitivity": 1.0,
+        "vibration_enabled": true,
+        "vibration_strength": 1.0
+    }
+}
+```
+
+### 使用配置系统
+
+```gdscript
+# 访问输入配置
+var config = input_manager._config_adapter.get_input_config()
+
+# 更新设置
+input_manager._config_adapter.set_deadzone(0.3)
+input_manager._config_adapter.set_axis_sensitivity(1.5)
+
+# 保存配置
+input_manager.save_config()
+
+# 重置为默认值
+input_manager.reset_to_default()
 ```
 
 ## 最佳实践
@@ -101,6 +152,7 @@ func clear_virtual_inputs() -> void
 3. 在改变游戏状态时清除虚拟输入
 4. 通过输入管理器而不是直接处理输入事件
 5. 对移动和类似的连续输入使用轴映射
+6. 使用配置系统管理输入设置
 
 ## 示例
 
@@ -130,3 +182,21 @@ func _process(delta):
     # 检查跳跃输入
     if input_manager.is_action_just_pressed("jump"):
         jump()
+
+# 更新动作映射
+func remap_jump_key():
+    var event = await get_next_input_event()
+    input_manager.update_action_mapping("jump", [
+        input_manager.get_event_data(event)
+    ])
+
+# 更新输入设置
+func update_settings():
+    input_manager._config_adapter.set_deadzone(0.3)
+    input_manager._config_adapter.set_axis_sensitivity(1.5)
+    input_manager.save_config()
+
+# 重置为默认配置
+func reset_settings():
+    input_manager.reset_to_default()
+```
