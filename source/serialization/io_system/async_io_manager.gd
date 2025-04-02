@@ -125,7 +125,7 @@ func read_file_async(path: String, use_compression: bool = false, encryption_key
 		else:
 			callback.call(false, null)
 
-	_io_thread.submit_task(work_func, callback_func)
+	_io_thread.add_task(work_func, callback_func)
 	
 	return task_id
 
@@ -160,7 +160,7 @@ func write_file_async(
 		if callback.is_valid():
 			callback.call(success, null)
 		
-	_io_thread.submit_task(work_func,callback_func)
+	_io_thread.add_task(work_func,callback_func)
 	
 	return task_id
 
@@ -185,7 +185,7 @@ func delete_file_async(path: String, callback: Callable = Callable()) -> String:
 		if callback.is_valid():
 			callback.call(success, null)
 
-	_io_thread.submit_task(work_func, callback_func)
+	_io_thread.add_task(work_func, callback_func)
 	
 	return task_id
 

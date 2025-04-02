@@ -6,6 +6,10 @@ extends RefCounted
 
 ## 所有任务完成信号
 signal thread_finished
+## 任务完成信号（结果, 任务ID）
+signal task_completed(result, task_id)
+## 任务错误信号（错误信息, 任务ID）
+signal task_error(error, task_id)
 
 ## 线程互斥锁，用于保护共享数据
 var _mutex: Mutex
@@ -90,6 +94,12 @@ func _thread_function():
 func _on_task_finished(task: Task) -> void:
 	# 从运行列表中移除已完成任务
 	_task_running_list.erase(task)
+	
+	# 发出任务完成信号
+	if task.has_error:
+		task_error.emit(task.error_message, task.id)
+	else:
+		task_completed.emit(task.result, task.id)
 	
 	# 如果没有更多任务，发出线程完成信号
 	if _task_pending_list.is_empty() && _task_running_list.is_empty():
@@ -191,6 +201,10 @@ func clear_pending_tasks() -> void:
 	_task_pending_list.clear()
 	_mutex.unlock()
 
+## 停止线程工作
+func stop() -> void:
+	_unload_thread()
+
 ## 任务类，表示一个可执行的工作单元
 class Task:
 	## 任务完成信号
@@ -207,6 +221,15 @@ class Task:
 	
 	## 是否使用延迟调用
 	var call_deferred: bool
+	
+	## 任务执行结果
+	var result: Variant
+	
+	## 是否有错误
+	var has_error: bool = false
+	
+	## 错误信息
+	var error_message: String = ""
 
 	## 任务初始化
 	## [param _id] 任务ID
@@ -229,13 +252,25 @@ class Task:
 	## [param callback] 回调函数
 	func process_callback(function: Callable, callback: Callable) -> void:
 		print("任务函数开始执行: %s" % id)
-		var result: Variant = await function.call()
-		print("任务函数执行完成: %s" % id)
-
-		if callback.is_valid():
-			print("任务回调开始执行: %s" % id)
-			await callback.call(result)
-			print("任务回调执行完成: %s" % id)
+		
+		# 执行任务函数并捕获可能的错误
+		has_error = false
+		error_message = ""
+		
+		# GDScript中没有直接的try-catch，使用push_error代替
+		if function.is_valid():
+			result = function.call()
+			print("任务函数执行完成: %s" % id)
+			
+			# 如果回调有效，执行回调
+			if not has_error and callback.is_valid():
+				print("任务回调开始执行: %s" % id)
+				callback.call(result)
+				print("任务回调执行完成: %s" % id)
+		else:
+			has_error = true
+			error_message = "任务函数无效: %s" % id
+			push_error(error_message)
 
 		# 发出任务完成信号
 		task_finished.emit(self)
