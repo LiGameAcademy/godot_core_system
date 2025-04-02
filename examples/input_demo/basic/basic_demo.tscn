@@ -1,0 +1,133 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8p4u5yqjbqx4"]
+
+[ext_resource type="Script" uid="uid://clc4t6p561yth" path="res://addons/godot_core_system/examples/input_demo/basic/basic_demo.gd" id="1_yvxu8"]
+
+[node name="BasicDemo" type="Node"]
+script = ExtResource("1_yvxu8")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 46.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "输入系统基础演示"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 60.0
+offset_right = 200.0
+offset_bottom = 160.0
+grow_horizontal = 2
+text = "输入系统就绪"
+horizontal_alignment = 1
+
+[node name="InputLog" type="TextEdit" parent="UI"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -74.0
+offset_right = 200.0
+offset_bottom = 46.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "输入日志"
+editable = false
+
+[node name="Controls" type="VBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -108.0
+offset_right = 200.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="SensitivityControl" type="HBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/Controls/SensitivityControl"]
+layout_mode = 2
+text = "灵敏度："
+
+[node name="SensitivitySlider" type="HSlider" parent="UI/Controls/SensitivityControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="DeadzoneControl" type="HBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/Controls/DeadzoneControl"]
+layout_mode = 2
+text = "死区："
+
+[node name="DeadzoneSlider" type="HSlider" parent="UI/Controls/DeadzoneControl"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+max_value = 0.5
+step = 0.05
+value = 0.2
+
+[node name="Buttons" type="HBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+alignment = 1
+
+[node name="ClearLogButton" type="Button" parent="UI/Controls/Buttons"]
+layout_mode = 2
+text = "清除日志"
+
+[node name="ResetConfigButton" type="Button" parent="UI/Controls/Buttons"]
+layout_mode = 2
+text = "重置配置"
+
+[node name="Instructions" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -316.0
+offset_right = 308.0
+offset_bottom = -215.0
+grow_vertical = 0
+text = "操作说明：
+方向键：移动
+空格键：跳跃
+回车键：攻击"
+
+[connection signal="value_changed" from="UI/Controls/SensitivityControl/SensitivitySlider" to="." method="_on_sensitivity_value_changed"]
+[connection signal="value_changed" from="UI/Controls/DeadzoneControl/DeadzoneSlider" to="." method="_on_deadzone_value_changed"]
+[connection signal="pressed" from="UI/Controls/Buttons/ClearLogButton" to="." method="_on_clear_log_pressed"]
+[connection signal="pressed" from="UI/Controls/Buttons/ResetConfigButton" to="." method="_on_reset_config_pressed"]

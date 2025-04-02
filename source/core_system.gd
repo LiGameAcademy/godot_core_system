@@ -25,7 +25,7 @@ const ModuleThread = preload("res://addons/godot_core_system/source/utils/thread
 ## 音频管理器
 var audio_manager : AudioManager:
 	get:
-		return _get_module("audio_manager", {"audio_node_root": self})
+		return _get_module("audio_manager")
 	set(value):
 		push_error("audio_manager is read-only")
 ## 事件总线
@@ -135,13 +135,13 @@ func is_module_enabled(module_id: StringName) -> bool:
 	return ProjectSettings.get_setting(setting_name, true)
 
 ## 创建模块实例
-func _create_module(module_id: StringName, data: Dictionary = {}) -> Node:
+func _create_module(module_id: StringName) -> Node:
 	var script = _module_scripts[module_id]
 	if not script:
 		push_error("无法加载模块脚本：" + module_id)
 		return null
 
-	var module = script.new(data)
+	var module = script.new()
 	if not module:
 		push_error("无法创建模块实例：" + module_id)
 		return null
@@ -151,10 +151,10 @@ func _create_module(module_id: StringName, data: Dictionary = {}) -> Node:
 	return module
 
 ## 获取模块
-func _get_module(module_id: StringName, data : Dictionary = {}) -> Node:
+func _get_module(module_id: StringName) -> Node:
 	if not _modules.has(module_id):
 		if is_module_enabled(module_id):
-			var module : Node = _create_module(module_id, data)
+			var module : Node = _create_module(module_id)
 			_modules[module_id] = module
 		else:
 			logger.warning("模块未启用：" + module_id)

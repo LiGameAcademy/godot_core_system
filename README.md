@@ -1,8 +1,8 @@
-# Godot Core System
+# Godot 核心系统
 
 <div align="center">
 
-[English](README.md) | [简体中文](README_zh.md)
+[English](README_en.md) | 简体中文
 
 ![Godot v4.4](https://img.shields.io/badge/Godot-v4.4-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
@@ -11,120 +11,124 @@
 [![GitHub forks](https://img.shields.io/github/forks/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/network)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-A highly modular and extensible core system framework designed for Godot 4.4+
+一个为 Godot 4.4+ 设计的高度模块化、易扩展的核心系统框架
 
-[Getting Started](#-getting-started) •
-[Documentation](docs/) •
-[Examples](examples/) •
-[Contributing](docs/CONTRIBUTING.md) •
-[Support and Help](#-support--help)
+[快速开始](#-快速开始) •
+[文档](docs/) •
+[示例](examples/) •
+[贡献](docs/CONTRIBUTING.md) •
+[支持与帮助](#-支持与帮助)
 
 </div>
 
-## ✨ Features
+## ✨ 特性
 
-- 🎮 **State Machine System** - Flexible and powerful state management for game logic
-- 💾 **Serialization System** - Easy-to-use save/load functionality with config management
-- 🎵 **Audio System** - Comprehensive audio management with categories and transitions
-- 🎯 **Input System** - Unified input handling with action mapping and event management
-- 📝 **Logger System** - Detailed logging system with multiple output channels
-- 🎨 **Resource System** - Efficient resource loading and management
-- 🎬 **Scene System** - Scene transition and management made easy
-- 🏷️ **Tag System** - Flexible object tagging and categorization system
-- 🔄 **Trigger System** - Event-driven trigger system with conditions and actions
-- ⚡ **Frame Splitter** - Performance optimization tool for distributing heavy tasks across frames
-- 🔧 **Plugin Architecture** - Easy to extend and customize
-- 📱 **Project Settings Integration** - Configure all systems through Godot's project settings
-- 🛠️ **Development Tools** - Built-in debugging and development tools
+- 🔧 **插件架构** : 易于扩展和自定义
+- 📱 **项目设置集成** : 通过 Godot 的项目设置配置所有系统
+- 🛠️ **开发工具** : 内置调试和开发工具
+- ManagerOfManagers : MOM 结构，易扩展和自定义
+  - 🎮 **状态机系统** : 灵活强大的游戏逻辑状态管理
+  - 💾 **序列化系统** : 易用的存档/读档功能和配置管理
+  - 🎵 **音频系统** : 全面的音频管理，支持分类和过渡
+  - 🎯 **输入系统** : 统一的输入处理，支持动作映射和事件管理
+  - 📝 **日志系统** : 详细的日志系统，支持多种输出通道
+  - 🎨 **资源系统** : 高效的资源加载和管理
+  - 🎬 **场景系统** : 简化场景转换和管理
+  - 🏷️ **标签系统** : 灵活的对象标签和分类系统
+  - 🔄 **触发器系统** : 事件驱动的触发器系统，支持条件和动作
+  - ⚡ **分帧执行器** : 性能优化工具，将耗时任务分散到多帧执行
 
-## 🚀 Getting Started
+## 🚀 快速开始
 
-### System Requirements
+### 系统要求
 
 - Godot Engine 4.4+
-- Basic knowledge of GDScript and Godot Engine
+- 基本的 GDScript 和 Godot 引擎知识
 
-### Installation Steps
+### 安装步骤
 
-1. Download the latest release from the [releases page](https://github.com/Liweimin0512/godot_core_system/releases)
-2. Copy the `godot_core_system` folder to your Godot project's `addons` directory
-3. Enable the plugin in Godot:
-   - Open Project Settings (Project -> Project Settings)
-   - Switch to the Plugins tab
-   - Find "Godot Core System" and enable it
+1. 从[发布页面](https://github.com/Liweimin0512/godot_core_system/releases)下载最新版本
+2. 将 `godot_core_system` 文件夹复制到你的 Godot 项目的 `addons` 目录下
+3. 在 Godot 编辑器中启用插件：
+   - 打开项目设置（Project -> Project Settings）
+   - 切换到插件标签页（Plugins）
+   - 找到 "Godot Core System" 并启用
 
-### Basic Usage
+### 基础使用
 
 ```gdscript
 extends Node
 
 func _ready():
-    # Access managers through CoreSystem singleton
-    CoreSystem.state_machine_manager  # State Machine Manager
-    CoreSystem.save_manager          # Save Manager
-    CoreSystem.audio_manager         # Audio Manager
-    CoreSystem.input_manager         # Input Manager
-    CoreSystem.logger               # Logger
-    CoreSystem.resource_manager     # Resource Manager
-    CoreSystem.scene_manager        # Scene Manager
-    CoreSystem.tag_manager         # Tag Manager
-    CoreSystem.trigger_manager     # Trigger Manager
+ # 通过 CoreSystem 单例访问各个管理器
+ CoreSystem.state_machine_manager  # 状态机管理器
+ CoreSystem.save_manager          # 存档管理器
+ CoreSystem.audio_manager         # 音频管理器
+ CoreSystem.input_manager         # 输入管理器
+ CoreSystem.logger               # 日志管理器
+ CoreSystem.resource_manager     # 资源管理器
+ CoreSystem.scene_manager        # 场景管理器
+ CoreSystem.tag_manager         # 标签管理器
+ CoreSystem.trigger_manager     # 触发器管理器
 ```
 
-## 📚 Documentation
+## 📚 文档
 
-Detailed documentation for each system:
+每个系统的详细文档：
 
-| System               | Description                           | Documentation                             |
-| -------------------- | ------------------------------------- | ----------------------------------------- |
-| State Machine System | Game state management and transitions | [View Docs](docs/state_machine_system.md) |
-| Serialization System | Game save and config management       | [View Docs](docs/serialization_system.md) |
-| Audio System         | Sound and music management            | [View Docs](docs/audio_system.md)         |
-| Input System         | Input control and event handling      | [View Docs](docs/input_system.md)         |
-| Logger System        | Logging and debugging                 | [View Docs](docs/logger_system.md)        |
-| Resource System      | Resource loading and management       | [View Docs](docs/resource_system.md)      |
-| Scene System         | Scene switching and management        | [View Docs](docs/scene_system.md)         |
-| Tag System           | Object tagging and categorization     | [View Docs](docs/tag_system.md)           |
-| Trigger System       | Event-driven triggers and conditions  | [View Docs](docs/trigger_system.md)       |
-| Config System        | Configuration management              | [View Docs](docs/config_system.md)        |
-| Save System          | Game save management                  | [View Docs](docs/save_system.md)          |
-| Frame Splitter       | Performance optimization tool         | [View Docs](docs/frame_splitter.md)       |
+| 系统名称           | 功能描述                           | 文档链接                                |
+|-------------------|----------------------------------|----------------------------------------|
+| 状态机系统         | 游戏逻辑状态管理                   | [查看文档](docs/state_machine_system_zh.md) |
+| 序列化系统         | 游戏存档与配置管理                 | [查看文档](docs/serialization_system_zh.md) |
+| 音频系统           | 音频管理和过渡                     | [查看文档](docs/audio_system_zh.md)       |
+| 输入系统           | 输入处理和事件管理                 | [查看文档](docs/input_system_zh.md)       |
+| 日志系统           | 多通道日志记录                     | [查看文档](docs/logger_system_zh.md)      |
+| 资源系统           | 资源加载和管理                     | [查看文档](docs/resource_system_zh.md)    |
+| 场景系统           | 场景转换和管理                     | [查看文档](docs/scene_system_zh.md)       |
+| 标签系统           | 对象标签和分类                     | [查看文档](docs/tag_system_zh.md)         |
+| 触发器系统         | 事件驱动的触发器                   | [查看文档](docs/trigger_system_zh.md)     |
+| 配置系统           | 配置文件管理                       | [查看文档](docs/config_system_zh.md)      |
+| 存档系统           | 游戏存档管理                       | [查看文档](docs/save_system_zh.md)        |
+| 分帧执行器         | 性能优化工具                       | [查看文档](docs/frame_splitter_zh.md)     |
 
-## 🌟 Example Project
+## 🌟 示例项目
 
-Visit our [example project](examples/) to understand the framework's practical applications and best practices.
+访问我们的[示例项目](examples/)，了解框架的实际应用场景和使用方式。
 
-## 🤝 Contributing
+### 完整游戏示例
 
-We welcome all forms of contributions! Whether it's new features, bug fixes, or documentation improvements. See our [Contributing Guidelines](CONTRIBUTING.md) for details.
+- [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - 一个使用 godot_core_system 框架开发的 2D 平台游戏示例，展示了框架在实际游戏开发中的应用。
 
-## 📄 License
+## 🤝 参与贡献
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+我们欢迎各种形式的贡献！无论是新功能、bug 修复，还是文档改进。详情请查看[贡献指南](CONTRIBUTING.md)。
 
-## 💖 Support & Help
+## 📄 开源协议
 
-If you encounter any issues or have suggestions:
+本项目采用 MIT 开源协议 - 查看 [LICENSE](LICENSE) 文件了解详情。
 
-1. Check the [detailed documentation](docs/)
-2. Search through [existing issues](https://github.com/Liweimin0512/godot_core_system/issues)
-3. Create a new [issue](https://github.com/Liweimin0512/godot_core_system/issues/new)
+## 💖 支持与帮助
 
-### Community
+如果你遇到问题或有任何建议：
 
-- Join our [Discord Community](https://discord.gg/V5nuzC2BcJ)
-- Follow us on [itch.io](https://godot-li.itch.io/)
-- Star ⭐ the project to show your support!
+1. 查看[详细文档](docs/)
+2. 搜索[已存在的 issues](https://github.com/Liweimin0512/godot_core_system/issues)
+3. 创建新的[issue](https://github.com/Liweimin0512/godot_core_system/issues/new)
 
-## 🙏 Acknowledgments
+### 社区交流
 
-- Thanks to all developers who contributed to this project!
-- Special thanks to every student at [Li's Game Academy](https://wx.zsxq.com/group/28885154818841)!
-- Built with ❤️ by the Godot community
+- 加入我们的 [Discord 社区](https://discord.gg/V5nuzC2BcJ)
+- 关注我们的 [itch.io](https://godot-li.itch.io/) 主页
+- 为项目点亮 ⭐ 以示支持！
+
+## 🙏 致谢
+
+- 感谢所有为项目做出贡献的开发者！
+- 感谢[老李游戏学院](https://wx.zsxq.com/group/28885154818841)的每一位同学！
 
 ---
 
 <div align="center">
-    <strong>Built by Liweimin0512 with ❤️</strong><br>
-    <sub>Making game development easier</sub>
+  <strong>由 老李游戏学院 用 ❤️ 构建</strong><br>
+  <sub>让游戏开发变得更简单</sub>
 </div>

@@ -1,132 +1,138 @@
-# Input System
+# 输入系统 (Input System)
 
-The Input System provides a flexible and powerful way to handle user input in your game, supporting virtual actions and axis mappings.
+## 简介
+输入系统是一个全面的输入处理框架，提供了高级的输入管理、状态跟踪、缓冲处理和事件记录功能。它由多个专门的子系统组成，每个子系统都专注于特定的输入处理方面。
 
-## Features
+## 系统架构
+输入系统由以下核心组件组成：
 
-- 🎮 **Virtual Actions**: Define and manage custom input actions
-- 🕹️ **Axis Mapping**: Create virtual axes from action combinations
-- 📊 **Input States**: Track pressed, just pressed, and just released states
-- 🎯 **Event Handling**: Comprehensive input event processing
-- 🔄 **Dynamic Registration**: Register and clear input mappings at runtime
+### 输入管理器 (InputManager)
+中央控制器，协调各个子系统的工作。主要职责包括：
+- 初始化和管理所有子系统
+- 处理原始输入事件
+- 更新输入状态
+- 分发处理后的事件
 
-## Core Components
+### 子系统
+1. [虚拟轴系统](input_system/virtual_axis.md)
+   - 处理基于轴的输入（如角色移动）
+   - 支持死区和灵敏度调节
+   - 提供实时轴值更新
 
-### InputManager
+2. [输入状态系统](input_system/input_state.md)
+   - 跟踪所有输入动作的状态
+   - 提供精确的时间戳记录
+   - 支持输入强度检测
 
-Central manager for all input operations:
-- Virtual action management
-- Axis mapping
-- Input state tracking
+3. [输入缓冲系统](input_system/input_buffer.md)
+   - 实现输入缓冲机制
+   - 支持可配置的缓冲窗口
+   - 自动管理缓冲优先级
 
+4. [输入记录器](input_system/input_recorder.md)
+   - 记录输入序列
+   - 支持回放功能
+   - 提供存档和加载功能
+
+5. [事件处理器](input_system/input_event_processor.md)
+   - 处理和过滤输入事件
+   - 管理事件优先级
+   - 提供事件转换功能
+
+## 使用示例
+### 基本设置
 ```gdscript
-# Register a virtual action
-input_manager.register_virtual_action(
-    "jump",                 # Action name
-    [jump_event]           # Key combination
+# 获取输入管理器实例
+@onready var input_manager = CoreSystem.input_manager
+
+# 设置虚拟轴
+input_manager.virtual_axis.register_axis(
+    "movement",
+    "ui_right",
+    "ui_left",
+    "ui_up",
+    "ui_down"
 )
 
-# Register an axis
-input_manager.register_axis(
-    "movement",            # Axis name
-    "move_right",         # Positive X
-    "move_left",          # Negative X
-    "move_down",          # Positive Y
-    "move_up"             # Negative Y
-)
+# 检查输入状态
+if input_manager.input_state.is_just_pressed("jump"):
+    character.jump()
 ```
 
-## API Reference
-
-### InputManager
-
-#### Signals
-
+### 高级功能
 ```gdscript
-# Emitted when an action is triggered
-signal action_triggered(action_name: String, event: InputEvent)
+# 使用输入缓冲
+input_manager.input_buffer.add_buffer("attack", 1.0)
 
-# Emitted when an axis value changes
-signal axis_changed(axis_name: String, value: Vector2)
+# 记录输入序列
+input_manager.input_recorder.start_recording()
+
+# 处理自定义事件
+input_manager.event_processor.process_event(event)
 ```
 
-#### Methods
-
-##### Virtual Actions
-
+## 配置和自定义
+### 系统配置
 ```gdscript
-# Register a virtual action
-func register_virtual_action(
-    action_name: String,       # Action name
-    key_combination: Array     # Key combination
-) -> void
+# 配置虚拟轴
+virtual_axis.set_sensitivity(1.0)
+virtual_axis.set_deadzone(0.2)
 
-# Check if action is pressed
-func is_action_pressed(action_name: String) -> bool
-
-# Check if action was just pressed
-func is_action_just_pressed(action_name: String) -> bool
-
-# Check if action was just released
-func is_action_just_released(action_name: String) -> bool
+# 设置缓冲窗口
+input_buffer.set_buffer_window(0.15)
 ```
 
-##### Axis Mapping
-
+### 信号连接
 ```gdscript
-# Register a virtual axis
-func register_axis(
-    axis_name: String,        # Axis name
-    positive_x: String = "",  # Positive X action
-    negative_x: String = "",  # Negative X action
-    positive_y: String = "",  # Positive Y action
-    negative_y: String = ""   # Negative Y action
-) -> void
+# 监听动作触发
+input_manager.action_triggered.connect(_on_action_triggered)
 
-# Get axis value
-func get_axis_value(axis_name: String) -> Vector2
+# 监听轴值变化
+input_manager.axis_changed.connect(_on_axis_changed)
 ```
 
-##### System Management
+## 最佳实践
+1. 状态管理
+   - 使用输入状态系统而不是直接检查输入
+   - 在适当的时机更新和重置状态
 
-```gdscript
-# Clear all virtual inputs
-func clear_virtual_inputs() -> void
-```
+2. 事件处理
+   - 使用事件处理器过滤无关事件
+   - 遵循事件优先级规则
 
-## Best Practices
+3. 性能优化
+   - 合理使用缓冲机制
+   - 及时清理过期数据
+   - 避免过度记录
 
-1. Register virtual actions at game startup or scene initialization
-2. Use meaningful names for actions and axes
-3. Clear virtual inputs when changing game states
-4. Handle input events through the input manager instead of directly
-5. Use axis mapping for movement and similar continuous inputs
+## 调试支持
+- 详细的状态日志
+- 输入序列记录和回放
+- 性能监控工具
 
-## Examples
+## 扩展性
+系统支持通过以下方式进行扩展：
+1. 添加新的子系统
+2. 自定义事件处理规则
+3. 实现特定游戏类型的输入处理
 
-```gdscript
-# Setup player input
-func _ready():
-    # Register movement axis
-    input_manager.register_axis(
-        "movement",
-        "move_right",
-        "move_left",
-        "move_down",
-        "move_up"
-    )
-    
-    # Register jump action
-    var jump_event = InputEventKey.new()
-    jump_event.keycode = KEY_SPACE
-    input_manager.register_virtual_action("jump", [jump_event])
+## 注意事项
+1. 初始化顺序
+   - 确保在使用前正确初始化所有子系统
+   - 遵循依赖关系
 
-# Handle input in process
-func _process(delta):
-    # Get movement input
-    var movement = input_manager.get_axis_value("movement")
-    position += movement * speed * delta
-    
-    # Check jump input
-    if input_manager.is_action_just_pressed("jump"):
-        jump()
+2. 资源管理
+   - 及时清理不需要的记录
+   - 控制缓冲区大小
+
+3. 线程安全
+   - 在主线程处理输入
+   - 注意异步操作的影响
+
+## API 参考
+请参考各个子系统的详细文档：
+- [虚拟轴系统](input_system/virtual_axis.md)
+- [输入状态系统](input_system/input_state.md)
+- [输入缓冲系统](input_system/input_buffer.md)
+- [输入记录器](input_system/input_recorder.md)
+- [事件处理器](input_system/input_event_processor.md)

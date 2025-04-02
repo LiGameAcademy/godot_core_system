@@ -54,10 +54,10 @@ func push_event(event_name: String, payload : Variant = [], immediate: bool = tr
 	# 处理事件
 	var valid_subscriptions := []
 	for sub : WeakSubscription in subscribers:
-		if not sub.is_valid(): # 检查回调是否有效
+		if not sub.is_valid():
 			continue
 		valid_subscriptions.append(sub)
-		if sub.filter.call(payload):
+		if sub.filter.is_valid() and sub.filter.call(payload):
 			if immediate:
 				sub.call_subscribed(payload)
 			else:

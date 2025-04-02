@@ -1,0 +1,111 @@
+[gd_scene load_steps=4 format=3 uid="uid://c8p4u5yqjbqx4"]
+
+[ext_resource type="Script" uid="uid://dtyovc5pap37o" path="res://addons/godot_core_system/examples/input_demo/virtual_axis/movement_demo.gd" id="1_yvxu8"]
+[ext_resource type="PackedScene" uid="uid://b8p4u5yqjbqx4" path="res://addons/godot_core_system/examples/input_demo/virtual_axis/character.tscn" id="2_n3k4r"]
+[ext_resource type="Script" uid="uid://ea77c7332d4m" path="res://addons/godot_core_system/examples/input_demo/virtual_axis/axis_visualizer.gd" id="3_f8m2p"]
+
+[node name="MovementDemo" type="CanvasLayer"]
+script = ExtResource("1_yvxu8")
+
+[node name="Character" parent="." instance=ExtResource("2_n3k4r")]
+position = Vector2(512, 300)
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Title" type="Label" parent="UI"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -100.0
+offset_top = 20.0
+offset_right = 100.0
+offset_bottom = 46.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 24
+text = "虚拟轴系统演示"
+horizontal_alignment = 1
+
+[node name="StatusLabel" type="Label" parent="UI"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 220.0
+offset_bottom = 120.0
+text = "虚拟轴系统就绪"
+
+[node name="AxisVisualizer" type="Control" parent="UI"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -352.0
+offset_top = -236.0
+offset_right = -132.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("3_f8m2p")
+
+[node name="Controls" type="VBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -160.0
+offset_right = 220.0
+offset_bottom = -20.0
+grow_vertical = 0
+
+[node name="SensitivityControl" type="VBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/Controls/SensitivityControl"]
+layout_mode = 2
+text = "灵敏度"
+
+[node name="SensitivitySlider" type="HSlider" parent="UI/Controls/SensitivityControl"]
+layout_mode = 2
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="DeadzoneControl" type="VBoxContainer" parent="UI/Controls"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="UI/Controls/DeadzoneControl"]
+layout_mode = 2
+text = "死区"
+
+[node name="DeadzoneSlider" type="HSlider" parent="UI/Controls/DeadzoneControl"]
+layout_mode = 2
+max_value = 0.5
+step = 0.05
+value = 0.2
+
+[node name="ResetButton" type="Button" parent="UI/Controls"]
+layout_mode = 2
+text = "重置参数"
+
+[node name="Instructions" type="Label" parent="UI"]
+layout_mode = 0
+offset_left = 424.0
+offset_right = 624.0
+offset_bottom = 101.0
+text = "操作说明：
+方向键：移动角色
+右下角：轴值可视化
+左下角：参数调节"
+
+[connection signal="value_changed" from="UI/Controls/SensitivityControl/SensitivitySlider" to="." method="_on_sensitivity_value_changed"]
+[connection signal="value_changed" from="UI/Controls/DeadzoneControl/DeadzoneSlider" to="." method="_on_deadzone_value_changed"]
+[connection signal="pressed" from="UI/Controls/ResetButton" to="." method="_on_reset_pressed"]
