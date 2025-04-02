@@ -29,7 +29,7 @@ enum TaskStatus {
 
 # 私有变量
 var _tasks: Array[IOTask] = []
-var _thread_pool: CoreSystem.ThreadPool
+var _io_thread: CoreSystem.SingleThread
 var _task_counter: int = 0  # 任务计数器
 
 ## 加密提供者
@@ -45,19 +45,20 @@ var encryption_provider: EncryptionProvider:
 var _encryption_provider: EncryptionProvider = null
 
 func _init(_data:Dictionary = {}):
-	_thread_pool = CoreSystem.ThreadPool.new(4)  # 创建4个线程的线程池
-	_thread_pool.task_completed.connect(_on_task_completed)
-	_thread_pool.task_error.connect(_on_task_error)
+	_io_thread = CoreSystem.SingleThread.new()
+	_io_thread.task_completed.connect(_on_task_completed)
+	_io_thread.task_error.connect(_on_task_error)
 
 func _exit() -> void:
-	_thread_pool.stop()
+	if _io_thread:
+		_io_thread.stop()
 
 ## 处理任务完成
-func _on_task_completed(task_id: String, result: Variant) -> void:
+func _on_task_completed(result: Variant, task_id: String) -> void:
 	io_completed.emit(task_id, true, result)
 
 ## 处理任务错误
-func _on_task_error(task_id: String, error: String) -> void:
+func _on_task_error(error: String, task_id: String) -> void:
 	io_error.emit(task_id, error)
 
 ## 异步读取文件（基础版本）
@@ -124,7 +125,7 @@ func read_file_async(path: String, use_compression: bool = false, encryption_key
 		else:
 			callback.call(false, null)
 
-	_thread_pool.submit_task(work_func, callback_func)
+	_io_thread.submit_task(work_func, callback_func)
 	
 	return task_id
 
@@ -159,7 +160,7 @@ func write_file_async(
 		if callback.is_valid():
 			callback.call(success, null)
 		
-	_thread_pool.submit_task(work_func,callback_func)
+	_io_thread.submit_task(work_func,callback_func)
 	
 	return task_id
 
@@ -184,7 +185,7 @@ func delete_file_async(path: String, callback: Callable = Callable()) -> String:
 		if callback.is_valid():
 			callback.call(success, null)
 
-	_thread_pool.submit_task(work_func, callback_func)
+	_io_thread.submit_task(work_func, callback_func)
 	
 	return task_id
 
