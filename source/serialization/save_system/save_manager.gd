@@ -3,8 +3,8 @@ extends Node
 ## 存档管理器，负责存档的创建、加载、删除等操作
 
 ## 存档数据
-const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
-const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.gd")
+const GameStateData = preload("./game_state_data.gd")
+const SETTING_SCRIPT: Script = preload("../../../setting.gd")
 const SETTING_SAVE_SYSTEM := SETTING_SCRIPT.SETTING_SAVE_SYSTEM
 
 ## 项目设置路径常量
