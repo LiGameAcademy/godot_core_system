@@ -1,9 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8p4u5yqjbqx4"]
+[gd_scene load_steps=2 format=3 uid="uid://cf0ikhesdwhcl"]
 
-[ext_resource type="Script" uid="uid://clc4t6p561yth" path="res://addons/godot_core_system/examples/input_demo/basic/basic_demo.gd" id="1_yvxu8"]
+[ext_resource type="Script" uid="uid://clc4t6p561yth" path="res://addons/godot_core_system/examples/input_demo/basic/basic_demo.gd" id="1_so60t"]
 
 [node name="BasicDemo" type="Node"]
-script = ExtResource("1_yvxu8")
+script = ExtResource("1_so60t")
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 3

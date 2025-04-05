@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://debavrld3wcii"]
+[gd_scene load_steps=2 format=3 uid="uid://kbxdoilv60o8"]
 
-[ext_resource type="Script" uid="uid://cve56a01fxb1q" path="res://addons/godot_core_system/examples/scene_demo/scenes/demo_scene.gd" id="1_tpa6t"]
+[ext_resource type="Script" uid="uid://cve56a01fxb1q" path="res://addons/godot_core_system/examples/scene_demo/scenes/demo_scene.gd" id="1_j2on2"]
 
 [node name="Scene1" type="Control"]
 layout_mode = 3
@@ -9,7 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_tpa6t")
+script = ExtResource("1_j2on2")
 
 [node name="ColorRect" type="ColorRect" parent="."]
 layout_mode = 1

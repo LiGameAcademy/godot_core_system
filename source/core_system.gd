@@ -1,24 +1,24 @@
 extends Node
 
 
-const AudioManager = preload("res://addons/godot_core_system/source/audio_system/audio_manager.gd")
-const EventBus = preload("res://addons/godot_core_system/source/event_system/event_bus.gd")
-const InputManager = preload("res://addons/godot_core_system/source/input_system/input_manager.gd")
-const Logger = preload("res://addons/godot_core_system/source/logger/logger.gd")
-const ResourceManager = preload("res://addons/godot_core_system/source/resource_system/resource_manager.gd")
-const SceneManager = preload("res://addons/godot_core_system/source/scene_system/scene_manager.gd")
-const TimeManager = preload("res://addons/godot_core_system/source/time_system/time_manager.gd")
-const AsyncIOManager = preload("res://addons/godot_core_system/source/serialization/io_system/async_io_manager.gd")
-const SaveManager = preload("res://addons/godot_core_system/source/serialization/save_system/save_manager.gd")
-const ConfigManager = preload("res://addons/godot_core_system/source/serialization/config_system/config_manager.gd")
-const StateMachineManager = preload("res://addons/godot_core_system/source/state_machine/state_machine_manager.gd")
-const EntityManager = preload("res://addons/godot_core_system/source/entity_system/entity_manager.gd")
-const TriggerManager = preload("res://addons/godot_core_system/source/trigger_system/trigger_manager.gd")
-const GameplayTagManager = preload("res://addons/godot_core_system/source/tag_system/gameplay_tag_manager.gd")
+const AudioManager = preload("./audio_system/audio_manager.gd")
+const EventBus = preload("./event_system/event_bus.gd")
+const InputManager = preload("./input_system/input_manager.gd")
+const Logger = preload("./logger/logger.gd")
+const ResourceManager = preload("./resource_system/resource_manager.gd")
+const SceneManager = preload("./scene_system/scene_manager.gd")
+const TimeManager = preload("./time_system/time_manager.gd")
+const AsyncIOManager = preload("./serialization/io_system/async_io_manager.gd")
+const SaveManager = preload("./serialization/save_system/save_manager.gd")
+const ConfigManager = preload("./serialization/config_system/config_manager.gd")
+const StateMachineManager = preload("./state_machine/state_machine_manager.gd")
+const EntityManager = preload("./entity_system/entity_manager.gd")
+const TriggerManager = preload("./trigger_system/trigger_manager.gd")
+const GameplayTagManager = preload("./tag_system/gameplay_tag_manager.gd")
 
-const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
+const GameStateData = preload("./serialization/save_system/game_state_data.gd")
 
-const FrameSplitter = preload("res://addons/godot_core_system/source/utils/frame_splitter.gd")
+const FrameSplitter = preload("./utils/frame_splitter.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:

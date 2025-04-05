@@ -4,7 +4,7 @@ extends Node
 ## 这个示例展示了一个简单的游戏状态机系统，包含主状态机和子状态机
 
 ## StateMachineManager常规由CoreSystem维护单例，这里进行单元测试
-const StateMachineManager = preload("res://addons/godot_core_system/source/state_machine/state_machine_manager.gd")
+const StateMachineManager = preload("../../source/state_machine/state_machine_manager.gd")
 
 @onready var state_machine_manager = StateMachineManager.new()
 
