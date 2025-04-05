@@ -5,7 +5,11 @@
 本文档格式基于[Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [未发布]
+## [待发布]
+
+
+
+## [0.0.2]
 
 ### 新增
 
@@ -24,6 +28,8 @@
   - 优化虚拟轴和动作处理
   - 添加输入系统配置管理
   - 网络输入系统改进
+- 重构`SceneSystem`场景系统
+  - 更接近Godot原生场景系统的使用体验
 
 ### 废弃
 
