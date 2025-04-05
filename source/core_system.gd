@@ -18,7 +18,9 @@ const GameplayTagManager = preload("res://addons/godot_core_system/source/tag_sy
 
 const GameStateData = preload("res://addons/godot_core_system/source/serialization/save_system/game_state_data.gd")
 
-const FrameSplitter = preload("res://addons/godot_core_system/source/utils/frame_splitter.gd")
+const FrameSplitter = preload("res://addons/godot_core_system/source/utils/frame_splitter/frame_splitter.gd")
+const SingleThread = preload("res://addons/godot_core_system/source/utils/threading/single_thread.gd")
+const ModuleThread = preload("res://addons/godot_core_system/source/utils/threading/module_thread.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:
