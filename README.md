@@ -103,6 +103,7 @@ func _ready():
 ### 完整游戏示例
 
 - [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - 一个使用 godot_core_system 框架开发的 2D 平台游戏示例，展示了框架在实际游戏开发中的应用。
+- [Exocave : 2d平台跳跃解密游戏。以重力翻转为核心机制](https://github.com/youer0219/Exocave) - 使用 godot_core_system 框架的 scene_system。
 
 ## 🤝 参与贡献
 

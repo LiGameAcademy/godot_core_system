@@ -102,6 +102,7 @@ Visit our [example projects](examples/) to understand the framework's practical 
 ### Complete Game Examples
 
 - [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - A 2D platform game example developed using the godot_core_system framework, demonstrating practical application of the framework in actual game development.
+- [Exocave : 2d platform jumping puzzle game. Gravity flip as the core mechanism](https://github.com/youer0219/Exocave) - Developed using the godot_core_system framework's scene_system.
 
 ## 🤝 Contributing
 
