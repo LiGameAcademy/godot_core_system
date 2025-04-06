@@ -303,7 +303,10 @@ func _do_scene_switch(
 	if effect != TransitionEffect.NONE:
 		await _end_transition(effect, duration, custom_transition_name)
 		_cleanup_transition(effect, custom_transition_name)
-		
+	
+	## 场景切换后强制更新新场景的相机
+	call_deferred("_update_new_scene_camera",new_scene)
+	
 	scene_changed.emit(old_scene, new_scene)
 
 	# 回调
@@ -317,3 +320,18 @@ func _on_resource_loaded(path: String, resource: Resource) -> void:
 	if path in _preloaded_scenes and resource is PackedScene:
 		_preloaded_scenes.erase(path)
 		scene_preloaded.emit(path)
+
+func _update_new_scene_camera(new_scene:Node):
+	if new_scene == null:
+		push_error("new_scene is null!")
+		return
+	
+	var new_scene_viewport = new_scene.get_viewport()
+	if new_scene_viewport != null:
+		if new_scene_viewport.get_camera_2d() != null:
+			new_scene_viewport.get_camera_2d().force_update_scroll()
+			new_scene_viewport.get_camera_2d().force_update_transform()
+	## 待补充3D相机有关设置。下面注释代码无法确定是否有效。需要进一步测试
+	#if new_scene_viewport != null:
+		#if new_scene_viewport.get_camera_3d() != null:
+			#new_scene_viewport.get_camera_3d().force_update_transform()
