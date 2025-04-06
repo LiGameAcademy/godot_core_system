@@ -3,9 +3,9 @@ extends EditorPlugin
 
 
 const SYSTEM_NAME: String = "CoreSystem"
-const SYSTEM_PATH: String = "res://addons/godot_core_system/source/core_system.gd"
+var SYSTEM_PATH: String = FileDirHandler.get_object_script_dir(self) + "/source/core_system.gd"
 
-const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.gd")
+const SETTING_SCRIPT: Script = preload("./setting.gd")
 const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = SETTING_SCRIPT.SETTING_INFO_DICT
 
 

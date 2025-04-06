@@ -8,10 +8,10 @@ const SceneManager = CoreSystem.SceneManager
 @onready var preload_status = $UI/PreloadStatus
 
 # 场景路径
-const SCENE_PATHS = [
-	"res://addons/godot_core_system/examples/scene_demo/scenes/scene1.tscn",
-	"res://addons/godot_core_system/examples/scene_demo/scenes/scene2.tscn",
-	"res://addons/godot_core_system/examples/scene_demo/scenes/scene3.tscn",
+var SCENE_PATHS = [
+	FileDirHandler.get_object_script_dir(self) + "/scenes/scene1.tscn",
+	FileDirHandler.get_object_script_dir(self) + "/scenes/scene2.tscn",
+	FileDirHandler.get_object_script_dir(self) + "/scenes/scene3.tscn",
 ]
 
 # 预加载状态
