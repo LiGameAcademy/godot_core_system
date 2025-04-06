@@ -6,9 +6,9 @@ const AudioManager = CoreSystem.AudioManager
 
 # 预加载的音频资源路径
 var AUDIO_PATHS := {
-	"bgm": FileDirHandler.get_object_dir(self) + "/assets/music/bgm.ogg",
-	"click": FileDirHandler.get_object_dir(self) + "/assets/sfx/click.ogg",
-	"voice": FileDirHandler.get_object_dir(self) + "/assets/voice/congratulations.ogg"
+	"bgm": FileDirHandler.get_object_script_dir(self) + "/assets/music/bgm.ogg",
+	"click": FileDirHandler.get_object_script_dir(self) + "/assets/sfx/click.ogg",
+	"voice": FileDirHandler.get_object_script_dir(self) + "/assets/voice/congratulations.ogg"
 }
 
 func _ready():

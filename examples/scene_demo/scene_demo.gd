@@ -9,9 +9,9 @@ const SceneManager = CoreSystem.SceneManager
 
 # 场景路径
 var SCENE_PATHS = [
-	FileDirHandler.get_object_dir(self) + "/scenes/scene1.tscn",
-	FileDirHandler.get_object_dir(self) + "/scenes/scene2.tscn",
-	FileDirHandler.get_object_dir(self) + "/scenes/scene3.tscn",
+	FileDirHandler.get_object_script_dir(self) + "/scenes/scene1.tscn",
+	FileDirHandler.get_object_script_dir(self) + "/scenes/scene2.tscn",
+	FileDirHandler.get_object_script_dir(self) + "/scenes/scene3.tscn",
 ]
 
 # 预加载状态

@@ -3,7 +3,7 @@ extends EditorPlugin
 
 
 const SYSTEM_NAME: String = "CoreSystem"
-var SYSTEM_PATH: String = FileDirHandler.get_object_dir(self) + "/source/core_system.gd"
+var SYSTEM_PATH: String = FileDirHandler.get_object_script_dir(self) + "/source/core_system.gd"
 
 const SETTING_SCRIPT: Script = preload("./setting.gd")
 const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = SETTING_SCRIPT.SETTING_INFO_DICT
