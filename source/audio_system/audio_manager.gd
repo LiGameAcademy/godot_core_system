@@ -63,6 +63,9 @@ func play_music(path: String, fade_duration: float = 1.0, loop: bool = true) -> 
 	
 	var audio_resource = _get_audio_resource(path)
 	if audio_resource:
+		if not loop and _is_audio_loop(audio_resource):
+			push_warning("The audio is imported with loop enabled, and it will always loop regardless of loop parameter!")
+		
 		_current_music = _get_audio_player(AudioType.MUSIC)
 		_current_music.stream = audio_resource
 		_current_music.bus = DEFAULT_BUSES[AudioType.MUSIC]
@@ -184,8 +187,19 @@ func _setup_audio_buses():
 			AudioServer.set_bus_name(bus_idx, bus_name)
 			AudioServer.set_bus_volume_db(bus_idx, linear_to_db(1.0))
 
-
 ## 音乐播放完毕回调
 func _on_music_finished() -> void:
 	if _current_music:
 		_current_music.play()
+
+## 判断音频是否循环
+func _is_audio_loop(audio:AudioStream)->bool:
+	if audio == null:
+		return false
+	
+	if audio is AudioStreamWAV:
+		return audio.loop_mode != AudioStreamWAV.LoopMode.LOOP_DISABLED
+	elif audio is AudioStreamMP3 or audio is AudioStreamOggVorbis or audio is AudioStreamPlaylist:
+		return audio.loop
+	
+	return false
