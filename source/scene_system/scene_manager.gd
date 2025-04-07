@@ -73,11 +73,21 @@ func _ready() -> void:
 	# 初始化默认转场效果
 	_setup_default_transitions()
 
+func _exit_tree() -> void:
+	clear_scene_stack()
+
 ## 预加载场景
 ## @param scene_path 场景路径
 func preload_scene(scene_path: String) -> void:
 	_preloaded_scenes.append(scene_path)
 	_resource_manager.load_resource(scene_path, _resource_manager.LOAD_MODE.LAZY)
+
+## 确保所有栈中的孤儿节点均被释放
+func clear_scene_stack() -> void:
+	for stack in _scene_stack:
+		var scene: Node = stack.get("scene") as Node
+		scene.queue_free()
+	_scene_stack.clear()
 
 ## 异步切换场景
 ## [param scene_path] 场景路径
