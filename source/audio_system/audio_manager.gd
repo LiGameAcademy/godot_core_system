@@ -52,18 +52,29 @@ func preload_audio(path: String, type: AudioType) -> void:
 ## 播放音乐
 ## [param path] 音频路径
 ## [param fade_duration] 淡出持续时间
-## [param loop] 是否循环
+## [param loop] 是否循环 如果音频导入时设置为循环播放，则将一直循环，哪怕loop参数设置为false
 func play_music(path: String, fade_duration: float = 1.0, loop: bool = true) -> void:
 	if _current_music and _current_music.playing:
 		_fade_out_music(fade_duration)
 	
+	# 断开旧音乐的finished信号连接
+	if _current_music and _current_music.is_connected("finished", _on_music_finished):
+		_current_music.disconnect("finished", _on_music_finished)
+	
 	var audio_resource = _get_audio_resource(path)
 	if audio_resource:
+		if not loop and _is_audio_loop(audio_resource):
+			push_warning("The audio is imported with loop enabled, and it will always loop regardless of loop parameter!")
+		
 		_current_music = _get_audio_player(AudioType.MUSIC)
 		_current_music.stream = audio_resource
 		_current_music.bus = DEFAULT_BUSES[AudioType.MUSIC]
 		_current_music.volume_db = linear_to_db(_volumes[AudioType.MUSIC])
 		_current_music.play()
+		
+		# 连接循环信号
+		if loop:
+			_current_music.connect("finished", _on_music_finished)
 		
 		if fade_duration > 0:
 			_fade_in_music(fade_duration)
@@ -175,3 +186,20 @@ func _setup_audio_buses():
 			var bus_idx = AudioServer.get_bus_count() - 1
 			AudioServer.set_bus_name(bus_idx, bus_name)
 			AudioServer.set_bus_volume_db(bus_idx, linear_to_db(1.0))
+
+## 音乐播放完毕回调
+func _on_music_finished() -> void:
+	if _current_music:
+		_current_music.play()
+
+## 判断音频是否循环
+func _is_audio_loop(audio:AudioStream)->bool:
+	if audio == null:
+		return false
+	
+	if audio is AudioStreamWAV:
+		return audio.loop_mode != AudioStreamWAV.LoopMode.LOOP_DISABLED
+	elif audio is AudioStreamMP3 or audio is AudioStreamOggVorbis or audio is AudioStreamPlaylist:
+		return audio.loop
+	
+	return false

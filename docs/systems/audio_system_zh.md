@@ -30,16 +30,16 @@ core_system/audio_system/voice_volume = 1.0
 
 # 使用示例
 func _ready() -> void:
-    var audio = CoreSystem.audio_manager
+	var audio = CoreSystem.audio_manager
 
-    # 播放音乐（带淡入淡出）
-    audio.play_music("res://assets/music/battle_theme.ogg", 2.0)
+	# 播放音乐（带淡入淡出）
+	audio.play_music("res://assets/music/battle_theme.ogg", 2.0)
 
-    # 播放音效
-    audio.play_sfx("res://assets/sfx/explosion.wav")
+	# 播放音效
+	audio.play_sound("res://assets/sfx/explosion.wav")
 
-    # 设置分类音量
-    audio.set_category_volume("music", 0.8)
+	# 设置分类音量
+	audio.set_category_volume("music", 0.8)
 ```
 
 ## 使用示例
@@ -47,53 +47,26 @@ func _ready() -> void:
 ### 播放音频
 
 ```gdscript
-# 播放背景音乐
+# 播放背景音乐 默认循环播放 如果音频导入时设置为循环播放，则将一直循环，哪怕loop参数设置为false
 func play_background_music() -> void:
-    CoreSystem.audio_manager.play_music("res://assets/music/main_theme.ogg")
+	CoreSystem.audio_manager.play_music("res://assets/music/main_theme.ogg")
 
 # 播放音效
 func play_attack_sound() -> void:
-    CoreSystem.audio_manager.play_sfx("res://assets/sfx/attack.wav")
+	CoreSystem.audio_manager.play_sound("res://assets/sfx/attack.wav")
 
 # 播放语音
 func play_character_voice() -> void:
-    CoreSystem.audio_manager.play_voice("res://assets/voice/greeting.ogg")
+	CoreSystem.audio_manager.play_voice("res://assets/voice/greeting.ogg")
 ```
 
 ### 音量控制
 
 ```gdscript
-# 设置主音量
-func set_master_volume(volume: float) -> void:
-    CoreSystem.audio_manager.set_master_volume(volume)
-
-# 设置分类音量
+# 设置背景音乐音量
 func set_music_volume(volume: float) -> void:
-    CoreSystem.audio_manager.set_category_volume("music", volume)
+	CoreSystem.audio_manager.set_volume(CoreSystem.AudioManager.AudioType.MUSIC,volume)
 
-# 静音/取消静音分类
-func toggle_sfx(enabled: bool) -> void:
-    CoreSystem.audio_manager.set_category_mute("sfx", !enabled)
-```
-
-### 音频状态管理
-
-```gdscript
-# 改变音频状态（例如，进入战斗时）
-func enter_battle() -> void:
-    CoreSystem.audio_manager.transition_to_state("battle", 2.0)
-
-# 定义状态行为
-func _setup_audio_states() -> void:
-    var audio = CoreSystem.audio_manager
-    audio.add_state("menu", {
-        "music": "res://assets/music/menu_theme.ogg",
-        "ambient": "res://assets/ambient/menu_ambience.ogg"
-    })
-    audio.add_state("battle", {
-        "music": "res://assets/music/battle_theme.ogg",
-        "ambient": "res://assets/ambient/battle_ambience.ogg"
-    })
 ```
 
 ## 最佳实践
@@ -119,14 +92,10 @@ func _setup_audio_states() -> void:
 
 ### 音频管理器 AudioManager
 
-- `play_music(stream_path: String, fade_time: float = 0.0) -> void`: 播放背景音乐
-- `play_sfx(stream_path: String, volume: float = 1.0) -> void`: 播放音效
-- `play_voice(stream_path: String, volume: float = 1.0) -> void`: 播放语音
-- `set_master_volume(volume: float) -> void`: 设置主音量
-- `set_category_volume(category: String, volume: float) -> void`: 设置分类音量
-- `set_category_mute(category: String, muted: bool) -> void`: 静音/取消静音分类
-- `transition_to_state(state: String, fade_time: float = 0.0) -> void`: 改变音频状态
-- `add_state(name: String, config: Dictionary) -> void`: 添加新的音频状态
-- `remove_state(name: String) -> void`: 移除音频状态
-- `get_category_volume(category: String) -> float`: 获取分类音量
-- `is_category_muted(category: String) -> bool`: 检查分类是否静音
+- `play_music(path: String, fade_duration: float = 1.0, loop: bool = true) -> void`: 播放背景音乐 
+	- 注意：默认循环播放 如果音频导入时设置为循环播放，则将一直循环，哪怕loop参数设置为false
+- `play_sound(path: String, volume: float = 1.0)`: 播放音效
+- `play_voice(path: String, volume: float = 1.0)`: 播放语音
+- `set_volume(type: AudioType, volume: float)`: 按类型设置音量
+- `stop_all() -> void`: 停止所有音频
+- `preload_audio(path: String, type: AudioType) -> void`: 预加载音频资源
