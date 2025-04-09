@@ -18,7 +18,9 @@ const GameplayTagManager = preload("./tag_system/gameplay_tag_manager.gd")
 
 const GameStateData = preload("./serialization/save_system/game_state_data.gd")
 
-const FrameSplitter = preload("./utils/frame_splitter.gd")
+const FrameSplitter = preload("./utils/frame_splitter/frame_splitter.gd")
+const SingleThread = preload("./utils/threading/single_thread.gd")
+const ModuleThread = preload("./utils/threading/module_thread.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:

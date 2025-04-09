@@ -78,18 +78,23 @@ func _ready():
 
 | 系统名称           | 功能描述                           | 文档链接                                |
 |-------------------|----------------------------------|----------------------------------------|
-| 状态机系统         | 游戏逻辑状态管理                   | [查看文档](docs/state_machine_system_zh.md) |
-| 序列化系统         | 游戏存档与配置管理                 | [查看文档](docs/serialization_system_zh.md) |
-| 音频系统           | 音频管理和过渡                     | [查看文档](docs/audio_system_zh.md)       |
-| 输入系统           | 输入处理和事件管理                 | [查看文档](docs/input_system_zh.md)       |
-| 日志系统           | 多通道日志记录                     | [查看文档](docs/logger_system_zh.md)      |
-| 资源系统           | 资源加载和管理                     | [查看文档](docs/resource_system_zh.md)    |
-| 场景系统           | 场景转换和管理                     | [查看文档](docs/scene_system_zh.md)       |
-| 标签系统           | 对象标签和分类                     | [查看文档](docs/tag_system_zh.md)         |
-| 触发器系统         | 事件驱动的触发器                   | [查看文档](docs/trigger_system_zh.md)     |
-| 配置系统           | 配置文件管理                       | [查看文档](docs/config_system_zh.md)      |
-| 存档系统           | 游戏存档管理                       | [查看文档](docs/save_system_zh.md)        |
-| 分帧执行器         | 性能优化工具                       | [查看文档](docs/frame_splitter_zh.md)     |
+| 状态机系统         | 游戏逻辑状态管理                   | [查看文档](docs/systems/state_machine_system_zh.md) |
+| 序列化系统         | 游戏存档与配置管理                 | [查看文档](docs/systems/serialization_system_zh.md) |
+| 音频系统           | 音频管理和过渡                     | [查看文档](docs/systems/audio_system_zh.md)       |
+| 输入系统           | 输入处理和事件管理                 | [查看文档](docs/systems/input_system_zh.md)       |
+| 日志系统           | 多通道日志记录                     | [查看文档](docs/systems/logger_system_zh.md)      |
+| 资源系统           | 资源加载和管理                     | [查看文档](docs/systems/resource_system_zh.md)    |
+| 场景系统           | 场景转换和管理                     | [查看文档](docs/systems/scene_system_zh.md)       |
+| 标签系统           | 对象标签和分类                     | [查看文档](docs/systems/tag_system_zh.md)         |
+| 触发器系统         | 事件驱动的触发器                   | [查看文档](docs/systems/trigger_system_zh.md)     |
+| 配置系统           | 配置文件管理                       | [查看文档](docs/systems/config_system_zh.md)      |
+| 存档系统           | 游戏存档管理                       | [查看文档](docs/systems/save_system_zh.md)        |
+
+每个工具的详细文档：
+
+| 工具名称           | 功能描述                           | 文档链接                                |
+|-------------------|----------------------------------|----------------------------------------|
+| 分帧执行器         | 性能优化工具                       | [查看文档](docs/utils/frame_splitter_zh.md)     |
 
 ## 🌟 示例项目
 
@@ -98,10 +103,11 @@ func _ready():
 ### 完整游戏示例
 
 - [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - 一个使用 godot_core_system 框架开发的 2D 平台游戏示例，展示了框架在实际游戏开发中的应用。
+- [Exocave : 2d平台跳跃解密游戏。以重力翻转为核心机制](https://github.com/youer0219/Exocave) - 使用 godot_core_system 框架的 scene_system。
 
 ## 🤝 参与贡献
 
-我们欢迎各种形式的贡献！无论是新功能、bug 修复，还是文档改进。详情请查看[贡献指南](CONTRIBUTING.md)。
+我们欢迎各种形式的贡献！无论是新功能、bug 修复，还是文档改进。详情请查看[贡献指南](docs/CONTRIBUTING.md)。
 
 ## 📄 开源协议
 
