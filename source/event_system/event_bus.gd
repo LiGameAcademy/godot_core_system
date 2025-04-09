@@ -193,6 +193,13 @@ func _deferred_call(subscription: WeakSubscription, payload: Array) -> void:
 	if subscription.is_valid():
 		subscription.call_subscribed(payload)
 
+# Add this method to your event_bus.gd script
+func get_subscription_counts() -> Dictionary:
+	var result = {}
+	for event_name in _subscriptions.keys():
+		result[event_name] = _subscriptions[event_name].size()
+	return result
+
 ## 事件订阅信息
 class Subscription:
 	## 回调函数
