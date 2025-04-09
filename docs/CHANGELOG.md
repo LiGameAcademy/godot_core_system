@@ -20,6 +20,8 @@
   - 注意：
     - 避免在`release`分支上进行开发，请在`dev`分支上进行开发
     - 避免将`release`分支合并到其他分支，导致`test`目录被意外移除
+- 使用godot的内置信号系统重构EventBus事件总线
+- 使用godot的内置current_scene重构SceneSystem场景系统
 
 ### 废弃
 
