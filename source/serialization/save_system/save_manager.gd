@@ -3,7 +3,7 @@ extends Node
 ## 存档管理器，负责存档的创建、加载、删除等操作
 
 ## 存档数据
-const GameStateData = preload("./game_state_data.gd")
+#const GameStateData = preload("./game_state_data.gd")
 const SETTING_SCRIPT: Script = preload("../../../setting.gd")
 const SETTING_SAVE_SYSTEM := SETTING_SCRIPT.SETTING_SAVE_SYSTEM
 
@@ -40,7 +40,7 @@ var auto_save_enabled: bool:
 		return ProjectSettings.get_setting(SETTING_AUTO_SAVE_ENABLED, true)
 
 ## 当前存档
-var _current_save: GameStateData = null
+var _current_save: CoreSystem.GameStateData = null
 
 ## 异步IO管理器
 var _io_manager: CoreSystem.AsyncIOManager:
@@ -89,7 +89,7 @@ func unregister_serializable_component(component: SerializableComponent) -> void
 ## [param save_name] 存档名称
 ## [param callback] 回调函数，用于通知创建结果
 func create_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
-	_current_save = GameStateData.new(save_name)
+	_current_save = CoreSystem.GameStateData.new(save_name)
 
 	# 收集所有可序列化组件的数据
 	var serialized_data = {}
@@ -125,7 +125,7 @@ func load_save(save_name: String, callback: Callable = func(_success: bool): pas
 		"12345",
 		func(success: bool, result: Variant):
 			if success:
-				_current_save = GameStateData.new()
+				_current_save = CoreSystem.GameStateData.new()
 				_current_save.deserialize(result)
 
 				# 恢复所有可序列化组件的数据
@@ -191,8 +191,12 @@ func get_save_list(callback: Callable = Callable()) -> void:
 
 ## 获取当前存档
 ## [return] 当前存档
-func get_current_save() -> GameStateData:
+func get_current_save() -> CoreSystem.GameStateData:
 	return _current_save
+
+## 获取空的存档
+func get_empty_save_slot() -> int:
+	return 0
 
 ## 清理旧的自动存档
 ## [param callback] 回调函数，在清理完成后调用

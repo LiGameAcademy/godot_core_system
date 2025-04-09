@@ -130,7 +130,7 @@ func set_lazy_load_interval(interval: float) -> void:
 ## 处理懒加载
 ## [param delta] 时间间隔
 func _lazy_load(delta: float) -> void:
-	#TODO 判断是否需要处理懒加载
+	#判断是否需要处理懒加载
 	if _loading_count <= 0: return
 	_lazy_load_time += delta
 	if _lazy_load_time < _lazy_load_interval:
