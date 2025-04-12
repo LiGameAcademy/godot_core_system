@@ -11,13 +11,13 @@ enum LogLevel {
 	FATAL = 4
 }
 
-## 日志颜色配置
-const LOG_COLORS = {
+## 默认日志颜色配置
+const DEFAULT_LOG_COLORS = {
 	LogLevel.DEBUG: Color.DARK_GRAY,
 	LogLevel.INFO: Color.WHITE,
 	LogLevel.WARNING: Color.YELLOW,
 	LogLevel.ERROR: Color.RED,
-	LogLevel.FATAL: Color.DARK_RED
+	LogLevel.FATAL: Color(0.5, 0, 0)  # 深红色
 }
 
 ## 当前日志级别
@@ -28,14 +28,37 @@ var _enable_file_logging: bool = false
 var _log_file_path: String = "user://logs/game.log"
 ## 日志文件对象
 var _log_file: FileAccess = null
+## 当前日志颜色配置
+var _log_colors: Dictionary = DEFAULT_LOG_COLORS.duplicate()
 
-func _init(data: Dictionary = {}) -> void:
+func _init() -> void:
 	_setup_file_logging()
 
 ## 设置日志级别
 ## [param level] 日志级别
 func set_level(level: LogLevel) -> void:
 	_current_level = level
+
+## 设置指定级别的日志颜色
+## [param level] 日志级别
+## [param color] 颜色
+func set_color(level: LogLevel, color: Color) -> void:
+	_log_colors[level] = color
+
+## 设置多个日志级别的颜色
+## [param colors] 颜色配置字典
+func set_colors(colors: Dictionary) -> void:
+	for level in colors:
+		if level is LogLevel and colors[level] is Color:
+			_log_colors[level] = colors[level]
+
+## 重置所有日志颜色为默认值
+func reset_colors() -> void:
+	_log_colors = DEFAULT_LOG_COLORS.duplicate()
+
+## 获取当前日志颜色配置
+func get_colors() -> Dictionary:
+	return _log_colors.duplicate()
 
 ## 设置是否启用文件日志
 ## [param enable] 是否启用
@@ -61,6 +84,7 @@ func info(message: String, context: Dictionary = {}) -> void:
 ## [param context] 上下文
 func warning(message: String, context: Dictionary = {}) -> void:
 	_log(LogLevel.WARNING, message, context)
+	push_warning(message)
 
 ## 记录错误日志
 ## [param message] 消息
@@ -68,6 +92,7 @@ func warning(message: String, context: Dictionary = {}) -> void:
 func error(message: String, context: Dictionary = {}) -> void:
 	_log(LogLevel.ERROR, message, context)
 	print_stack()
+	push_error(message)
 
 ## 记录致命错误日志
 ## [param message] 消息
@@ -91,6 +116,11 @@ func _log(level: LogLevel, message: String, context: Dictionary) -> void:
 	
 	if not context.is_empty():
 		formatted_message += " | Context: " + str(context)
+	
+	# 控制台输出（带颜色）
+	if level in _log_colors:
+		var color = _log_colors[level]
+		print_rich("[color=%s]%s[/color]" % [color.to_html(), formatted_message])
 	else:
 		print(formatted_message)
 	
@@ -104,7 +134,7 @@ func print_stack() -> void:
 	var stack_message = "\nCall Stack:"
 	for frame in stack:
 		stack_message += "\n  at %s:%d - %s()" % [frame["source"], frame["line"], frame["function"]]
-	print(stack_message)
+	print_rich("[color=%s]%s[/color]" % [_log_colors[LogLevel.ERROR].to_html(), stack_message])
 
 ## 设置文件日志
 func _setup_file_logging() -> void:
