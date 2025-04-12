@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dhpwdvmwg41dx"]
+
+[ext_resource type="Script" uid="uid://btaff43gum3uu" path="res://addons/godot_core_system/test/random_picker/test_random_picker.gd" id="1_nscw4"]
+
+[node name="TestRandomPicker" type="Node2D"]
+script = ExtResource("1_nscw4")
