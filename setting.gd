@@ -294,10 +294,6 @@ static func get_setting_value(setting_name: StringName, default_value: Variant =
 				setting_dict = dict
 				break
 
-	if setting_dict.is_empty():
-		push_error("setting path not exist: ", setting_name)
-		return default_value
-
 	if setting_dict.has("default") && default_value == null:
 		default_value = setting_dict.get("default")
 
