@@ -1,17 +1,9 @@
 extends Node
 
 ## 异步IO管理器
-## 提供三个层次的API：
-## 1. 基础API - 简单的异步读写操作
-## 2. 进阶API - 支持压缩功能
-## 3. 完整API - 支持压缩和加密功能
+## 提供文件系统操作的异步执行功能，支持压缩和加密
 
-# 信号
-## IO完成
-signal io_completed(task_id: String, success: bool, result: Variant)
-## IO错误
-signal io_error(task_id: String, error: String)
-
+#region 常量和枚举
 ## IO任务类型
 enum TaskType {
 	READ,   # 读取
@@ -26,12 +18,29 @@ enum TaskStatus {
 	COMPLETED, # 完成
 	ERROR      # 错误
 }
+#endregion
 
-# 私有变量
-var _tasks: Array[IOTask] = []
-var _io_thread: CoreSystem.SingleThread
-var _task_counter: int = 0  # 任务计数器
+#region 信号定义
+## IO操作完成信号
+signal io_completed(task_id: String, success: bool, result: Variant)
+## IO操作错误信号
+signal io_error(task_id: String, error: String)
+#endregion
 
+#region 私有变量
+# 任务管理
+var _task_counter: int = 0                 ## 任务计数器
+var _pending_tasks: Array[IOTask] = []     ## 等待处理的任务列表
+var _completed_tasks: Array[IOTask] = []   ## 已完成的任务列表
+
+# 线程管理
+var _io_thread: CoreSystem.SingleThread    ## IO专用线程
+
+# 加密管理
+var _encryption_provider: EncryptionProvider = null
+#endregion
+
+#region 公共属性
 ## 加密提供者
 var encryption_provider: EncryptionProvider:
 	get:
@@ -40,27 +49,46 @@ var encryption_provider: EncryptionProvider:
 		return _encryption_provider
 	set(value):
 		_encryption_provider = value
+#endregion
 
-## 内部加密提供者实例
-var _encryption_provider: EncryptionProvider = null
+## 初始化IO管理器
+func _init(_data: Dictionary = {}) -> void:
+	_initialize_thread()
+	_connect_signals()
 
-func _init(_data:Dictionary = {}):
+## 清理资源
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_shutdown()
+
+#region 初始化和清理
+## 初始化IO线程
+func _initialize_thread() -> void:
 	_io_thread = CoreSystem.SingleThread.new()
+
+## 连接信号
+func _connect_signals() -> void:
 	_io_thread.task_completed.connect(_on_task_completed)
 	_io_thread.task_error.connect(_on_task_error)
 
-func _exit() -> void:
+## 关闭管理器
+func _shutdown() -> void:
 	if _io_thread:
 		_io_thread.stop()
+		_io_thread = null
+#endregion
 
-## 处理任务完成
+#region 信号处理
+## 处理任务完成信号
 func _on_task_completed(result: Variant, task_id: String) -> void:
 	io_completed.emit(task_id, true, result)
 
-## 处理任务错误
+## 处理任务错误信号
 func _on_task_error(error: String, task_id: String) -> void:
 	io_error.emit(task_id, error)
+#endregion
 
+#region 基础API - 简单操作
 ## 异步读取文件（基础版本）
 ## [param path] 文件路径
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
@@ -76,14 +104,16 @@ func read_file(path: String, callback: Callable = func(_s, _r): pass) -> String:
 func write_file(path: String, data: Variant, callback: Callable = func(_s, _r): pass) -> String:
 	return write_file_async(path, data, false, "", callback)
 
-## 异步删除文件（基础版本）
+## 异步删除文件
 ## [param path] 文件路径
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
 func delete_file(path: String, callback: Callable = func(_s, _r): pass) -> String:
 	return delete_file_async(path, callback)
+#endregion
 
-## 异步读取文件（进阶版本）
+#region 进阶API - 支持压缩
+## 异步读取文件（支持压缩）
 ## [param path] 文件路径
 ## [param use_compression] 是否使用压缩
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
@@ -91,7 +121,7 @@ func delete_file(path: String, callback: Callable = func(_s, _r): pass) -> Strin
 func read_file_advanced(path: String, use_compression: bool = false, callback: Callable = func(_s, _r): pass) -> String:
 	return read_file_async(path, use_compression, "", callback)
 
-## 异步写入文件（进阶版本）
+## 异步写入文件（支持压缩）
 ## [param path] 文件路径
 ## [param data] 要写入的数据
 ## [param use_compression] 是否使用压缩
@@ -99,96 +129,132 @@ func read_file_advanced(path: String, use_compression: bool = false, callback: C
 ## [return] 任务ID
 func write_file_advanced(path: String, data: Variant, use_compression: bool = false, callback: Callable = func(_s, _r): pass) -> String:
 	return write_file_async(path, data, use_compression, "", callback)
+#endregion
 
-## 异步读取文件
+#region 完整API - 支持压缩和加密
+## 异步读取文件（完整版）
 ## [param path] 文件路径
 ## [param use_compression] 是否使用压缩
-## [param encryption_key] 加密密钥
-## [param callback] 回调函数
+## [param encryption_key] 加密密钥，空字符串表示不加密
+## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
 func read_file_async(path: String, use_compression: bool = false, encryption_key: String = "", callback: Callable = func(_s, _r): pass) -> String:
-	var task_id = str(_task_counter)
-	_task_counter += 1
-	var work_func : Callable = func():
-		var file = FileAccess.open(path, FileAccess.READ)
-		if not file:
-			push_error("Failed to open file: " + path)
-			return null
-		
-		var content = file.get_buffer(file.get_length())
-		file.close()
-		
-		return _process_data_for_read(content, use_compression, encryption_key)
-	var callback_func : Callable = func(result):
+	var task_id = _generate_task_id()
+	
+	# 创建读取任务
+	var read_task = func() -> Variant:
+		return _execute_read_operation(path, use_compression, encryption_key)
+	
+	# 创建回调处理
+	var callback_handler = func(result: Variant) -> void:
 		if result != null:
 			callback.call(true, result)
 		else:
 			callback.call(false, null)
 
-	_io_thread.add_task(work_func, callback_func)
-	
+	# 提交到IO线程
+	_io_thread.add_task(read_task, callback_handler)
 	return task_id
 
-## 异步写入文件
+## 异步写入文件（完整版）
 ## [param path] 文件路径
 ## [param data] 要写入的数据
 ## [param use_compression] 是否使用压缩
-## [param encryption_key] 加密密钥
-## [param callback] 回调函数
+## [param encryption_key] 加密密钥，空字符串表示不加密
+## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
-func write_file_async(
-		path: String, 
-		data: Variant, 
-		use_compression: bool = false, 
-		encryption_key: String = "", 
-		callback: Callable = Callable()) -> String:
-	var task_id = str(_task_counter)
-	_task_counter += 1
-
-	var work_func : Callable = func():
-		var processed_data = _process_data_for_write(data, use_compression, encryption_key)
-		var file = FileAccess.open(path, FileAccess.WRITE)
-		if not file:
-			push_error("Failed to open file for writing: " + path)
-			return false
-		
-		file.store_buffer(processed_data)
-		file.close()
-		return true
-
-	var callback_func : Callable = func(success):
+func write_file_async(path: String, data: Variant, use_compression: bool = false, encryption_key: String = "", callback: Callable = func(_s, _r): pass) -> String:
+	var task_id = _generate_task_id()
+	
+	# 创建写入任务
+	var write_task = func() -> bool:
+		return _execute_write_operation(path, data, use_compression, encryption_key)
+	
+	# 创建回调处理
+	var callback_handler = func(success: bool) -> void:
 		if callback.is_valid():
 			callback.call(success, null)
-		
-	_io_thread.add_task(work_func,callback_func)
-	
+
+	# 提交到IO线程
+	_io_thread.add_task(write_task, callback_handler)
 	return task_id
 
 ## 异步删除文件
 ## [param path] 文件路径
-## [param callback] 回调函数
+## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
-func delete_file_async(path: String, callback: Callable = Callable()) -> String:
-	var task_id = str(_task_counter)
-	_task_counter += 1
+func delete_file_async(path: String, callback: Callable = func(_s, _r): pass) -> String:
+	var task_id = _generate_task_id()
 	
-	var work_func : Callable = func():
-		var dir = DirAccess.open(path.get_base_dir())
-		if not dir:
-			push_error("Failed to access directory: " + path.get_base_dir())
-			return false
-		
-		var err = dir.remove(path)
-		return err == OK
-
-	var callback_func : Callable = func(success):
+	# 创建删除任务
+	var delete_task = func() -> bool:
+		return _execute_delete_operation(path)
+	
+	# 创建回调处理
+	var callback_handler = func(success: bool) -> void:
 		if callback.is_valid():
 			callback.call(success, null)
 
-	_io_thread.add_task(work_func, callback_func)
-	
+	# 提交到IO线程
+	_io_thread.add_task(delete_task, callback_handler)
 	return task_id
+#endregion
 
+#region 文件操作实现
+## 执行读取操作
+## [param path] 文件路径
+## [param use_compression] 是否使用压缩
+## [param encryption_key] 加密密钥
+## [return] 读取的数据或null（失败时）
+func _execute_read_operation(path: String, use_compression: bool, encryption_key: String) -> Variant:
+	# 打开文件
+	var file = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		push_error("无法打开文件: %s, 错误: %s" % [path, FileAccess.get_open_error()])
+		return null
+	
+	# 读取内容
+	var content = file.get_buffer(file.get_length())
+	file.close()
+	
+	# 处理数据
+	return _process_data_for_read(content, use_compression, encryption_key)
+
+## 执行写入操作
+## [param path] 文件路径
+## [param data] 数据
+## [param use_compression] 是否使用压缩
+## [param encryption_key] 加密密钥
+## [return] 是否成功
+func _execute_write_operation(path: String, data: Variant, use_compression: bool, encryption_key: String) -> bool:
+	# 处理数据
+	var processed_data = _process_data_for_write(data, use_compression, encryption_key)
+	
+	# 打开文件
+	var file = FileAccess.open(path, FileAccess.WRITE)
+	if not file:
+		push_error("无法打开文件写入: %s, 错误: %s" % [path, FileAccess.get_open_error()])
+		return false
+	
+	# 写入内容
+	file.store_buffer(processed_data)
+	file.close()
+	return true
+
+## 执行删除操作
+## [param path] 文件路径
+## [return] 是否成功
+func _execute_delete_operation(path: String) -> bool:
+	var dir = DirAccess.open(path.get_base_dir())
+	if not dir:
+		push_error("无法访问目录: %s, 错误: %s" % [path.get_base_dir(), DirAccess.get_open_error()])
+		return false
+	
+	var err = dir.remove(path)
+	return err == OK
+#endregion
+
+#region 数据处理
 ## 处理数据（写入）
 ## [param data] 数据
 ## [param compression] 是否压缩
@@ -231,6 +297,8 @@ func _process_data_for_read(byte_array: PackedByteArray, compression: bool, encr
 	var error := json.parse(json_str)
 	if error == OK:
 		return json.get_data()
+	
+	push_error("JSON解析错误: %s" % json.get_error_message())
 	return null
 
 ## 加密数据
@@ -246,42 +314,47 @@ func _encrypt_data(data: PackedByteArray, key: PackedByteArray) -> PackedByteArr
 ## [return] 解密后的数据
 func _decrypt_data(data: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
 	return encryption_provider.decrypt(data, key)
+#endregion
 
+#region 工具方法
+## 生成唯一任务ID
+## [return] 任务ID
+func _generate_task_id() -> String:
+	_task_counter += 1
+	return "%d_%d" % [Time.get_ticks_msec(), _task_counter]
+#endregion
+
+#region 内部类
 ## IO任务
 class IOTask:
-	## 任务ID
-	var id: String
-	## 任务类型
-	var type: TaskType
-	## 路径
-	var path: String
-	## 数据
-	var data: Variant
-	## 状态
-	var status: TaskStatus
-	## 错误
-	var error: String
-	## 回调
-	var callback: Callable
-	## 压缩
-	var compression: bool
-	## 加密密钥, 为空表示不加密
-	var encryption_key: String
+	## 任务属性
+	var id: String                    ## 任务唯一标识
+	var type: TaskType                ## 任务类型
+	var path: String                  ## 文件路径
+	var data: Variant                 ## 任务数据
+	var status: TaskStatus = TaskStatus.PENDING  ## 任务状态
+	var error: String = ""            ## 错误信息
 	
+	## 选项
+	var callback: Callable            ## 完成回调
+	var compression: bool = false     ## 是否使用压缩
+	var encryption_key: String = ""   ## 加密密钥
+	
+	## 初始化任务
 	func _init(
-		_id: String, 
-		_type: TaskType, 
-		_path: String, 
-		_data: Variant = null,
-		_compression: bool = false,
-		_encryption_key: String = "",
-		_callback: Callable = func(_s, _r): pass
+		p_id: String, 
+		p_type: TaskType, 
+		p_path: String, 
+		p_data: Variant = null,
+		p_compression: bool = false,
+		p_encryption_key: String = "",
+		p_callback: Callable = func(_s, _r): pass
 	) -> void:
-		id = _id
-		type = _type
-		path = _path
-		data = _data
-		status = TaskStatus.PENDING
-		compression = _compression
-		encryption_key = _encryption_key
-		callback = _callback
+		id = p_id
+		type = p_type
+		path = p_path
+		data = p_data
+		compression = p_compression
+		encryption_key = p_encryption_key
+		callback = p_callback
+#endregion

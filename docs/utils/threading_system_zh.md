@@ -50,6 +50,11 @@ func _ready() -> void:
 func _ready() -> void:
     var thread = SingleThread.new()
     
+    # 连接信号以处理结果
+    thread.task_completed.connect(_on_task_completed)
+    thread.task_error.connect(_on_task_error)
+    thread.thread_finished.connect(_on_thread_finished)
+    
     # 添加多个要按顺序执行的任务
     thread.add_task(
         func():
@@ -70,6 +75,16 @@ func _ready() -> void:
             # 处理第二个任务的结果
             finalize_data(result)
     )
+
+# 处理信号回调
+func _on_task_completed(result, task_id):
+    print("任务完成，ID: ", task_id, " 结果: ", result)
+    
+func _on_task_error(error, task_id):
+    print("任务错误，ID: ", task_id, " 错误: ", error)
+    
+func _on_thread_finished():
+    print("所有任务已完成")
 ```
 
 ### ThreadPool（线程池）
@@ -159,11 +174,16 @@ thread_pool.submit_task(
 # 创建单线程工作器
 var single_thread = SingleThread.new()
 
-# 队列中的多个任务将按顺序执行
+# 连接信号
+single_thread.task_completed.connect(func(result, task_id): print("任务完成: ", task_id, " 结果: ", result))
+single_thread.thread_finished.connect(func(): print("所有任务已完成"))
+
+# 添加任务到队列
 single_thread.add_task(
     func():
         print("任务1开始")
-        await get_tree().create_timer(1.0).timeout
+        # 注意：SingleThread不支持await，若需要延迟可使用OS.delay_msec
+        OS.delay_msec(1000)  # 延迟1秒
         print("任务1完成")
         return "任务1结果"
     ,
@@ -174,7 +194,7 @@ single_thread.add_task(
 single_thread.add_task(
     func():
         print("任务2开始")
-        await get_tree().create_timer(1.0).timeout
+        OS.delay_msec(1000)  # 延迟1秒
         print("任务2完成")
         return "任务2结果"
     ,
@@ -257,11 +277,18 @@ func write_file_async(path: String, content: String, callback: Callable) -> void
 ### SingleThread（单线程）
 
 - `_init() -> void`：构造函数
-- `add_task(task_function: Callable, task_callback: Callable, call_deferred: bool = true) -> void`：添加任务
+- `add_task(task_function: Callable, task_callback: Callable = func(_result: Variant): pass, call_deferred: bool = true) -> void`：添加任务
 - `next_step() -> void`：进入下一个任务
+- `get_index() -> int`：获取当前任务索引
 - `get_pending_task_count() -> int`：获取待处理任务数量
 - `get_running_task_count() -> int`：获取运行中任务数量
 - `clear_pending_tasks() -> void`：清空任务队列
+- `stop() -> void`：停止线程工作
+
+信号：
+- `thread_finished`：所有任务完成时触发
+- `task_completed(result, task_id)`：任务成功完成时触发
+- `task_error(error, task_id)`：任务出错时触发
 
 ### ThreadPool（线程池）
 
