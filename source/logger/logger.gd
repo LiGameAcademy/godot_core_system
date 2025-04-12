@@ -8,16 +8,23 @@ enum LogLevel {
 	INFO = 1,
 	WARNING = 2,
 	ERROR = 3,
-	FATAL = 4
+	FATAL = 4,
 }
 
 ## 默认日志颜色配置
-const DEFAULT_LOG_COLORS = {
-	LogLevel.DEBUG: Color.DARK_GRAY,
-	LogLevel.INFO: Color.WHITE,
-	LogLevel.WARNING: Color.YELLOW,
-	LogLevel.ERROR: Color.RED,
-	LogLevel.FATAL: Color(0.5, 0, 0)  # 深红色
+const SETTING_SCRIPT: Script = preload("res://addons/godot_core_system/setting.gd")
+
+var default_log_colors: Dictionary = {
+	LogLevel.DEBUG:
+		SETTING_SCRIPT.get_setting_value("logger/color_debug"),
+	LogLevel.INFO:
+		SETTING_SCRIPT.get_setting_value("logger/color_info"),
+	LogLevel.WARNING:
+		SETTING_SCRIPT.get_setting_value("logger/color_warning"),
+	LogLevel.ERROR:
+		SETTING_SCRIPT.get_setting_value("logger/color_error"),
+	LogLevel.FATAL:
+		SETTING_SCRIPT.get_setting_value("logger/color_fatal"),
 }
 
 ## 当前日志级别
@@ -29,7 +36,7 @@ var _log_file_path: String = "user://logs/game.log"
 ## 日志文件对象
 var _log_file: FileAccess = null
 ## 当前日志颜色配置
-var _log_colors: Dictionary = DEFAULT_LOG_COLORS.duplicate()
+var _log_colors: Dictionary = default_log_colors.duplicate()
 
 func _init() -> void:
 	_setup_file_logging()
@@ -54,7 +61,7 @@ func set_colors(colors: Dictionary) -> void:
 
 ## 重置所有日志颜色为默认值
 func reset_colors() -> void:
-	_log_colors = DEFAULT_LOG_COLORS.duplicate()
+	_log_colors = default_log_colors.duplicate()
 
 ## 获取当前日志颜色配置
 func get_colors() -> Dictionary:
@@ -109,21 +116,21 @@ func fatal(message: String, context: Dictionary = {}) -> void:
 func _log(level: LogLevel, message: String, context: Dictionary) -> void:
 	if level < _current_level:
 		return
-	
+
 	var timestamp = Time.get_datetime_string_from_system()
 	var level_name = LogLevel.keys()[level]
 	var formatted_message = "[%s] [%s] %s" % [timestamp, level_name, message]
-	
+
 	if not context.is_empty():
 		formatted_message += " | Context: " + str(context)
-	
+
 	# 控制台输出（带颜色）
 	if level in _log_colors:
 		var color = _log_colors[level]
 		print_rich("[color=%s]%s[/color]" % [color.to_html(), formatted_message])
 	else:
 		print(formatted_message)
-	
+
 	# 文件日志
 	if _enable_file_logging and _log_file:
 		_log_file.store_line(formatted_message)
@@ -140,9 +147,9 @@ func print_stack() -> void:
 func _setup_file_logging() -> void:
 	if not _enable_file_logging:
 		return
-	
+
 	var dir = DirAccess.open("user://")
 	if not dir.dir_exists("logs"):
 		dir.make_dir("logs")
-	
+
 	_log_file = FileAccess.open(_log_file_path, FileAccess.WRITE)
