@@ -163,7 +163,13 @@ func read_file_async(path: String, use_compression: bool = false, encryption_key
 ## [param encryption_key] 加密密钥，空字符串表示不加密
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
-func write_file_async(path: String, data: Variant, use_compression: bool = false, encryption_key: String = "", callback: Callable = func(_s, _r): pass) -> String:
+func write_file_async(
+		path: String, 
+		data: Variant, 
+		use_compression: bool = false, 
+		encryption_key: String = "", 
+		callback: Callable = func(_s, _r): pass
+		) -> String:
 	var task_id = _generate_task_id()
 	
 	# 创建写入任务

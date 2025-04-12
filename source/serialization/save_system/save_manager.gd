@@ -2,240 +2,352 @@ extends Node
 
 ## 存档管理器，负责存档的创建、加载、删除等操作
 
-## 存档数据
-#const GameStateData = preload("./game_state_data.gd")
-const SETTING_SCRIPT: Script = preload("../../../setting.gd")
-const SETTING_SAVE_SYSTEM := SETTING_SCRIPT.SETTING_SAVE_SYSTEM
+# 引用类型
+const GameStateData = CoreSystem.GameStateData
+const ResourceSaveStrategy = preload("./save_format_strategy/resource_save_strategy.gd")
+const BinarySaveStrategy = preload("./save_format_strategy/binary_save_strategy.gd")
+const JSONSaveStrategy = preload("./save_format_strategy/json_save_strategy.gd")
+const SaveFormatStrategy = preload("./save_format_strategy/save_format_strategy.gd")
 
-## 项目设置路径常量
-const SETTING_SAVE_DIR =  SETTING_SAVE_SYSTEM + "save_directory"
-const SETTING_SAVE_EXT = SETTING_SAVE_SYSTEM + "save_extension"
-const SETTING_AUTO_SAVE_INTERVAL = SETTING_SAVE_SYSTEM + "auto_save_interval"
-const SETTING_MAX_AUTO_SAVES = SETTING_SAVE_SYSTEM + "max_auto_saves"
-const SETTING_AUTO_SAVE_ENABLED = SETTING_SAVE_SYSTEM + "auto_save_enabled"
+## 存档格式策略注册器（单例模式）
+class _SaveFormatRegistryClass:
+	var _strategies = {}
+	
+	## 注册策略
+	func register_strategy(format: SaveFormat, strategy: SaveFormatStrategy) -> void:
+		_strategies[format] = strategy
+	
+	## 获取策略
+	func get_strategy(format: SaveFormat, manager: Node) -> SaveFormatStrategy:
+		if _strategies.has(format):
+			return _strategies[format]
+		
+		# 创建新策略实例
+		var strategy: SaveFormatStrategy
+		match format:
+			SaveFormat.RESOURCE:
+				strategy = ResourceSaveStrategy.new(manager)
+			SaveFormat.BINARY:
+				strategy = BinarySaveStrategy.new(manager)
+			SaveFormat.JSON:
+				strategy = JSONSaveStrategy.new(manager)
+			_:
+				strategy = BinarySaveStrategy.new(manager)
+		
+		_strategies[format] = strategy
+		return strategy
 
-## 存档目录
-var save_directory: String:
-	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_DIR, "user://saves")
+# 存档格式注册器单例
+var SaveFormatRegistry = _SaveFormatRegistryClass.new()
 
-## 存档扩展名
-var save_extension: String:
-	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_EXT, "save")
-
-## 自动存档间隔（秒）
-var auto_save_interval: float:
-	get:
-		return ProjectSettings.get_setting(SETTING_AUTO_SAVE_INTERVAL, 300)
-
-## 自动存档最大数量
-var max_auto_saves: int:
-	get:
-		return ProjectSettings.get_setting(SETTING_MAX_AUTO_SAVES, 3)
-
-## 是否启用自动存档
-var auto_save_enabled: bool:
-	get:
-		return ProjectSettings.get_setting(SETTING_AUTO_SAVE_ENABLED, true)
-
-## 当前存档
-var _current_save: CoreSystem.GameStateData = null
-
-## 异步IO管理器
-var _io_manager: CoreSystem.AsyncIOManager:
-	get:
-		return CoreSystem.io_manager
-
-## 自动存档计时器
-var _auto_save_timer: float = 0
-
-var _serializable_components : Array[SerializableComponent]
+# 存档格式枚举
+enum SaveFormat {
+	RESOURCE,  # Godot资源格式
+	BINARY,    # 二进制格式
+	JSON       # JSON格式
+}
 
 # 信号
-## 存档创建
-signal save_created(save_name: String)
-## 存档加载
-signal save_loaded(save_name: String)
-## 存档删除
-signal save_deleted(save_name: String)
-## 自动存档
-signal auto_save_created
-## 自动存档清理完成
-signal auto_save_cleaned
+signal save_created(save_id: String, metadata: Dictionary)
+signal save_loaded(save_id: String, metadata: Dictionary)
+signal save_deleted(save_id: String)
+signal auto_save_created(save_id: String)
 
-# 每帧判断是否需要自动存档
+# 配置选项
+var save_directory: String = "user://saves"
+var save_format: SaveFormat = SaveFormat.BINARY
+var encryption_enabled: bool = true
+var compression_enabled: bool = true
+
+var auto_save_enabled: bool = true
+var auto_save_interval: float = 300.0
+var max_auto_saves: int = 3
+
+# 私有变量
+var _current_save_id: String = ""
+var _auto_save_timer: float = 0
+var _io_manager: CoreSystem.AsyncIOManager = CoreSystem.io_manager
+var _serializable_components: Array[SerializableComponent] = []
+var _encryption_key: String = "your_encryption_key" 
+var _save_strategy: SaveFormatStrategy = null
+
+func _init() -> void:
+	# 初始化默认策略
+	_set_save_format(save_format)
+
 func _process(delta: float) -> void:
-	_update_auto_save(delta)
+	if auto_save_enabled and not _current_save_id.is_empty():
+		_auto_save_timer += delta
+		if _auto_save_timer >= auto_save_interval:
+			_auto_save_timer = 0
+			create_auto_save()
 
+#region 公共API
 
-## 注册可序列化组件
+# 设置存档格式
+func set_save_format(format: SaveFormat) -> void:
+	save_format = format
+	_set_save_format(format)
+
+# 注册可序列化组件
 func register_serializable_component(component: SerializableComponent) -> void:
-	if _serializable_components.has(component):
-		CoreSystem.logger.warning("Serializable component already registered: " + component.name)
-		return
-	_serializable_components.append(component)
-
-
-## 注销可序列化组件
-func unregister_serializable_component(component: SerializableComponent) -> void:
 	if not _serializable_components.has(component):
-		CoreSystem.logger.warning("Serializable component not registered: " + component.name)
-		return
-	_serializable_components.erase(component)
+		_serializable_components.append(component)
 
+# 注销可序列化组件
+func unregister_serializable_component(component: SerializableComponent) -> void:
+	if _serializable_components.has(component):
+		_serializable_components.erase(component)
 
-## 创建存档
-## [param save_name] 存档名称
-## [param callback] 回调函数，用于通知创建结果
-func create_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
-	_current_save = CoreSystem.GameStateData.new(save_name)
-
-	# 收集所有可序列化组件的数据
-	var serialized_data = {}
-	for node in _serializable_components:
-		if node is SerializableComponent:
-			var node_path = str(node.get_path())
-			serialized_data[node_path] = node.serialize()
-
-	_current_save.set_data("nodes", serialized_data)
-
-	# 保存到文件
-	var save_path = _get_save_path(save_name)
-	_io_manager.write_file_async(
-		save_path,
-		_current_save.serialize(),
-		true,
-		"12345",
-		func(success: bool, _result: Variant):
-			if success:
-				save_created.emit(save_name)
-			callback.call(success)
-	)
-
-## 加载存档
-## [param save_name] 存档名称
-## [param callback] 回调函数,用于通知加载结果
-func load_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
-	var save_path = _get_save_path(save_name)
-
-	_io_manager.read_file_async(
-		save_path,
-		true,
-		"12345",
-		func(success: bool, result: Variant):
-			if success:
-				_current_save = CoreSystem.GameStateData.new()
-				_current_save.deserialize(result)
-
-				# 恢复所有可序列化组件的数据
-				var serialized_data = _current_save.get_data("nodes", {})
-				for node_path in serialized_data.keys():
-					var node = get_node_or_null(node_path)
-					if node is SerializableComponent:
-						node.deserialize(serialized_data[node_path])
-
-				save_loaded.emit(save_name)
-			callback.call(success)
-	)
-
-## 删除存档
-## [param save_name] 存档名称
-## [param callback] 回调函数
-func delete_save(save_name: String, callback: Callable = func(_success: bool): pass) -> void:
-	var save_path = _get_save_path(save_name)
-
-	_io_manager.delete_file_async(
-		save_path,
-		func(success: bool, _result: Variant):
-			if success:
-				if _current_save and _current_save.metadata.save_name == save_name:
-					_current_save = null
-				save_deleted.emit(save_name)
-			callback.call(success)
-	)
-
-## 创建自动存档
-func create_auto_save() -> void:
-	if not _current_save:
-		return
-
-	var timestamp = Time.get_unix_time_from_system()
-	var auto_save_name = "auto_save_%d" % timestamp
-
-	create_save(auto_save_name, func(success: bool):
+# 创建存档
+func create_save(save_id: String = "") -> String:
+	var actual_id = _generate_save_id() if save_id.is_empty() else save_id
+	
+	# 收集数据
+	var save_data = {
+		"metadata": {
+			"id": actual_id,
+			"timestamp": Time.get_unix_time_from_system(),
+			"datetime": Time.get_datetime_string_from_system(),
+			"version": ProjectSettings.get_setting("application/config/version", "1.0.0")
+		},
+		"game_state": _collect_game_state(),
+		"level_state": _collect_level_state(),
+		"entities": _collect_entity_states(),
+		"components": _collect_component_states()
+	}
+	
+	# 存储数据
+	var save_path = _get_save_path(actual_id)
+	_save_strategy.save(save_path, save_data, func(success: bool):
 		if success:
-			auto_save_created.emit()
-			# 清理旧的自动存档
-			_clean_old_auto_saves(func():
-				auto_save_cleaned.emit()
-			)
+			_current_save_id = actual_id
+			save_created.emit(actual_id, save_data.metadata)
 	)
+	
+	return actual_id
 
-## 获取存档列表
-## [param callback] 回调函数
-func get_save_list(callback: Callable = Callable()) -> void:
-	if not callback.is_valid(): 
-		return
-	var saves = []
-	var dir = DirAccess.open(save_directory)
-	if dir:
-		dir.list_dir_begin()
-		var file_name = dir.get_next()
-		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with("." + save_extension):
-				var save_name = file_name.get_basename()
-				saves.append(save_name)
-			file_name = dir.get_next()
-	callback.call(saves)
-
-## 获取当前存档
-## [return] 当前存档
-func get_current_save() -> CoreSystem.GameStateData:
-	return _current_save
-
-## 获取空的存档
-func get_empty_save_slot() -> int:
-	return 0
-
-## 清理旧的自动存档
-## [param callback] 回调函数，在清理完成后调用
-func _clean_old_auto_saves(callback: Callable = Callable()) -> void:
-	get_save_list(func(saves: Array):
-		var auto_saves = saves.filter(func(save_name: String):
-			return save_name.begins_with("auto_save_")
-		)
-		auto_saves.sort()
+# 加载存档
+func load_save(save_id: String) -> bool:
+	if save_id.is_empty():
+		return false
+	
+	var task = _create_await_task()
+	var save_path = _get_save_path(save_id)
+	
+	_save_strategy.load(save_path, func(success: bool, data: Dictionary):
+		if success:
+			_current_save_id = save_id
+			
+			# 应用游戏状态
+			if data.has("game_state"):
+				_apply_game_state(data.game_state)
+			
+			# 应用关卡状态
+			if data.has("level_state"):
+				_apply_level_state(data.level_state)
+			
+			# 应用实体状态
+			if data.has("entities"):
+				_apply_entity_states(data.entities)
+			
+			# 应用组件状态
+			if data.has("components"):
+				_apply_component_states(data.components)
+			
+			save_loaded.emit(save_id, data.metadata)
 		
-		var remaining_deletes = auto_saves.size() - max_auto_saves
-		if remaining_deletes <= 0:
-			if callback.is_valid():
-				callback.call()
-			return
-		
-		var deletes_completed = 0
-		while auto_saves.size() > max_auto_saves:
-			var old_save = auto_saves.pop_front()
-			delete_save(old_save, func(success: bool):
-				deletes_completed += 1
-				if deletes_completed >= remaining_deletes and callback.is_valid():
-					callback.call()
-			)
+		task.complete(success)
 	)
+	
+	return await task.wait()
 
-## 获取存档路径
-## [param save_name] 存档名称
-## [return] 存档路径
-func _get_save_path(save_name: String) -> String:
-	return save_directory.path_join(save_name + "." + save_extension)
+# 删除存档
+func delete_save(save_id: String) -> bool:
+	var save_path = _get_save_path(save_id)
+	var task = _create_await_task()
+	
+	_io_manager.delete_file_async(save_path, func(success: bool, _result):
+		if success:
+			if _current_save_id == save_id:
+				_current_save_id = ""
+			save_deleted.emit(save_id)
+		task.complete(success)
+	)
+	
+	return await task.wait()
 
-## 更新自动存档计时器并在需要时创建自动存档
-## [param delta] 时间增量
-func _update_auto_save(delta: float) -> void:
-	if not auto_save_enabled or _current_save == null:
-		return
+# 创建自动存档
+func create_auto_save() -> String:
+	var auto_save_id = "auto_" + _get_timestamp()
+	var save_id = create_save(auto_save_id)
+	
+	# 清理旧的自动存档
+	_clean_old_auto_saves()
+	
+	auto_save_created.emit(save_id)
+	return save_id
 
-	_auto_save_timer += delta
-	if _auto_save_timer >= auto_save_interval:
-		_auto_save_timer = 0
-		create_auto_save()
+# 获取所有存档列表
+func get_save_list() -> Array[Dictionary]:
+	var saves: Array[Dictionary] = []
+	var task = _create_await_task()
+	
+	_io_manager.list_files_async(save_directory, func(success: bool, files: Array):
+		if success:
+			var pending_loads = files.size()
+			
+			if pending_loads == 0:
+				task.complete(saves)
+				return
+				
+			for file in files:
+				if _is_valid_save_file(file):
+					var save_id = _get_save_id_from_file(file)
+					var save_path = _get_save_path(save_id)
+					
+					_save_strategy.load_metadata(save_path, func(meta_success: bool, metadata: Dictionary):
+						pending_loads -= 1
+						
+						if meta_success:
+							saves.append({
+								"id": save_id,
+								"metadata": metadata
+							})
+							
+						if pending_loads == 0:
+							# 按时间戳排序
+							saves.sort_custom(func(a, b): 
+								return a.metadata.timestamp > b.metadata.timestamp
+							)
+							task.complete(saves)
+					)
+				else:
+					pending_loads -= 1
+					if pending_loads == 0:
+						task.complete(saves)
+	)
+	
+	return await task.wait()
+
+# 注册自定义存档格式策略
+func register_save_format_strategy(format: SaveFormat, strategy: SaveFormatStrategy) -> void:
+	SaveFormatRegistry.register_strategy(format, strategy)
+	if save_format == format:
+		_save_strategy = strategy
+#endregion
+
+#region 辅助方法
+# 设置当前存档格式
+func _set_save_format(format: SaveFormat) -> void:
+	_save_strategy = SaveFormatRegistry.get_strategy(format, self)
+	if _save_strategy == null:
+		push_error("无法创建存档格式策略: %d" % format)
+		_save_strategy = SaveFormatRegistry.get_strategy(SaveFormat.BINARY, self)
+
+# 检查文件是否为有效的存档文件
+func _is_valid_save_file(file_name: String) -> bool:
+	return _save_strategy.is_valid_save_file(file_name)
+
+# 从文件名获取存档ID
+func _get_save_id_from_file(file_name: String) -> String:
+	return _save_strategy.get_save_id_from_file(file_name)
+
+# 收集组件状态
+func _collect_component_states() -> Dictionary:
+	var components_data = {}
+	for component in _serializable_components:
+		if component is SerializableComponent:
+			var node_path = str(component.get_path())
+			components_data[node_path] = component.serialize()
+	return components_data
+
+# 应用组件状态
+func _apply_component_states(components_data: Dictionary) -> void:
+	for node_path in components_data:
+		var node = get_node_or_null(node_path)
+		if node is SerializableComponent:
+			node.deserialize(components_data[node_path])
+
+# 创建等待任务
+func _create_await_task():
+	var task = AwaitTask.new()
+	return task
+
+# 确保存档目录存在
+func _ensure_save_directory_exists() -> void:
+	if not DirAccess.dir_exists_absolute(save_directory):
+		DirAccess.make_dir_recursive_absolute(save_directory)
+
+# 获取存档路径
+func _get_save_path(save_id: String) -> String:
+	return _save_strategy.get_save_path(save_directory, save_id)
+
+# 清理旧的自动存档
+func _clean_old_auto_saves() -> void:
+	var saves = await get_save_list()
+	var auto_saves = saves.filter(func(save): return save.id.begins_with("auto_"))
+	
+	if auto_saves.size() > max_auto_saves:
+		for i in range(max_auto_saves, auto_saves.size()):
+			delete_save(auto_saves[i].id)
+
+# 生成时间戳
+func _get_timestamp() -> String:
+	return str(Time.get_unix_time_from_system())
+
+# 生成存档ID
+func _generate_save_id() -> String:
+	return "save_" + _get_timestamp()
+#endregion
+
+#region 游戏特定实现 - 可根据需要修改
+# 收集游戏状态
+func _collect_game_state() -> Dictionary:
+	# 示例：可以从GameInstance或类似的单例收集
+	return {}
+
+# 应用游戏状态
+func _apply_game_state(game_state: Dictionary) -> void:
+	pass
+
+# 收集关卡状态
+func _collect_level_state() -> Dictionary:
+	return {}
+
+# 应用关卡状态
+func _apply_level_state(level_state: Dictionary) -> void:
+	pass
+
+# 收集实体状态
+func _collect_entity_states() -> Array:
+	var entities = []
+	var saveables = get_tree().get_nodes_in_group("saveable")
+	for saveable in saveables:
+		if saveable.has_method("save"):
+			var entity_data = saveable.save()
+			entity_data["node_path"] = saveable.get_path()
+			entity_data["position"] = saveable.global_position
+			entities.append(entity_data)
+	return entities
+
+# 应用实体状态
+func _apply_entity_states(entities: Array) -> void:
+	for entity_data in entities:
+		var node_path = entity_data.node_path
+		var entity = get_node_or_null(node_path)
+		
+		if entity and entity.has_method("load_data"):
+			entity.global_position = entity_data.position
+			entity.load_data(entity_data)
+#endregion
+
+# 等待任务类，用于异步到同步转换
+class AwaitTask:
+	signal completed(result)
+	
+	func complete(result):
+		completed.emit(result)
+		
+	func wait():
+		return await completed
