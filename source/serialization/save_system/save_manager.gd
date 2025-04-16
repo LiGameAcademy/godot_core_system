@@ -10,6 +10,7 @@ const JSONSaveStrategy = preload("./save_format_strategy/json_save_strategy.gd")
 const SaveFormatStrategy = preload("./save_format_strategy/save_format_strategy.gd")
 
 const SaveFormatRegistry = preload("./save_format_strategy/save_format_registry.gd")
+const SAVE_GROUP : String = "saveable"
 
 # 信号
 signal save_created(save_id: String, metadata: Dictionary)
@@ -228,12 +229,12 @@ func _generate_save_id() -> String:
 # 收集Node状态
 func _collect_node_states() -> Array:
 	var nodes = []
-	var saveables = get_tree().get_nodes_in_group("saveable")
+	var saveables = get_tree().get_nodes_in_group(SAVE_GROUP)
 	for saveable in saveables:
 		if saveable.has_method("save"):
 			var node_data = saveable.save()
 			node_data["node_path"] = saveable.get_path()
-			node_data["position"] = saveable.global_position
+			#node_data["position"] = saveable.global_position
 			nodes.append(node_data)
 		else:
 			CoreSystem.logger.warning("缺少save方法！%s" % str(saveable))
@@ -249,7 +250,7 @@ func _apply_node_states(nodes: Array) -> void:
 			return
 
 		if node.has_method("load_data"):
-			node.global_position = node_data.position
+			# node.global_position = node_data.position
 			node.load_data(node_data)
 		else:
 			CoreSystem.logger.warning("缺少 load_data 方法！%s" % str(node))
