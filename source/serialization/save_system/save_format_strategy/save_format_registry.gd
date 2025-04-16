@@ -9,25 +9,25 @@ const JSONSaveStrategy = preload("./json_save_strategy.gd")
 var _strategies = {}
 
 ## 注册策略
-func register_strategy(format: SaveManager.SaveFormat, strategy: SaveFormatStrategy) -> void:
+func register_strategy(format: StringName, strategy: SaveFormatStrategy) -> void:
     _strategies[format] = strategy
 
 ## 获取策略
-func get_strategy(format: SaveManager.SaveFormat, manager: Node) -> SaveFormatStrategy:
+func get_strategy(format: StringName) -> SaveFormatStrategy:
     if _strategies.has(format):
         return _strategies[format]
     
     # 创建新策略实例
     var strategy: SaveFormatStrategy
     match format:
-        SaveManager.SaveFormat.RESOURCE:
-            strategy = ResourceSaveStrategy.new(manager)
-        SaveManager.SaveFormat.BINARY:
-            strategy = BinarySaveStrategy.new(manager)
-        SaveManager.SaveFormat.JSON:
-            strategy = JSONSaveStrategy.new(manager)
+        &"resource":
+            strategy = ResourceSaveStrategy.new()
+        &"binary":
+            strategy = BinarySaveStrategy.new()
+        &"json":
+            strategy = JSONSaveStrategy.new()
         _:
-            strategy = BinarySaveStrategy.new(manager)
+            strategy = BinarySaveStrategy.new()
     
     _strategies[format] = strategy
     return strategy

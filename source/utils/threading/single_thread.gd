@@ -241,6 +241,13 @@ class Task:
 		task_callback = p_task_callback
 		call_deferred = p_call_deferred
 
+	## 开始执行任务
+	func process_function() -> void:
+		if call_deferred:
+			process_callback.call_deferred(task_function, task_callback)
+		else:
+			process_callback.call(task_function, task_callback)
+
 	## 处理任务回调
 	func process_callback(function: Callable, callback: Callable) -> void:
 		print("任务函数开始执行: %s" % id)
@@ -262,21 +269,14 @@ class Task:
 		
 		if function.is_valid():
 			result = function.call()
-			print("任务函数执行完成: %s" % id)
+			CoreSystem.logger.debug("任务函数执行完成: %s" % id)
 		else:
 			has_error = true
 			error_message = "任务函数无效: %s" % id
-			push_error(error_message)
+			CoreSystem.logger.error(error_message)
 	
 	## 执行回调函数
 	func _execute_callback(callback: Callable) -> void:
-		print("任务回调开始执行: %s" % id)
+		CoreSystem.logger.debug("任务回调开始执行: %s" % id)
 		callback.call(result)
-		print("任务回调执行完成: %s" % id)
-
-	## 开始执行任务
-	func process_function() -> void:
-		if call_deferred:
-			process_callback.call_deferred(task_function, task_callback)
-		else:
-			process_callback.call(task_function, task_callback)
+		CoreSystem.logger.debug("任务回调执行完成: %s" % id)

@@ -1,4 +1,4 @@
-extends RefCounted
+extends Resource
 
 ## 游戏状态数据
 

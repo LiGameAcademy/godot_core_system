@@ -2,24 +2,6 @@ extends Node
 
 ## 异步IO管理器
 ## 提供文件系统操作的异步执行功能，支持压缩和加密
-
-#region 常量和枚举
-## IO任务类型
-enum TaskType {
-	READ,   # 读取
-	WRITE,  # 写入
-	DELETE  # 删除
-}
-
-## IO任务状态
-enum TaskStatus {
-	PENDING,   # 未开始
-	RUNNING,   # 运行中
-	COMPLETED, # 完成
-	ERROR      # 错误
-}
-#endregion
-
 #region 信号定义
 ## IO操作完成信号
 signal io_completed(task_id: String, success: bool, result: Variant)
@@ -30,8 +12,6 @@ signal io_error(task_id: String, error: String)
 #region 私有变量
 # 任务管理
 var _task_counter: int = 0                 ## 任务计数器
-var _pending_tasks: Array[IOTask] = []     ## 等待处理的任务列表
-var _completed_tasks: Array[IOTask] = []   ## 已完成的任务列表
 
 # 线程管理
 var _io_thread: CoreSystem.SingleThread    ## IO专用线程
@@ -39,6 +19,16 @@ var _io_thread: CoreSystem.SingleThread    ## IO专用线程
 # 加密管理
 var _encryption_provider: EncryptionProvider = null
 #endregion
+
+## 初始化IO管理器
+func _init() -> void:
+	_initialize_thread()
+	_connect_signals()
+
+## 清理资源
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_shutdown()
 
 #region 公共属性
 ## 加密提供者
@@ -50,16 +40,6 @@ var encryption_provider: EncryptionProvider:
 	set(value):
 		_encryption_provider = value
 #endregion
-
-## 初始化IO管理器
-func _init(_data: Dictionary = {}) -> void:
-	_initialize_thread()
-	_connect_signals()
-
-## 清理资源
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		_shutdown()
 
 #region 初始化和清理
 ## 初始化IO线程
@@ -78,22 +58,12 @@ func _shutdown() -> void:
 		_io_thread = null
 #endregion
 
-#region 信号处理
-## 处理任务完成信号
-func _on_task_completed(result: Variant, task_id: String) -> void:
-	io_completed.emit(task_id, true, result)
-
-## 处理任务错误信号
-func _on_task_error(error: String, task_id: String) -> void:
-	io_error.emit(task_id, error)
-#endregion
-
 #region 基础API - 简单操作
 ## 异步读取文件（基础版本）
 ## [param path] 文件路径
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
-func read_file(path: String, callback: Callable = func(_s, _r): pass) -> String:
+func read_file(path: String, callback: Callable = Callable()) -> String:
 	return read_file_async(path, false, "", callback)
 
 ## 异步写入文件（基础版本）
@@ -101,7 +71,7 @@ func read_file(path: String, callback: Callable = func(_s, _r): pass) -> String:
 ## [param data] 要写入的数据
 ## [param callback] 回调函数，接收(success: bool, result: Variant)
 ## [return] 任务ID
-func write_file(path: String, data: Variant, callback: Callable = func(_s, _r): pass) -> String:
+func write_file(path: String, data: Variant, callback: Callable = Callable()) -> String:
 	return write_file_async(path, data, false, "", callback)
 
 ## 异步删除文件
@@ -204,6 +174,26 @@ func delete_file_async(path: String, callback: Callable = func(_s, _r): pass) ->
 	# 提交到IO线程
 	_io_thread.add_task(delete_task, callback_handler)
 	return task_id
+
+## 异步获取文件列表
+func list_files_async(path: String, callback:Callable = Callable()) -> String:
+	var task_id = _generate_task_id()
+
+	## 创建获取文件列表任务
+	var list_task := func() -> Variant:
+		return _get_file_list(path)
+	
+	## 创建回调处理
+	var callback_handler := func(result: Variant) -> void:
+		if result != null:
+			callback.call(true, result)
+		else:
+			callback.call(false, null)
+	
+	## 提交到IO线程
+	_io_thread.add_task(list_task, callback_handler)
+	return task_id
+
 #endregion
 
 #region 文件操作实现
@@ -258,6 +248,25 @@ func _execute_delete_operation(path: String) -> bool:
 	
 	var err = dir.remove(path)
 	return err == OK
+
+## 获取文件列表
+func _get_file_list(file_directory: String) -> Array:
+	var files : Array = []
+	var dir := DirAccess.open(file_directory)
+
+	if not dir:
+		CoreSystem.logger.error("无法访问目录：%s" %file_directory)
+	
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+
+	while not file_name.is_empty():
+		if not dir.current_is_dir():
+			files.append(file_name)
+		file_name = dir.get_next()
+
+	return files
+
 #endregion
 
 #region 数据处理
@@ -330,37 +339,12 @@ func _generate_task_id() -> String:
 	return "%d_%d" % [Time.get_ticks_msec(), _task_counter]
 #endregion
 
-#region 内部类
-## IO任务
-class IOTask:
-	## 任务属性
-	var id: String                    ## 任务唯一标识
-	var type: TaskType                ## 任务类型
-	var path: String                  ## 文件路径
-	var data: Variant                 ## 任务数据
-	var status: TaskStatus = TaskStatus.PENDING  ## 任务状态
-	var error: String = ""            ## 错误信息
-	
-	## 选项
-	var callback: Callable            ## 完成回调
-	var compression: bool = false     ## 是否使用压缩
-	var encryption_key: String = ""   ## 加密密钥
-	
-	## 初始化任务
-	func _init(
-		p_id: String, 
-		p_type: TaskType, 
-		p_path: String, 
-		p_data: Variant = null,
-		p_compression: bool = false,
-		p_encryption_key: String = "",
-		p_callback: Callable = func(_s, _r): pass
-	) -> void:
-		id = p_id
-		type = p_type
-		path = p_path
-		data = p_data
-		compression = p_compression
-		encryption_key = p_encryption_key
-		callback = p_callback
+#region 信号处理
+## 处理任务完成信号
+func _on_task_completed(result: Variant, task_id: String) -> void:
+	io_completed.emit(task_id, true, result)
+
+## 处理任务错误信号
+func _on_task_error(error: String, task_id: String) -> void:
+	io_error.emit(task_id, error)
 #endregion

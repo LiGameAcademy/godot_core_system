@@ -2,18 +2,19 @@ extends "./save_format_strategy.gd"
 
 const GameStateData = CoreSystem.GameStateData
 
-func _init(p_manager: Node):
-    super(p_manager)
-
+## 文件名是否有效
 func is_valid_save_file(file_name: String) -> bool:
     return file_name.ends_with(".tres")
 
+## 获取存档ID
 func get_save_id_from_file(file_name: String) -> String:
     return file_name.trim_suffix(".tres")
 
+## 获取存档路径
 func get_save_path(directory: String, save_id: String) -> String:
     return directory.path_join("%s.tres" % save_id)
 
+## 保存存档
 func save(path: String, data: Dictionary, callback: Callable) -> void:
     # 创建一个新的GameStateData对象
     var save_data = GameStateData.new(data.metadata.id)
@@ -32,18 +33,19 @@ func save(path: String, data: Dictionary, callback: Callable) -> void:
     for key in data.keys():
         if key != "metadata":
             save_data.set_data(key, data[key])
-    
+
     # 保存资源
-    var resource_data = save_data.serialize()
+    var resource_data : Dictionary = save_data.serialize()
     
     # 创建和保存自定义资源
     var resource = Resource.new()
     for property in resource_data:
         resource.set_meta(property, resource_data[property])
     
-    var error = ResourceSaver.save(resource, path)
+    var error := ResourceSaver.save(resource, path)
     callback.call(error == OK)
 
+## 加载存档
 func load(path: String, callback: Callable) -> void:
     if not FileAccess.file_exists(path):
         callback.call(false, {})
@@ -80,4 +82,3 @@ func load_metadata(path: String, callback: Callable) -> void:
         callback.call(true, metadata)
     else:
         callback.call(false, {})
-
