@@ -13,23 +13,23 @@ signal pool_emptied
 
 ## 初始化物品池
 ## [param items] 初始物品数组，格式支持Array或Dictionary
-func _init(items: Array = []) -> void:
+func _init(items: Array = [],check_repeat:bool = true) -> void:
 	if items.is_empty():
 		return
-	add_items(items)
+	add_items(items,true,check_repeat)
 
 ## 添加单个随机项
 ## [param item_data] 要添加的物品数据
 ## [param item_weight] 物品权重值（必须为正数）
 ## [param rebuild] 是否立即重建别名表（默认true）
 ## [return] 是否添加成功
-func add_item(item_data: Variant, item_weight: float, rebuild: bool = true) -> bool:
+func add_item(item_data: Variant, item_weight: float, rebuild: bool = true, check_repeat:bool= true) -> bool:
 	if item_weight <= 0:
 		_logger.error("道具权重必须为正数 %s" % str(item_data))
 		return false
-	for item in _item_pool:
-		if item.data == item_data:
-			_logger.warning("%s物品已经存在，添加失败！" % str(item_data))
+	if check_repeat:
+		if has_item(item_data):
+			_logger.warning("要添加的物品已存在，无法添加", {"item_data": item_data})
 			return false
 	_item_pool.append({"data": item_data, "weight": item_weight})
 	if rebuild:
@@ -39,29 +39,16 @@ func add_item(item_data: Variant, item_weight: float, rebuild: bool = true) -> b
 ## 批量添加随机项
 ## [param items] 要添加的物品数组（支持多种格式）
 ## [return] 成功添加的数量
-func add_items(items: Array) -> int:
+func add_items(items: Array, rebuild: bool = true, check_repeat:bool= true) -> int:
+	var unified_items: Array[Dictionary] = convert_to_unified_format(items)
 	var success_count := 0
-	for item in items:
-		var data
-		var weight
-		if item is Array:
-			if item.size() < 2:
-				_logger.error("物品格式不合法！%s" % str(item))
-				continue
-			data = item[0]
-			weight = float(item[1])
-		elif item is Dictionary:
-			if not (item.has("data") and item.has("weight")):
-				_logger.error("物品格式错误，必须包含 data 和 weight 字段 %s" % str(item))
-				continue
-			data = item.data
-			weight = item.weight
-		else:
-			_logger.error("无效的物品格式 %s" % str(item))
-			continue
-		if add_item(data, weight, false):
+	for item in unified_items:
+		if add_item(item.data, item.weight, false, false):
 			success_count += 1
-	_build_alias_table()
+	if check_repeat:
+		success_count += remove_duplicates()
+	if success_count > 0 and rebuild:
+		_build_alias_table()
 	return success_count
 
 ## 删除单个指定项
@@ -81,14 +68,75 @@ func remove_item(item_data: Variant, rebuild: bool = true) -> bool:
 ## 批量删除指定物品
 ## [param item_datas] 要删除的物品数据数组
 ## [return] 成功删除的数量
-func remove_items(item_datas: Array) -> int:
+func remove_items(item_datas: Array, rebuild: bool = true) -> int:
 	var success_count := 0
 	for data in item_datas:
 		if remove_item(data, false):
 			success_count += 1
-	if success_count > 0:
+	if success_count > 0 and rebuild:
 		_build_alias_table()
 	return success_count
+
+## 更新指定物品的权重
+## [param item_data] 要更新的物品数据
+## [param new_weight] 新权重值（必须为正数）
+## [param rebuild] 是否立即重建别名表（默认true）
+## [return] 是否更新成功
+func update_item_weight(item_data: Variant, new_weight: float, rebuild: bool = true) -> bool:
+	if new_weight <= 0:
+		_logger.error("权重必须为正数：%s" % str(item_data))
+		return false
+	for i in range(_item_pool.size()):
+		if _item_pool[i].data == item_data:
+			_item_pool[i].weight = new_weight
+			if rebuild:
+				_build_alias_table()
+			return true
+	_logger.warning("要更新的物品不存在：%s" % str(item_data))
+	return false
+
+## 批量更新物品权重
+## [param updates] 要更新的项数组
+## [param rebuild] 是否在更新完成后重建别名表（默认true）
+## [return] 成功更新的物品数量
+func update_items_weights(updates: Array, rebuild: bool = true) -> int:
+	var unified_updates: Array[Dictionary] = convert_to_unified_format(updates)
+	var success_count := 0
+	for item in unified_updates:
+		if update_item_weight(item.data, item.weight, false):
+			success_count += 1
+	if rebuild and success_count > 0:
+		_build_alias_table()
+	return success_count
+
+## 获取单个物品的权重数据
+## [param item_data] 要查询的物品数据
+## [return] 该物品的权重，未找到返回-1
+func get_item_weight(item_data: Variant) -> float:
+	for item in _item_pool:
+		if item.data == item_data:
+			return item.weight
+	_logger.warning("要获取权重的物品不存在", {"item_data": item_data})
+	return -1.0
+
+## 获取多个物品的权重数据
+## [param item_datas] 要查询的物品数据数组
+## [return] 字典，键为存在的物品数据，值为对应权重（仅包含找到的项）
+func get_items_weights(item_datas: Array) -> Dictionary:
+	var target_set := {} # 创建哈希集合用于快速查找
+	for data in item_datas:
+		target_set[data] = true
+	var result := {}
+	# 单次遍历池数据
+	for item in _item_pool:
+		if target_set.has(item.data) and not result.has(item.data):
+			result[item.data] = item.weight
+			# 移除以避免重复处理
+			target_set.erase(item.data)
+	# 记录未找到项的警告（每个缺失项仅记录一次）
+	for missing in target_set:
+		_logger.warning("要获取权重的物品不存在", {"item_data": missing})
+	return result
 
 ## 获取随机物品
 ## [param should_remove] 是否在获取后移除该物品（默认false）
@@ -115,6 +163,11 @@ func get_random_item(should_remove: bool = false) -> Variant:
 
 	item_picked.emit(selected_item.data)
 	return selected_item.data
+
+## 重建别名表和概率表 
+## 给予开发者更多自由，避免一个原子操作中被迫多次构建别名表和概率表
+func rebuild_alias_table()->void:
+	_build_alias_table()
 
 ## 清空物品池
 func clear() -> void:
@@ -198,3 +251,44 @@ func has_item(item_data: Variant) -> bool:
 		if item.data == item_data:
 			return true
 	return false
+
+## 剔除池中所有重复的数据项，每个数据只保留第一个出现的实例
+## 不会重新创建别名表和概率表
+## [return] 被移除的重复项数量
+func remove_duplicates() -> int:
+	var seen := {}
+	var unique_items: Array[Dictionary] = []
+	var removed_count := 0
+	for item in _item_pool:
+		var data = item.data
+		if not seen.has(data):
+			seen[data] = true
+			unique_items.append(item)
+		else:
+			removed_count += 1
+	if removed_count > 0:
+		_item_pool = unique_items
+	return removed_count
+
+static func convert_to_unified_format(items: Array) -> Array[Dictionary]:
+	var converted: Array[Dictionary] = []
+	for item in items:
+		var data: Variant
+		var weight: float
+		if item is Array:
+			if item.size() < 2:
+				push_error("Invalid array format: %s" % str(item))
+				continue
+			data = item[0]
+			weight = float(item[1])
+		elif item is Dictionary:
+			if not (item.has("data") and item.has("weight")):
+				push_error("Invalid dictionary format: %s" % str(item))
+				continue
+			data = item["data"]
+			weight = float(item["weight"])
+		else:
+			push_error("Unsupported item type: %s" % str(item))
+			continue
+		converted.append({"data": data, "weight": weight})
+	return converted
