@@ -93,3 +93,5 @@ size_flags_vertical = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/ButtonsContainer/SingleThreadBtn" to="." method="_on_single_thread_btn_pressed"]

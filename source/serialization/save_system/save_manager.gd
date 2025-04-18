@@ -22,6 +22,7 @@ signal auto_save_created(save_id: String)
 var save_format_registry = SaveFormatRegistry.new()
 
 # 配置选项
+# TODO 存放到插件的设置里
 var save_directory: String = "user://saves"
 var encryption_enabled: bool = true
 var compression_enabled: bool = true
@@ -56,7 +57,7 @@ func create_save(save_id: String = "") -> String:
 	var actual_id = _generate_save_id() if save_id.is_empty() else save_id
 	
 	# 收集数据
-	var save_data = {
+	var save_data : Dictionary = {
 		"metadata": {
 			"id": actual_id,
 			"timestamp": Time.get_unix_time_from_system(),
@@ -232,9 +233,8 @@ func _collect_node_states() -> Array:
 	var saveables = get_tree().get_nodes_in_group(SAVE_GROUP)
 	for saveable in saveables:
 		if saveable.has_method("save"):
-			var node_data = saveable.save()
+			var node_data : Resource = saveable.save()
 			node_data["node_path"] = saveable.get_path()
-			#node_data["position"] = saveable.global_position
 			nodes.append(node_data)
 		else:
 			CoreSystem.logger.warning("缺少save方法！%s" % str(saveable))

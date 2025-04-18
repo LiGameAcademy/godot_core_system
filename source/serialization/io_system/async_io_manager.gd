@@ -49,7 +49,7 @@ func _initialize_thread() -> void:
 ## 连接信号
 func _connect_signals() -> void:
 	_io_thread.task_completed.connect(_on_task_completed)
-	_io_thread.task_error.connect(_on_task_error)
+	#_io_thread.task_error.connect(_on_task_error)
 
 ## 关闭管理器
 func _shutdown() -> void:
@@ -123,7 +123,7 @@ func read_file_async(path: String, use_compression: bool = false, encryption_key
 			callback.call(false, null)
 
 	# 提交到IO线程
-	_io_thread.add_task(read_task, callback_handler)
+	_io_thread.add_task(read_task)
 	return task_id
 
 ## 异步写入文件（完整版）
@@ -152,7 +152,7 @@ func write_file_async(
 			callback.call(success, null)
 
 	# 提交到IO线程
-	_io_thread.add_task(write_task, callback_handler)
+	_io_thread.add_task(write_task)
 	return task_id
 
 ## 异步删除文件
@@ -172,7 +172,7 @@ func delete_file_async(path: String, callback: Callable = func(_s, _r): pass) ->
 			callback.call(success, null)
 
 	# 提交到IO线程
-	_io_thread.add_task(delete_task, callback_handler)
+	_io_thread.add_task(delete_task)
 	return task_id
 
 ## 异步获取文件列表
@@ -191,7 +191,7 @@ func list_files_async(path: String, callback:Callable = Callable()) -> String:
 			callback.call(false, null)
 	
 	## 提交到IO线程
-	_io_thread.add_task(list_task, callback_handler)
+	_io_thread.add_task(list_task)
 	return task_id
 
 #endregion
@@ -229,7 +229,7 @@ func _execute_write_operation(path: String, data: Variant, use_compression: bool
 	# 打开文件
 	var file = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
-		push_error("无法打开文件写入: %s, 错误: %s" % [path, FileAccess.get_open_error()])
+		CoreSystem.logger.error("无法打开文件写入: %s, 错误: %s" % [path, FileAccess.get_open_error()])
 		return false
 	
 	# 写入内容
