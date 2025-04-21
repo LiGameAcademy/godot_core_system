@@ -77,16 +77,6 @@ const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
 		"default": true,
 	},
 
-	"module_enable/async_io_manager":
-	{
-		"name": SETTING_MODULE_ENABLE + "async_io_manager",
-		"type": TYPE_BOOL,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"basic": true,
-		"default": true,
-	},
-
 	"module_enable/save_manager":
 	{
 		"name": SETTING_MODULE_ENABLE + "save_manager",

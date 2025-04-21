@@ -22,3 +22,9 @@
 1. Resource方案：文本文件，Godot原生方案，简单直接但不能加密；
 2. JSON方案：文本文件，几乎没有冗余的数据。但是它无法支持复杂的类型；
 3. 二进制方案：支持压缩和自定义的加解密方案，更高效，但也更复杂；
+
+强烈建议使用 ConfigFile 重构 ConfigManager.gd，除非配置文件必须加密/压缩。
+AsyncIOManager 的核心价值在于处理耗时 IO（大文件、网络、复杂处理），存档是其主要应用场景之一。
+当前 AsyncIOManager 因硬编码 JSON 而局限性很大。
+必须通过实现序列化策略模式来扩展 AsyncIOManager，使其能够处理 Resource、纯二进制、Godot Variant 等多种数据格式，这样才能真正发挥其潜力。
+应将 AsyncIOManager 重构为可实例化的 RefCounted 类。

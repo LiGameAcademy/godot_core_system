@@ -8,7 +8,6 @@ const Logger = preload("./logger/logger.gd")
 const ResourceManager = preload("./resource_system/resource_manager.gd")
 const SceneManager = preload("./scene_system/scene_manager.gd")
 const TimeManager = preload("./time_system/time_manager.gd")
-const AsyncIOManager = preload("./serialization/io_system/async_io_manager.gd")
 const SaveManager = preload("./serialization/save_system/save_manager.gd")
 const ConfigManager = preload("./serialization/config_system/config_manager.gd")
 const StateMachineManager = preload("./state_machine/state_machine_manager.gd")
@@ -18,10 +17,11 @@ const GameplayTagManager = preload("./tag_system/gameplay_tag_manager.gd")
 
 const GameStateData = preload("./serialization/save_system/game_state_data.gd")
 
-const FrameSplitter = preload("./utils/frame_splitter/frame_splitter.gd")
+const FrameSplitter = preload("./utils/frame_splitter.gd")
 const SingleThread = preload("./utils/threading/single_thread.gd")
 const ModuleThread = preload("./utils/threading/module_thread.gd")
 const RandomPicker = preload("./utils/random_picker.gd")
+const AsyncIOManager = preload("./utils/async_io_manager.gd")
 
 ## 音频管理器
 var audio_manager : AudioManager:
@@ -65,12 +65,6 @@ var time_manager : TimeManager:
 		return _get_module("time_manager")
 	set(value):
 		push_error("time_manager is read-only")
-## 异步IO管理器
-var io_manager : AsyncIOManager:
-	get:
-		return _get_module("io_manager")
-	set(value):
-		push_error("io_manager is read-only")
 ## 存档管理器
 var save_manager : SaveManager:
 	get:
@@ -118,7 +112,6 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"resource_manager": ResourceManager,
 	"scene_manager": SceneManager,
 	"time_manager": TimeManager,
-	"io_manager": AsyncIOManager,
 	"save_manager": SaveManager,
 	"config_manager": ConfigManager,
 	"state_machine_manager": StateMachineManager,
