@@ -26,7 +26,7 @@ const ENCRYPTION_KEY = "my_secret_key"
 var test_data := {
 	"name": "AsyncIO Test",
 	"version": 1.0,
-	"data": [1, 2, 3, "hello", {"nested": true}],
+	"data": [1.0, 2.0, 3.0, "hello", {"nested": true}], # 改为浮点数
 	"timestamp": Time.get_unix_time_from_system()
 }
 

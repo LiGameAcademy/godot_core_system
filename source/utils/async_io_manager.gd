@@ -1,4 +1,5 @@
 extends RefCounted
+class_name AsyncIOManager
 
 const CompressionStrategy = preload("./io_strategies/compression/compression_strategy.gd")
 const EncryptionStrategy = preload("./io_strategies/encryption/encryption_strategy.gd")
@@ -13,13 +14,14 @@ const SingleThread = CoreSystem.SingleThread
 ## IO操作完成信号
 signal io_completed(task_id: String, success: bool, result: Variant)
 ## IO操作错误信号
-signal io_error(task_id: String, error: String)
+# signal io_error(task_id: String, error: String)
 
 # Task Management
 var _task_counter: int = 0
+var _task_id_map: Dictionary = {} # 映射: { int_id_from_thread: string_id_for_public }
 
 # Thread Management
-var _io_thread: CoreSystem.SingleThread = CoreSystem.SingleThread.new()
+var _io_thread: SingleThread # 假设 SingleThread 已被正确 Preload
 
 # Strategy Instances
 var _serializer: SerializationStrategy
@@ -33,6 +35,7 @@ func _init(p_serializer = null, p_compressor = null, p_encryptor = null) -> void
 	set_compression_strategy(p_compressor if p_compressor else NoCompressionStrategy.new())
 	set_encryption_strategy(p_encryptor if p_encryptor else NoEncryptionStrategy.new())
 
+	_initialize_thread()
 	_connect_signals()
 
 ## Clean up resources when the object is about to be deleted.
@@ -52,14 +55,36 @@ func set_encryption_strategy(strategy: EncryptionStrategy) -> void:
 #endregion
 
 #region Initialization and Cleanup
+## Initialize the IO thread.
+func _initialize_thread() -> void:
+	# Ensure previous thread is cleaned up if called multiple times (though unlikely for init)
+	if _io_thread and is_instance_valid(_io_thread):
+		_io_thread.stop()
+	_io_thread = SingleThread.new()
+
+## Connect signals from the IO thread.
 func _connect_signals() -> void:
-	_io_thread.task_completed.connect(_on_task_completed)
+	# Check if thread exists before connecting
+	if not _io_thread or not is_instance_valid(_io_thread):
+		_logger.error("AsyncIO: Cannot connect signals, IO thread is not initialized.")
+		return
+	# Connect directly to the internal handler
+	# Ensure not already connected if _connect_signals could be called multiple times
+	if not _io_thread.task_completed.is_connected(_on_task_completed):
+		_io_thread.task_completed.connect(_on_task_completed)
+	# If SingleThread emits task_error, connect it too
+	# if not _io_thread.task_error.is_connected(_on_task_error):
+	# 	_io_thread.task_error.connect(_on_task_error)
 
 ## Shut down the IO thread manager.
 func _shutdown() -> void:
+	# Disconnect signals first to prevent issues during shutdown
 	if _io_thread and is_instance_valid(_io_thread):
+		if _io_thread.task_completed.is_connected(_on_task_completed):
+			_io_thread.task_completed.disconnect(_on_task_completed)
+		# Disconnect error signal if connected
 		_io_thread.stop()
-		_io_thread = null
+	_io_thread = null
 #endregion
 
 #region Public API
@@ -68,7 +93,7 @@ func _shutdown() -> void:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func read_file_async(path: String, encryption_key: String = "") -> String:
-	var task_id := _generate_task_id()
+	var public_task_id := _generate_task_id() # 生成 String ID
 	var key_bytes := encryption_key.to_utf8_buffer()
 
 	# Create the read task callable
@@ -77,8 +102,11 @@ func read_file_async(path: String, encryption_key: String = "") -> String:
 		return { "success": result_data != null, "result": result_data }
 
 	# Submit the task to the IO thread
-	_io_thread.add_task(read_task)
-	return task_id
+	var internal_task_id = _io_thread.add_task(read_task)
+	# 存储映射
+	_task_id_map[internal_task_id] = public_task_id
+
+	return public_task_id # 返回 String ID
 
 ## 异步写入数据到文件
 ## [param path] 文件路径
@@ -86,7 +114,7 @@ func read_file_async(path: String, encryption_key: String = "") -> String:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func write_file_async(path: String, data: Variant, encryption_key: String = "") -> String:
-	var task_id := _generate_task_id()
+	var public_task_id := _generate_task_id()
 	var key_bytes := encryption_key.to_utf8_buffer()
 
 	# Create the write task callable
@@ -95,14 +123,16 @@ func write_file_async(path: String, data: Variant, encryption_key: String = "") 
 		return { "success": success, "result": null } # Write result is just success/fail
 
 	# Submit the task to the IO thread
-	_io_thread.add_task(write_task)
-	return task_id
+	var internal_task_id = _io_thread.add_task(write_task)
+	# 存储映射
+	_task_id_map[internal_task_id] = public_task_id
+	return public_task_id
 
 ## Asynchronously deletes a file.
 ## [param path] The path to the file to delete.
 ## [return] A unique task ID string.
 func delete_file_async(path: String) -> String:
-	var task_id := _generate_task_id()
+	var public_task_id := _generate_task_id()
 
 	# Create the delete task callable
 	var delete_task := func() -> Dictionary:
@@ -110,14 +140,16 @@ func delete_file_async(path: String) -> String:
 		return { "success": success, "result": null } # Delete result is just success/fail
 
 	# Submit the task to the IO thread
-	_io_thread.add_task(delete_task)
-	return task_id
+	var internal_task_id = _io_thread.add_task(delete_task)
+	# 存储映射
+	_task_id_map[internal_task_id] = public_task_id
+	return public_task_id
 
 ## Asynchronously lists files in a directory (no strategies involved).
 ## [param path] The directory path.
 ## [return] A unique task ID string.
 func list_files_async(path: String) -> String:
-	var task_id := _generate_task_id()
+	var public_task_id := _generate_task_id()
 
 	# Create the list task callable
 	var list_task := func() -> Dictionary:
@@ -127,8 +159,10 @@ func list_files_async(path: String) -> String:
 		return { "success": success, "result": files if success else [] }
 
 	# Submit the task to the IO thread
-	_io_thread.add_task(list_task)
-	return task_id
+	var internal_task_id = _io_thread.add_task(list_task)
+	# 存储映射
+	_task_id_map[internal_task_id] = public_task_id
+	return public_task_id
 #endregion
 
 #region Internal File Operations (Executed in IO Thread)
@@ -270,16 +304,29 @@ func _generate_task_id() -> String:
 #endregion
 
 #region Signal handling
+## 处理来自 SingleThread 的 task_completed 信号
+func _on_task_completed(result_dict: Dictionary, internal_task_id: int) -> void: # 注意：这里接收 int ID
+	# 查找对应的 Public String ID
+	var public_task_id = _task_id_map.get(internal_task_id, "") # 获取 String ID
 
-func _on_task_completed(result_dict: Dictionary, task_id: String) -> void:
+	if public_task_id.is_empty():
+		_logger.error("AsyncIO: Received completed signal for unknown internal task ID: %d" % internal_task_id)
+		return # 无法处理，直接返回
+
+	# 任务完成，从映射中移除
+	_task_id_map.erase(internal_task_id)
+
+	# 检查任务函数返回的结果字典格式
 	if not result_dict is Dictionary or not result_dict.has("success"):
-		_logger.error("AsyncIO: Internal task result format error for task %s: %s" % [task_id, str(result_dict)])
-		io_completed.emit(task_id, false, {"error": "Internal task result format error"})
+		_logger.error("AsyncIO: Internal task result format error for task %s (Internal ID: %d): %s" % [public_task_id, internal_task_id, str(result_dict)])
+		io_completed.emit(public_task_id, false, {"error": "Internal task result format error"})
 		return
 
 	var success: bool = result_dict["success"]
 	var result_data: Variant = result_dict.get("result")
-	
-	io_completed.emit(task_id, success, result_data)
+
+	_logger.info("AsyncIO: Task %s completed (Internal ID: %d). Success: %s" % [public_task_id, internal_task_id, str(success)])
+	# 发出公共信号，使用 String ID
+	io_completed.emit(public_task_id, success, result_data)
 
 #endregion 
