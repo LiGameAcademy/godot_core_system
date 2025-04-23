@@ -124,6 +124,10 @@ func remove_state(state_id: StringName) -> void:
 	_debug("Removing state: %s" % state_id)
 	states.erase(state_id)
 
+## 检查状态是否存在
+func has_state(state_id: StringName) -> bool:
+	return states.has(state_id)
+
 ## 切换状态
 func switch(state_id: StringName, msg: Dictionary = {}) -> void:
 	if not states.has(state_id):

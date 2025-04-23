@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://d2i3gjmx5dc4d" path="res://addons/godot_core_system/examples/save_demo/save_demo.gd" id="1_ysvbt"]
 [ext_resource type="Script" uid="uid://tp7fgwa0ysst" path="res://addons/godot_core_system/examples/save_demo/player.gd" id="2_masrl"]
-[ext_resource type="Script" uid="uid://blo7p7y0s6611" path="res://addons/godot_core_system/source/serialization/serializable_component.gd" id="3_5wtt6"]
+[ext_resource type="Script" uid="uid://blo7p7y0s6611" path="res://addons/godot_core_system/source/serialization/save_system/serializable_component.gd" id="3_5wtt6"]
 
 [node name="SaveDemo" type="Node2D"]
 script = ExtResource("1_ysvbt")
@@ -12,7 +12,6 @@ script = ExtResource("2_masrl")
 
 [node name="SerializableComponent" type="Node" parent="Player"]
 script = ExtResource("3_5wtt6")
-metadata/_custom_type_script = "uid://bmogf1du5qa8r"
 
 [node name="UI" type="CanvasLayer" parent="."]
 
