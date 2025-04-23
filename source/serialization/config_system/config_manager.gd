@@ -33,7 +33,7 @@ const SETTING_AUTO_SAVE: String = SETTING_CONFIG_SYSTEM + "auto_save"
 ## 当前配置
 var _config: Dictionary = {}
 ## 异步IO管理器
-var _io_manager: CoreSystem.AsyncIOManager = CoreSystem.io_manager
+#var _io_manager: CoreSystem.AsyncIOManager = CoreSystem.io_manager
 ## 是否已修改
 var _modified: bool = false
 
@@ -51,40 +51,42 @@ func _exit() -> void:
 ## 加载配置
 ## [param callback] 回调函数
 func load_config(callback: Callable = Callable()) -> void:
-	_io_manager.read_file_async(
-		config_path,
-		true,
-		"",
-		func(success: bool, result: Variant):
-			if success:
-				# 合并加载的配置和默认配置
-				var default_config = DefaultConfig.get_default_config()
-				_merge_config(default_config, result)
-				_config = default_config
-			else:
-				# 使用默认配置
-				_config = DefaultConfig.get_default_config()
-			_modified = false
-			config_loaded.emit()
-			if callback.is_valid():
-				callback.call(success)
-	)
+	#_io_manager.read_file_async(
+		#config_path,
+		#true,
+		#"",
+		#func(success: bool, result: Variant):
+			#if success:
+				## 合并加载的配置和默认配置
+				#var default_config = DefaultConfig.get_default_config()
+				#_merge_config(default_config, result)
+				#_config = default_config
+			#else:
+				## 使用默认配置
+				#_config = DefaultConfig.get_default_config()
+			#_modified = false
+			#config_loaded.emit()
+			#if callback.is_valid():
+				#callback.call(success)
+	#)
+	pass
 
 ## 保存配置
 ## [param callback] 回调函数
 func save_config(callback: Callable = Callable()) -> void:
-	_io_manager.write_file_async(
-		config_path,
-		_config,
-		true,
-		"",
-		func(success: bool, _result: Variant):
-			if success:
-				_modified = false
-				config_saved.emit()
-			if callback.is_valid():
-				callback.call(success)
-	)
+	#_io_manager.write_file_async(
+		#config_path,
+		#_config,
+		#true,
+		#"",
+		#func(success: bool, _result: Variant):
+			#if success:
+				#_modified = false
+				#config_saved.emit()
+			#if callback.is_valid():
+				#callback.call(success)
+	#)
+	pass
 
 ## 重置为默认配置
 func reset_to_default() -> void:
