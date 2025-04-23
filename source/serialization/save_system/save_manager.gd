@@ -35,7 +35,7 @@ var max_auto_saves: int = 3
 # 私有变量
 var _current_save_id: String = ""
 var _auto_save_timer: float = 0
-var _io_manager: CoreSystem.AsyncIOManager = CoreSystem.io_manager
+# var _io_manager: CoreSystem.AsyncIOManager = CoreSystem.io_manager
 var _encryption_key: String = "123456"
 var _save_strategy: SaveFormatStrategy = BinarySaveStrategy.new()
 
@@ -107,15 +107,15 @@ func delete_save(save_id: String) -> bool:
 	var save_path = _get_save_path(save_id)
 	var task = _create_await_task()
 	
-	_io_manager.delete_file_async(save_path, func(success: bool, _result):
-		if success:
-			if _current_save_id == save_id:
-				_current_save_id = ""
-			save_deleted.emit(save_id)
-		else:
-			CoreSystem.logger.error("删除存档失败：%s" % save_path)
-		task.complete(success)
-	)
+	#_io_manager.delete_file_async(save_path, func(success: bool, _result):
+		#if success:
+			#if _current_save_id == save_id:
+				#_current_save_id = ""
+			#save_deleted.emit(save_id)
+		#else:
+			#CoreSystem.logger.error("删除存档失败：%s" % save_path)
+		#task.complete(success)
+	#)
 	
 	return await task.wait()
 
@@ -135,42 +135,42 @@ func get_save_list() -> Array[Dictionary]:
 	var saves: Array[Dictionary] = []
 	var task = _create_await_task()
 	
-	_io_manager.list_files_async(save_directory, func(success: bool, files: Array):
-		if not success:
-			CoreSystem.logger.error("获取文件列表失败：%s" % save_directory)
-			return
-		var pending_loads = files.size()
-		
-		if pending_loads == 0:
-			task.complete(saves)
-			return
-			
-		for file in files:
-			if _is_valid_save_file(file):
-				var save_id = _get_save_id_from_file(file)
-				var save_path = _get_save_path(save_id)
-				
-				_save_strategy.load_metadata(save_path, func(meta_success: bool, metadata: Dictionary):
-					pending_loads -= 1
-					
-					if meta_success:
-						saves.append({
-							"id": save_id,
-							"metadata": metadata
-						})
-						
-					if pending_loads == 0:
-						# 按时间戳排序
-						saves.sort_custom(func(a, b): 
-							return a.metadata.timestamp > b.metadata.timestamp
-						)
-						task.complete(saves)
-				)
-			else:
-				pending_loads -= 1
-				if pending_loads == 0:
-					task.complete(saves)
-	)
+	#_io_manager.list_files_async(save_directory, func(success: bool, files: Array):
+		#if not success:
+			#CoreSystem.logger.error("获取文件列表失败：%s" % save_directory)
+			#return
+		#var pending_loads = files.size()
+		#
+		#if pending_loads == 0:
+			#task.complete(saves)
+			#return
+			#
+		#for file in files:
+			#if _is_valid_save_file(file):
+				#var save_id = _get_save_id_from_file(file)
+				#var save_path = _get_save_path(save_id)
+				#
+				#_save_strategy.load_metadata(save_path, func(meta_success: bool, metadata: Dictionary):
+					#pending_loads -= 1
+					#
+					#if meta_success:
+						#saves.append({
+							#"id": save_id,
+							#"metadata": metadata
+						#})
+						#
+					#if pending_loads == 0:
+						## 按时间戳排序
+						#saves.sort_custom(func(a, b): 
+							#return a.metadata.timestamp > b.metadata.timestamp
+						#)
+						#task.complete(saves)
+				#)
+			#else:
+				#pending_loads -= 1
+				#if pending_loads == 0:
+					#task.complete(saves)
+	#)
 	
 	return await task.wait()
 
