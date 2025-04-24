@@ -31,7 +31,7 @@ var _modified : bool = false
 
 var _logger : CoreSystem.Logger = CoreSystem.logger
 
-func _ready() -> void:
+func _init() -> void:
 	# 加载配置
 	load_config()
 

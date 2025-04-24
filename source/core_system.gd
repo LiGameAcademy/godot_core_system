@@ -23,6 +23,11 @@ const ModuleThread = preload("./utils/threading/module_thread.gd")
 const RandomPicker = preload("./utils/random_picker.gd")
 const AsyncIOManager = preload("./utils/async_io_manager.gd")
 
+@onready var logger : Logger = _get_module("logger"):								## 日志管理器
+	get:
+		if not logger:
+			logger = _get_module("logger")
+		return logger
 @onready var resource_manager : ResourceManager = _get_module("resource_manager"):			## 资源管理器
 	get:
 		if not resource_manager:
@@ -43,11 +48,11 @@ const AsyncIOManager = preload("./utils/async_io_manager.gd")
 		if not input_manager:
 			input_manager = _get_module("input_manager")
 		return input_manager
-@onready var logger : Logger = _get_module("logger"):								## 日志管理器
+@onready var config_manager : ConfigManager = _get_module("config_manager"):			## 配置管理器
 	get:
-		if not logger:
-			logger = _get_module("logger")
-		return logger
+		if not config_manager:
+			config_manager = _get_module("config_manager")
+		return config_manager
 @onready var scene_manager : SceneManager = _get_module("scene_manager"):			## 场景管理器
 	get:
 		if not scene_manager:
@@ -58,11 +63,6 @@ const AsyncIOManager = preload("./utils/async_io_manager.gd")
 		if not time_manager:
 			time_manager = _get_module("time_manager")
 		return time_manager
-@onready var config_manager : ConfigManager = _get_module("config_manager"):			## 配置管理器
-	get:
-		if not config_manager:
-			config_manager = _get_module("config_manager")
-		return config_manager
 @onready var save_manager : SaveManager = _get_module("save_manager"):				## 存档管理器
 	get:
 		if not save_manager:
@@ -128,7 +128,6 @@ func _create_module(module_id: StringName) -> Node:
 		return null
 	_modules[module_id] = module
 	module.name = module_id
-	#add_child.call_deferred(module)
 	add_child(module)
 	return module
 

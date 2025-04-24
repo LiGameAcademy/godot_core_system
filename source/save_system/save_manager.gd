@@ -68,6 +68,7 @@ var _current_save_id: String = ""
 var _auto_save_timer: float = 0
 var _encryption_key: String = "123456"  # TODO: 从安全的地方获取
 var _save_strategy: SaveFormatStrategy
+var _pending_node_states: Dictionary = {}
 
 var _strategies := {
 	"resource": ResourceSaveStrategy.new(),
@@ -97,6 +98,19 @@ func register_saveable_node(node: Node) -> void:
 	if not node.is_in_group(save_group):
 		node.add_to_group(save_group)
 		CoreSystem.logger.info("注册存档节点: %s" % node.get_path())
+
+	var node_path : String = node.get_path()
+	# 检查是否有待加载的缓存状态
+	if _pending_node_states.has(node_path):
+		_logger.debug("发现节点 %s 的缓存状态，正在应用..." % node_path)
+		var cached_data = _pending_node_states[node_path]
+		if node.has_method("load_data"):
+			#await get_tree().process_frame
+			node.load_data(cached_data)
+			# 加载后从缓存移除
+			_pending_node_states.erase(node_path)
+		else:
+			_logger.warning("节点 %s 缺少 load_data 方法，无法应用缓存状态！" % node_path)
 
 # 设置存档格式
 func set_save_format(format: StringName) -> void:
@@ -235,6 +249,7 @@ func _generate_default_key() -> String:
 	for i in range(32):
 		key += str(randi() % 10)
 	return key
+	# return "123456"
 
 # 检查文件是否为有效的存档文件
 func _is_valid_save_file(file_name: String) -> bool:
@@ -295,12 +310,14 @@ func _apply_node_states(nodes: Array) -> void:
 			_logger.error("节点路径为空！%s" % str(node_data))
 			continue
 		var node = get_node_or_null(node_path)
-		if not node:
-			_logger.error("不是有效的Node: %s" % node_path)
-			continue
-		if node.has_method("load_data"):
-			node.load_data(node_data)
+		if node:
+			if node.has_method("load_data"):
+				node.load_data(node_data)
+			else:
+				_logger.warning("缺少 load_data 方法！%s" % str(node))
 		else:
-			_logger.warning("缺少 load_data 方法！%s" % str(node))
+			# 节点不存在，缓存数据
+			_logger.debug("节点 %s 尚未加载，缓存其状态数据。" % node_path)
+			_pending_node_states[node_path] = node_data
 
 #endregion

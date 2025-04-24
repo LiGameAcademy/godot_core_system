@@ -282,10 +282,10 @@ const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
 	{
 		"name": SETTING_SAVE_SYSTEM_DEFAULTS + "serialization_format",
 		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
+		"hint": PROPERTY_HINT_ENUM,
+		"hint_string": "binary,json,resource",
 		"basic": true,
-		"default": "binary",
+		"default": "",
 	},
 }
 
