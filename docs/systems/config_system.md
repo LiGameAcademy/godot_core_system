@@ -1,155 +1,122 @@
 # Config System
 
-The Config System provides a robust solution for managing game configurations, supporting both runtime settings and persistent storage.
+The Config System provides a straightforward solution for managing game configurations using Godot's built-in `ConfigFile` format, supporting persistent storage and default values.
 
 ## Features
 
-- ⚙️ **Flexible Configuration**: Easy to use key-value storage
-- 💾 **Persistent Storage**: Automatic save and load of settings
-- 🔄 **Default Values**: Built-in default configuration support
-- 🔌 **Project Settings Integration**: Configurable through Godot's project settings
-- 🛡️ **Async Operations**: Non-blocking save/load operations
-- 📦 **Section Management**: Organize settings in logical sections
+- ⚙️ **Simple Key-Value Storage**: Leverages Godot's `ConfigFile` for easy section/key/value management.
+- 💾 **Persistent Storage**: Loads from and saves to a specified file (default: `user://config.cfg`).
+- 🔄 **Default Value Handling**: `get_value` gracefully handles missing keys by returning a provided default.
+- 🔌 **Project Settings Integration**: Key settings like `config_path` and `auto_save` can be configured via Project Settings (though accessed internally, not directly exposed as settable properties in the script provided).
+- 📂 **Section Management**: Organizes settings into logical sections within the config file.
+- ⚙️ **Synchronous Operations**: Core load, save, get, and set operations are synchronous.
 
 ## Quick Start
 
 ### 1. Access Config Manager
 
 ```gdscript
+# Assuming CoreSystem singleton is set up
 var config_manager = CoreSystem.config_manager
 ```
 
 ### 2. Basic Operations
 
 ```gdscript
-# Load configuration
-config_manager.load_config(func(success: bool):
-    if success:
-        print("Config loaded successfully!")
-)
+# ConfigManager typically loads automatically on init/ready. Manual load example:
+# var success = config_manager.load_config()
+# if success:
+#     print("Config loaded/reloaded.")
 
-# Get configuration value
+# Get configuration value (provide a default if the key might not exist)
 var sound_volume = config_manager.get_value("audio", "sound_volume", 1.0)
+print("Sound Volume: ", sound_volume)
 
 # Set configuration value
+# If auto_save is true (default), this might trigger an automatic save.
 config_manager.set_value("audio", "sound_volume", 0.8)
 
-# Save configuration
-config_manager.save_config(func(success: bool):
-    if success:
-        print("Config saved successfully!")
-)
+# Check if a value was modified and potentially save manually if auto_save is off
+# (The internal _modified flag handles this if auto_save is on)
+# if config_manager._modified: # Note: _modified is internal, direct access not recommended practice
+#    var save_success = config_manager.save_config()
+#    if save_success:
+#        print("Config saved manually.")
 
-# Reset to defaults
-config_manager.reset_config(func(success: bool):
-    if success:
-        print("Config reset to defaults!")
-)
+# Reset config in memory (and saves an empty file if auto_save is on)
+# config_manager.reset_config()
 ```
 
-### 3. Default Configuration
+### 3. Default Values
+
+The system relies on providing default values when calling `get_value`. There isn't an explicit "default config file" mechanism shown in the script, but rather handling defaults at the point of access.
 
 ```gdscript
-# Define default configuration in default_config.gd
-static func get_default_config() -> Dictionary:
-    return {
-        "audio": {
-            "master_volume": 1.0,
-            "music_volume": 0.8,
-            "sound_volume": 1.0,
-            "voice_volume": 1.0
-        },
-        "graphics": {
-            "fullscreen": false,
-            "vsync": true,
-            "resolution": "1920x1080"
-        },
-        "gameplay": {
-            "difficulty": "normal",
-            "language": "en"
-        }
-    }
+# If "difficulty" doesn't exist in the [gameplay] section, this returns "normal"
+var difficulty = config_manager.get_value("gameplay", "difficulty", "normal")
 ```
 
-## Project Settings
+## Project Settings (via `setting.gd`)
 
-| Setting     | Description          | Default             |
-| ----------- | -------------------- | ------------------- |
-| config_path | Path to config file  | "user://config.cfg" |
-| auto_save   | Auto-save on changes | true                |
+These settings control the ConfigManager's behavior and are typically defined in your plugin's `setting.gd` or similar setup script:
+
+| Setting Name (in ProjectSettings)         | Description                     | Default in `setting.gd` Example |
+| ----------------------------------------- | ------------------------------- | ------------------------------- |
+| `godot_core_system/config_system/config_path` | Path to the configuration file. | `"user://config.cfg"`           |
+| `godot_core_system/config_system/auto_save`   | Automatically save when `set_value` changes a value. | `true`                          |
+
+*Note: The `@export` variables in `config_manager.gd` use `get:` only, reading these project settings.*
 
 ## API Reference
 
-### ConfigManager
+### ConfigManager (`config_manager.gd`)
 
-Core class for managing configurations.
+Core class for managing configurations via `ConfigFile`.
 
-#### Properties
+#### Properties (Accessed via Project Settings)
 
-- `config_path: String`: Path to configuration file
-- `auto_save: bool`: Whether to auto-save changes
+-   `config_path: String` (Read via `ProjectSettings.get_setting(SETTING_CONFIG_PATH, ...)`): Path to the configuration file.
+-   `auto_save: bool` (Read via `ProjectSettings.get_setting(SETTING_AUTO_SAVE, ...)`): Whether to automatically save when a value is modified via `set_value`.
 
 #### Methods
 
-- `load_config(callback: Callable) -> void`: Load configuration from file
-- `save_config(callback: Callable) -> void`: Save configuration to file
-- `reset_config(callback: Callable) -> void`: Reset to default configuration
-- `get_value(section: String, key: String, default: Variant) -> Variant`: Get configuration value
-- `set_value(section: String, key: String, value: Variant) -> void`: Set configuration value
-- `has_section(section: String) -> bool`: Check if section exists
-- `has_key(section: String, key: String) -> bool`: Check if key exists in section
-- `get_section(section: String) -> Dictionary`: Get entire section
-- `set_section(section: String, data: Dictionary) -> void`: Set entire section
+-   `load_config(p_path: String = "") -> bool`: Loads configuration from the specified path (or the default `config_path` if empty). Returns `true` if loading was successful (or file not found, which is treated as success with empty config), `false` on other errors. Typically called automatically during initialization.
+-   `save_config(p_path: String = "") -> bool`: Saves the current configuration to the specified path (or the default `config_path`). Ensures the directory exists. Returns `true` on success, `false` on failure. Called automatically by `set_value` if `auto_save` is true and a value was changed.
+-   `reset_config() -> void`: Clears all sections and keys from the in-memory configuration. If `auto_save` is true, it will then save an empty configuration file.
+-   `set_value(section: String, key: String, value: Variant) -> void`: Sets a configuration value. Marks the configuration as modified if the new value is different from the current value. Triggers `save_config` if `auto_save` is true and the value changed.
+-   `get_value(section: String, key: String, p_default_value: Variant) -> Variant`: Gets a configuration value. If the section or key does not exist, returns `p_default_value`.
+-   `get_section(section: String) -> Dictionary`: Returns a dictionary containing all key-value pairs *currently loaded* for the given section. Returns an empty dictionary if the section doesn't exist.
+-   `set_section(section: String, value: Dictionary) -> void`: Updates a configuration section by setting or overriding keys based on the input dictionary `value`. *Note: This implementation adds or overwrites keys, it does not strictly replace the entire section by deleting old keys first.* Triggers `save_config` if `auto_save` is true and any value was changed.
+-   `get_sections() -> PackedStringArray`: Returns an array of all section names currently loaded in the configuration.
+-   `has_section(section: String) -> bool`: Checks if a section exists in the currently loaded configuration.
+-   `has_key(section: String, key: String) -> bool`: Checks if a key exists within a given section in the currently loaded configuration.
 
 #### Signals
 
-- `config_loaded`: Emitted when configuration is loaded
-- `config_saved`: Emitted when configuration is saved
-- `config_reset`: Emitted when configuration is reset
+-   `config_loaded`: Emitted when configuration loading (even if empty/file not found) is completed via `load_config`.
+-   `config_saved`: Emitted when configuration is successfully saved via `save_config`.
+-   `config_reset`: Emitted when the in-memory configuration is cleared via `reset_config`.
 
 ## Best Practices
 
-1. **Configuration Organization**
-
-   - Use logical section names
-   - Keep related settings together
-   - Use consistent naming conventions
-
-2. **Default Values**
-
-   - Always provide sensible defaults
-   - Document default values
-   - Consider platform differences
-
-3. **Error Handling**
-
-   - Check callback success status
-   - Provide fallback values
-   - Handle missing sections/keys gracefully
-
-4. **Performance**
-   - Use auto-save judiciously
-   - Cache frequently accessed values
-   - Batch multiple changes
+1.  **Configuration Organization**: Use clear section and key names (e.g., `[audio] music_volume = 0.8`).
+2.  **Default Values**: Always provide a default value in `get_value` calls to prevent errors if a setting is missing.
+3.  **Error Handling**: Check the return values of `load_config` and `save_config` if calling them manually, especially if `auto_save` is off.
+4.  **Performance**: `ConfigFile` operations involve disk I/O, which is relatively slow. Avoid calling `load_config` or `save_config` repeatedly in performance-critical loops. Rely on `auto_save` or save changes at logical points (e.g., closing settings menu, quitting game). Cache frequently accessed values in variables instead of calling `get_value` repeatedly within the same scope or frame.
 
 ## Common Issues
 
-1. **Configuration Not Saving**
-
-   - Check write permissions
-   - Verify config path is valid
-   - Ensure auto-save is enabled if needed
-
-2. **Default Values Not Loading**
-
-   - Check default configuration format
-   - Verify section and key names
-   - Debug merge conflicts with saved data
-
-3. **Missing Settings**
-   - Always use get_value with defaults
-   - Check section existence
-   - Validate configuration structure
+1.  **Configuration Not Saving**:
+    *   Check file system permissions for the `user://` directory.
+    *   Verify the `config_path` setting points to the correct location.
+    *   Ensure `auto_save` is `true` OR you are calling `save_config()` manually after `set_value`.
+    *   Check for errors logged by `save_config`.
+2.  **Settings Not Loading / Defaults Returned**:
+    *   Verify the `config_path` is correct and the file exists.
+    *   Check file system permissions.
+    *   Ensure `load_config()` is called *before* you try to access values (moving `load_config` to `_init` helps).
+    *   Check for errors logged by `load_config`.
+    *   Ensure section and key names in `get_value` exactly match those in the `.cfg` file (case-sensitive).
 
 ## Examples
 
