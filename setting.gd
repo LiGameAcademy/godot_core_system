@@ -285,7 +285,7 @@ const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
 		"hint": PROPERTY_HINT_NONE,
 		"hint_string": "",
 		"basic": true,
-		"default": "binary_variant",
+		"default": "binary",
 	},
 }
 
