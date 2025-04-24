@@ -117,9 +117,11 @@ func reset_config() -> void: # 方法名也改为 reset_config 更准确
 ## 设置配置值
 func set_value(section: String, key: String, value: Variant) -> void:
 	# 获取当前值（如果存在）和默认值，用于比较是否真的修改了
-	var current_value = get_value(section, key, value) # 使用 get_value 获取合并后的当前值
+	var current_value = get_value(section, key, null) # 使用 get_value 获取合并后的当前值
 
-	_modified = current_value != value
+	# 使用更严格的比较
+	_modified = _is_value_modified(current_value, value)
+
 	if _modified:
 		_config_file.set_value(section, key, value)
 		CoreSystem.logger.debug("Config value set: [%s] %s = %s" % [section, key, str(value)])
@@ -206,3 +208,36 @@ func has_section(section: String) -> bool:
 func has_key(section: String, key: String) -> bool:
 	# 只检查文件
 	return _config_file.has_section_key(section, key)
+
+## 比较两个值是否不同
+func _is_value_modified(current: Variant, new: Variant) -> bool:
+	# 处理 null 情况
+	if current == null and new == null:
+		return false
+	if current == null or new == null:
+		return true
+
+	# 处理数组
+	if current is Array and new is Array:
+		if current.size() != new.size():
+			return true
+		for i in range(current.size()):
+			if _is_value_modified(current[i], new[i]):
+				return true
+		return false
+
+	# 处理字典
+	if current is Dictionary and new is Dictionary:
+		if current.size() != new.size():
+			return true
+		for key in current:
+			if not new.has(key) or _is_value_modified(current[key], new[key]):
+				return true
+		return false
+
+	# 处理浮点数
+	if current is float and new is float:
+		return not is_equal_approx(current, new)
+
+	# 默认比较
+	return current != new

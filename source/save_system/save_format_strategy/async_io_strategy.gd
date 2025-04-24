@@ -1,23 +1,29 @@
 extends "./save_format_strategy.gd"
 
 var _io_manager: CoreSystem.AsyncIOManager
+var _encryption_key: String = ""
 
 func _init() -> void:
 	_io_manager = CoreSystem.AsyncIOManager.new()
 
+## 设置加密密钥
+func set_encryption_key(key: String) -> void:
+	_encryption_key = key
+
 ## 保存数据
 func save(path: String, data: Dictionary) -> bool:
 	var processed_data = _process_data_for_save(data)
-	var task_id = _io_manager.write_file_async(path, processed_data)
+	var task_id = _io_manager.write_file_async(path, processed_data, _encryption_key)
 	var result = await _io_manager.io_completed
 	return result[1] if result[0] == task_id else false
 
 ## 加载数据
 func load_save(path: String) -> Dictionary:
-	var task_id = _io_manager.read_file_async(path)
+	var task_id = _io_manager.read_file_async(path, _encryption_key)
 	var result = await _io_manager.io_completed
 	if result[0] == task_id and result[1]:
 		return _process_data_for_load(result[2])
+	
 	return {}
 
 ## 加载元数据

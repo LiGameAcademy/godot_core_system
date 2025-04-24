@@ -76,7 +76,7 @@ var _strategies := {
 }
 var _logger : CoreSystem.Logger = CoreSystem.logger
 
-func _ready() -> void:
+func _init() -> void:
 	# 设置默认序列化策略
 	_set_save_format(default_format)
 	
@@ -204,6 +204,29 @@ func _get_auto_save_id() -> String:
 # 设置当前存档格式
 func _set_save_format(format: StringName) -> void:
 	_save_strategy = _strategies.get(format, "resource")
+	if _save_strategy.has_method("set_encryption_key"):
+		var encryption_key = _get_encryption_key()
+		_save_strategy.set_encryption_key(encryption_key)
+
+## 获取加密密钥
+func _get_encryption_key() -> String:
+	# 从配置中获取密钥
+	var key = CoreSystem.config_manager.get_value("save_system", "encryption_key", "")
+
+	# 如果配置中没有密钥，生成一个默认的
+	if key.is_empty():
+		key = _generate_default_key()
+		CoreSystem.config_manager.set_value("save_system", "encryption_key", key)
+		CoreSystem.config_manager.save_config()
+
+	return key
+
+## 生成默认密钥
+func _generate_default_key() -> String:
+	var key = ""
+	for i in range(32):
+		key += str(randi() % 10)
+	return key
 
 # 检查文件是否为有效的存档文件
 func _is_valid_save_file(file_name: String) -> bool:

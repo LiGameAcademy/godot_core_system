@@ -10,7 +10,7 @@ const SaveManager = CoreSystem.SaveManager
 @onready var line_edit_exp: LineEdit = %LineEditExp
 @onready var label: Label = %Label
 
-var _save_manager : CoreSystem.SaveManager = CoreSystem.save_manager
+@onready var _save_manager : CoreSystem.SaveManager = CoreSystem.save_manager
 var _logger : CoreSystem.Logger = CoreSystem.logger
 
 func _ready():
