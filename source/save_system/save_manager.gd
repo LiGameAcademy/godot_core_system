@@ -159,13 +159,21 @@ func delete_save(save_id: String) -> bool:
 # 创建自动存档
 func create_auto_save() -> String:
 	var auto_save_id = _get_auto_save_id()
-	var save_id = await create_save(auto_save_id)
+	
+	# 创建新存档
+	var success = await create_save(auto_save_id)
+	if not success:
+		CoreSystem.logger.error("Failed to create auto save: %s" % auto_save_id)
+		return ""
 	
 	# 清理旧的自动存档
-	await _clean_old_auto_saves()
+	var cleanup_success = await _clean_old_auto_saves()
+	if not cleanup_success:
+		CoreSystem.logger.warning("Failed to clean old auto saves")
 	
-	auto_save_created.emit(save_id)
-	return save_id
+	# 发送信号
+	auto_save_created.emit(auto_save_id)
+	return auto_save_id
 
 # 获取所有存档列表
 func get_save_list() -> Array[Dictionary]:
@@ -249,8 +257,9 @@ func _get_save_path(save_id: String) -> String:
 # 清理旧的自动存档
 func _clean_old_auto_saves() -> void:
 	var saves = await get_save_list()
-	var auto_saves = saves.filter(func(save): 
-		return save.id.begins_with(auto_save_prefix)
+	var auto_saves = saves.filter(func(save):
+		var save_id = save.get("save_id")
+		return save_id.begins_with(auto_save_prefix)
 	)
 	
 	if auto_saves.size() > max_auto_saves:
