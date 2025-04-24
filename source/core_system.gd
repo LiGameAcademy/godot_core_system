@@ -15,8 +15,6 @@ const EntityManager = preload("./entity_system/entity_manager.gd")
 const TriggerManager = preload("./trigger_system/trigger_manager.gd")
 const GameplayTagManager = preload("./tag_system/gameplay_tag_manager.gd")
 
-const GameStateData = preload("./serialization/save_system/game_state_data.gd")
-
 const FrameSplitter = preload("./utils/frame_splitter.gd")
 const SingleThread = preload("./utils/threading/single_thread.gd")
 const ModuleThread = preload("./utils/threading/module_thread.gd")

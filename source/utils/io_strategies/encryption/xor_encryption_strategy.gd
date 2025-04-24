@@ -3,9 +3,11 @@ extends "./encryption_strategy.gd"
 ## Simple XOR encryption/decryption.
 ## NOTE: This is NOT cryptographically secure and is for demonstration/basic obfuscation only.
 
+var _logger : CoreSystem.Logger = CoreSystem.logger
+
 func encrypt(bytes: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
 	if key.is_empty():
-		CoreSystem.logger.error("XOR encrypt: Empty key provided, returning original data.")
+		_logger.error("XOR encrypt: Empty key provided, returning original data.")
 		return bytes
 	
 	var encrypted_bytes := PackedByteArray()
@@ -16,7 +18,7 @@ func encrypt(bytes: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
 
 func decrypt(bytes: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
 	if key.is_empty():
-		CoreSystem.logger.error("XOR decrypt: Empty key provided, returning original data.")
+		_logger.error("XOR decrypt: Empty key provided, returning original data.")
 		return bytes
 	
 	# XOR decryption is the same operation as encryption

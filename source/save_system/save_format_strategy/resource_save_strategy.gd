@@ -1,6 +1,6 @@
 extends "./save_format_strategy.gd"
 
-const GameStateData = CoreSystem.GameStateData
+const GameStateData = CoreSystem.SaveManager.GameStateData
 
 ## 文件名是否有效
 func is_valid_save_file(file_name: String) -> bool:
@@ -15,61 +15,41 @@ func get_save_path(directory: String, save_id: String) -> String:
 	return directory.path_join("%s.tres" % save_id)
 
 ## 保存存档
-func save(path: String, data: Dictionary, callback: Callable) -> void:
-	# 创建一个新的GameStateData对象
-	var save_data = GameStateData.new(data.metadata.id)
-	
-	# 添加元数据
-	save_data.game_version = data.metadata.version
-	save_data.timestamp = data.metadata.timestamp
-	save_data.save_id = data.metadata.id
-	
-	if data.metadata.has("datetime"):
-		save_data.save_date = data.metadata.datetime
-	if data.metadata.has("playtime") or data.metadata.has("play_time"):
-		save_data.play_time = data.metadata.get("playtime", 0)
-	
-	# 添加游戏数据
-	for node_data in data.nodes:
-		save_data.nodes_state.append(node_data)
+func save(path: String, data: Dictionary) -> bool:
+	var save_data = GameStateData.new(
+		data.metadata.id,
+		data.metadata.game_version,
+		data.metadata.timestamp,
+		data.metadata.save_date,
+		data.metadata.playtime
+	)
+	# 设置节点状态
+	save_data.nodes_state = data.nodes
+    
+    # 保存资源
+	var error = ResourceSaver.save(save_data, path)
+	return error == OK
 
-	var error := ResourceSaver.save(save_data, path)
-	callback.call(error == OK)
-
-## 加载存档
-func load(path: String, callback: Callable) -> void:
+## 加载存档数据
+func load_save(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
-		callback.call(false, {})
-		return
-		
+		return {}
+        
 	var resource = ResourceLoader.load(path)
-	if resource:
-		var result_data = {}
-		
-		# 获取元数据
-		var metadata = {}
-		if resource.has_meta("metadata"):
-			metadata = resource.get_meta("metadata")
-		
-		result_data["metadata"] = metadata
-		
-		# 获取其他游戏数据
-		for meta_name in resource.get_meta_list():
-			if meta_name != "metadata":
-				result_data[meta_name] = resource.get_meta(meta_name)
-		
-		callback.call(true, result_data)
-	else:
-		callback.call(false, {})
+	if not resource:
+		return {}
+        
+	var result = {
+		"metadata": resource.metadata,
+		"nodes": resource.nodes_state
+	}
+	
+	return result
 
-func load_metadata(path: String, callback: Callable) -> void:
+## 加载元数据
+func load_metadata(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
-		callback.call(false, {})
-		return
-		
+		return {}
+        
 	var resource = ResourceLoader.load(path)
-	if resource and resource.has_meta("metadata"):
-		var metadata = resource.get_meta("metadata")
-		callback.call(true, metadata)
-	else:
-		callback.call(false, {})
+	return resource.metadata if resource else {}

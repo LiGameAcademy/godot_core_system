@@ -1,13 +1,15 @@
 extends RefCounted
-class_name AsyncIOManager
+
+const SerializationStrategy = preload("./io_strategies/serialization/serialization_strategy.gd")
+const JSONSerializationStrategy = preload("./io_strategies/serialization/json_serialization_strategy.gd")
 
 const CompressionStrategy = preload("./io_strategies/compression/compression_strategy.gd")
-const EncryptionStrategy = preload("./io_strategies/encryption/encryption_strategy.gd")
-const SerializationStrategy = preload("./io_strategies/serialization/serialization_strategy.gd")
-
-const NoEncryptionStrategy = preload("./io_strategies/encryption/no_encryption_strategy.gd")
 const NoCompressionStrategy = preload("./io_strategies/compression/no_compression_strategy.gd")
-const JSONSerializationStrategy = preload("./io_strategies/serialization/json_serialization_strategy.gd")
+const GzipCompressionStrategy = preload("./io_strategies/compression/gzip_compression_strategy.gd")
+
+const EncryptionStrategy = preload("./io_strategies/encryption/encryption_strategy.gd")
+const NoEncryptionStrategy = preload("./io_strategies/encryption/no_encryption_strategy.gd")
+const XOREncryptionStrategy = preload("./io_strategies/encryption/xor_encryption_strategy.gd")
 
 const SingleThread = CoreSystem.SingleThread
 
