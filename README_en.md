@@ -78,7 +78,6 @@ Detailed documentation for each system:
 | System               | Description                           | Documentation                             |
 | -------------------- | ------------------------------------- | ----------------------------------------- |
 | State Machine System | Game state management and transitions | [View Docs](docs/systems/state_machine_system.md) |
-| Serialization System | Game save and config management       | [View Docs](docs/systems/serialization_system.md) |
 | Audio System         | Sound and music management            | [View Docs](docs/systems/audio_system.md)         |
 | Input System         | Input control and event handling      | [View Docs](docs/systems/input_system.md)         |
 | Logger System        | Logging and debugging                 | [View Docs](docs/systems/logger_system.md)        |
