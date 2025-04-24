@@ -287,24 +287,6 @@ const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
 		"basic": true,
 		"default": "binary_variant",
 	},
-	"save_system/defaults/compression_format":
-	{
-		"name": SETTING_SAVE_SYSTEM_DEFAULTS + "compression_format",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"basic": true,
-		"default": "gzip",
-	},
-	"save_system/defaults/encryption_format":
-	{
-		"name": SETTING_SAVE_SYSTEM_DEFAULTS + "encryption_format",
-		"type": TYPE_STRING,
-		"hint": PROPERTY_HINT_NONE,
-		"hint_string": "",
-		"basic": true,
-		"default": "none",
-	},
 }
 
 ## 设置路径和字典名称里只要填对一个就能得到参数的傻瓜方法

@@ -68,8 +68,9 @@ func _ready() -> void:
 	# 连接资源加载完成信号
 	if not _resource_manager.resource_loaded.is_connected(_on_resource_loaded):
 		_resource_manager.resource_loaded.connect(_on_resource_loaded)
-	# 初始化默认转场遮罩
-	_setup_transition_layer()
+	if not _transition_rect:
+		# 初始化默认转场遮罩
+		_setup_transition_layer()
 	# 初始化默认转场效果
 	_setup_default_transitions()
 
@@ -208,6 +209,8 @@ func register_transition(effect: TransitionEffect, transition: BaseTransition, c
 		_custom_transitions[custom_name] = transition
 	else:
 		_transitions[effect] = transition
+	if not _transition_rect:
+		_setup_transition_layer()
 	transition.init(_transition_rect)
 
 ## 开始转场效果

@@ -103,7 +103,7 @@ func set_save_format(format: StringName) -> void:
 	_set_save_format(format)
 
 # 创建存档
-func create_save(save_id: String = "") -> String:
+func create_save(save_id: String = "") -> bool:
 	var actual_id = _generate_save_id() if save_id.is_empty() else save_id
 	
 	# 收集数据
@@ -124,27 +124,27 @@ func create_save(save_id: String = "") -> String:
 	if success:
 		_current_save_id = actual_id
 		save_created.emit(actual_id, save_data.metadata)
-
-	return actual_id
+		return true
+	return false
 
 # 加载存档
-func load_save(save_id: String) -> void:
+func load_save(save_id: String) -> bool:
 	if save_id.is_empty():
-		return
+		return false
 	
 	var save_path = _get_save_path(save_id)
 	
-	var result = await _save_strategy.load(save_path)
+	var result = await _save_strategy.load_save(save_path)
 	if not result.is_empty():
 		_current_save_id = save_id
 		if result.has("nodes"):
 			_apply_node_states(result.nodes)
 		save_loaded.emit(save_id, result.metadata)
-	else:
-		_logger.error("加载存档失败！")
+		return true
+	return false
 
 # 删除存档
-func delete_save(save_id: String) -> void:
+func delete_save(save_id: String) -> bool:
 	var save_path = _get_save_path(save_id)
 	var success = _save_strategy.delete_file(save_path)
 
@@ -152,8 +152,9 @@ func delete_save(save_id: String) -> void:
 		if _current_save_id == save_id:
 			_current_save_id = ""
 		save_deleted.emit(save_id)
-	else:
-		_logger.error("删除存档失败：%s" % save_path)
+		return true
+	_logger.error("删除存档失败：%s" % save_path)
+	return false
 
 # 创建自动存档
 func create_auto_save() -> String:
@@ -178,7 +179,7 @@ func get_save_list() -> Array[Dictionary]:
 		var metadata = await _save_strategy.load_metadata(save_path)
 		if not metadata.is_empty():
 			saves.append({
-				"id": save_id,
+				"save_id": save_id,
 				"metadata": metadata
 			})
 	
@@ -243,7 +244,7 @@ func _generate_save_id() -> String:
 
 # 收集Node状态
 func _collect_node_states() -> Array[Dictionary]:
-	var nodes = []
+	var nodes : Array[Dictionary] = []
 	var saveables = get_tree().get_nodes_in_group(save_group)
 	for saveable in saveables:
 		if saveable.has_method("save"):

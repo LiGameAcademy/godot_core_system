@@ -42,7 +42,7 @@ func _init(p_serializer = null, p_compressor = null, p_encryptor = null) -> void
 
 ## Clean up resources when the object is about to be deleted.
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
 		_shutdown()
 
 #region Strategy Setters
@@ -146,6 +146,25 @@ func delete_file_async(path: String) -> String:
 	# 存储映射
 	_task_id_map[internal_task_id] = public_task_id
 	return public_task_id
+
+## Asynchronously lists files in a directory (no strategies involved).
+## [param path] The directory path.
+## [return] A unique task ID string.
+func list_files_async(path: String) -> String:
+	var public_task_id := _generate_task_id()
+
+	# Create the list task callable
+	var list_task := func() -> Dictionary:
+		var files = _get_file_list(path)
+		# Check if _get_file_list indicates error (e.g., returns null)
+		var success = files != null
+		return { "success": success, "result": files if success else [] }
+
+	# Submit the task to the IO thread
+	var internal_task_id = _io_thread.add_task(list_task)
+	# 存储映射
+	_task_id_map[internal_task_id] = public_task_id
+	return public_task_id
 #endregion
 
 #region Internal File Operations (Executed in IO Thread)
@@ -213,6 +232,26 @@ func _execute_delete_operation(path: String) -> bool:
 		return false
 	
 	return true
+
+## Gets the file list in the background thread.
+func _get_file_list(directory_path: String) -> Array:
+	var files := []
+	var dir := DirAccess.open(directory_path)
+
+	if not dir:
+		_logger.error("AsyncIO: Cannot access directory: %s" % directory_path)
+		return []
+
+	dir.list_dir_begin()
+	var file_name := dir.get_next()
+	while not file_name.is_empty():
+		if file_name != "." and file_name != "..": # Skip . and ..
+			# Consider adding option to include directories or get full paths
+			if not dir.current_is_dir():
+				files.append(file_name)
+		file_name = dir.get_next()
+	dir.list_dir_end()
+	return files
 #endregion
 
 #region Internal Data Processing (Uses Strategies)

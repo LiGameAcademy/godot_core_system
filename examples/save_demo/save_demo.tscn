@@ -1,8 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://fa8kbn7t2exb"]
+[gd_scene load_steps=3 format=3 uid="uid://fa8kbn7t2exb"]
 
 [ext_resource type="Script" uid="uid://d2i3gjmx5dc4d" path="res://addons/godot_core_system/examples/save_demo/save_demo.gd" id="1_ysvbt"]
 [ext_resource type="Script" uid="uid://tp7fgwa0ysst" path="res://addons/godot_core_system/examples/save_demo/player.gd" id="2_masrl"]
-[ext_resource type="Script" uid="uid://blo7p7y0s6611" path="res://addons/godot_core_system/source/serialization/save_system/serializable_component.gd" id="3_5wtt6"]
 
 [node name="SaveDemo" type="Node2D"]
 script = ExtResource("1_ysvbt")
@@ -10,14 +9,14 @@ script = ExtResource("1_ysvbt")
 [node name="Player" type="Node" parent="."]
 script = ExtResource("2_masrl")
 
-[node name="SerializableComponent" type="Node" parent="Player"]
-script = ExtResource("3_5wtt6")
-
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="MarginContainer2" type="MarginContainer" parent="UI"]
-offset_right = 600.0
-offset_bottom = 391.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2"]
 layout_mode = 2
@@ -126,8 +125,6 @@ text = "加载存档"
 layout_mode = 2
 text = "删除存档"
 
-[connection signal="deserialized" from="Player/SerializableComponent" to="." method="_on_serializable_component_deserialized"]
-[connection signal="serialized" from="Player/SerializableComponent" to="." method="_on_serializable_component_serialized"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/CreateButton" to="." method="_on_create_button_pressed"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/LoadButton" to="." method="_on_load_button_pressed"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/DeleteButton" to="." method="_on_delete_button_pressed"]
