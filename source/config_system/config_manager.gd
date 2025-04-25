@@ -124,7 +124,7 @@ func set_value(section: String, key: String, value: Variant) -> void:
 
 	if _modified:
 		_config_file.set_value(section, key, value)
-		CoreSystem.logger.debug("Config value set: [%s] %s = %s" % [section, key, str(value)])
+		_logger.debug("Config value set: [%s] %s = %s" % [section, key, str(value)])
 		if auto_save:
 			save_config()
 
