@@ -155,39 +155,20 @@ func get_section(section: String) -> Dictionary:
 	return result.duplicate() # 返回副本
 
 ## 设置整个配置段 (替换模式)
-## 注意：此方法会先删除指定段落中所有现有的键，然后添加新字典中的所有键值。
+## 注意：此方法不会删除指定段落中所有现有的键，只是会覆盖
 ## [param section] 要设置的配置段名称
 ## [param value] 包含新键值对的字典
 func set_section(section: String, value: Dictionary) -> void:
 	var changed = false
 
-	# 1. 删除段落中所有现有的键
-	if _config_file.has_section(section):
-		var existing_keys = _config_file.get_section_keys(section)
-		if not existing_keys.is_empty():
-			changed = true # 标记为更改，因为我们要删除
-			for key in existing_keys:
-				_config_file.erase_section_key(section, key)
-				# 注意: erase_section_key 在 ConfigFile 中似乎不存在
-				# ConfigFile API 的限制使得完美实现 "erase section" 很困难
-				# 替代方案：我们可以不删除，只覆盖。但这不符合"设置整个段"的替换语义。
-				#
-				# **重要更新：** 查阅文档后，ConfigFile 确实没有 erase_section_key 或 erase_section。
-				# 最接近的方法是重新加载一个空的 ConfigFile 或者手动比较。
-				# 为了简单起见，我们将采用"覆盖或添加"的策略，并更新注释说明其行为。
-				# 如果需要严格的"替换"，ConfigManager 需要更复杂的逻辑或完全不同的存储方式。
-
-	# --- 更新后的实现：采用"覆盖或添加"策略 ---
-	# (移除上面的删除逻辑)
-
-	# 2. 遍历新字典，设置或覆盖值
+	# 1. 遍历新字典，设置或覆盖值
 	for key in value:
 		var current_value = _config_file.get_value(section, key, null) # 获取当前文件中的值
 		if current_value != value[key]: # 仅在值确实改变时设置
 			_config_file.set_value(section, key, value[key])
 			changed = true
 
-	# 3. 如果有任何值被修改或添加
+	# 2. 如果有任何值被修改或添加
 	if changed:
 		_modified = true
 		CoreSystem.logger.debug("Config section updated/set: [%s]" % section)
