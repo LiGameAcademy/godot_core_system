@@ -1,7 +1,8 @@
 extends "./async_io_strategy.gd"
 
 func _init() -> void:
-	_io_manager = CoreSystem.AsyncIOManager.new(CoreSystem.AsyncIOManager.JSONSerializationStrategy.new())
+	_io_manager = CoreSystem.AsyncIOManager.new(
+		CoreSystem.AsyncIOManager.JSONSerializationStrategy.new())
 
 ## 是否为有效的存档文件
 func is_valid_save_file(file_name: String) -> bool:
@@ -14,4 +15,3 @@ func get_save_id_from_file(file_name: String) -> String:
 ## 获取存档路径
 func get_save_path(directory: String, save_id: String) -> String:
 	return directory.path_join("%s.json" % save_id)
-

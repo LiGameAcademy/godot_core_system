@@ -23,7 +23,6 @@ func load_save(path: String) -> Dictionary:
 	var result = await _io_manager.io_completed
 	if result[0] == task_id and result[1]:
 		return _process_data_for_load(result[2])
-	
 	return {}
 
 ## 加载元数据
