@@ -5,30 +5,9 @@
 本文档格式基于[Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 并且本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
-## [未发布]
+详细的更新历史记录已迁移至 [changelogs](./changelogs/) 目录下的单独文件。
 
-### 新增
+## 主要版本
 
-- 新增 `FrameSplitter` 工具类，用于将耗时操作分散到多帧执行，避免卡顿
-  - 支持数组、范围、迭代器和自定义处理模式
-  - 提供进度反馈和完成信号
-  - 动态调整每帧处理量
-  - 详细的使用文档和示例
-
-### 变更
-
-- 重构 `InputManager` 输入系统
-  - 添加输入缓冲系统，提升游戏手感
-  - 集成 `ConfigManager` 进行输入配置管理
-  - 添加输入重映射功能和事件通知
-  - 优化虚拟轴和动作处理
-  - 添加输入系统配置管理
-  - 网络输入系统改进
-
-### 废弃
-
-### 移除
-
-### 修复
-
-### 安全
+- **[待发布]** - 查看 [unreleased.md](./changelogs/unreleased.md)
+- **[0.0.2]** - 查看 [v0.0.2.md](./changelogs/v0.0.2.md)
