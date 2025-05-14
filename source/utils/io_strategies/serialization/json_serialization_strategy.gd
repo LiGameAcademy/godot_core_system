@@ -1,7 +1,7 @@
 extends "./serialization_strategy.gd"
 
 func serialize(data: Variant) -> PackedByteArray:
-	var json_str := JSON.stringify(data)
+	var json_str := JSON.stringify(data, "\t", false)
 	if json_str.is_empty() and data != null:
 		CoreSystem.logger.error("Failed to serialize data to JSON: %s" % str(data))
 	return json_str.to_utf8_buffer()
@@ -14,8 +14,8 @@ func deserialize(bytes: PackedByteArray) -> Variant:
 		return null
 	if json_str.is_empty() and bytes.size() == 0:
 		# Handle empty input gracefully (e.g., return empty dict or null)
-		return null 
-	
+		return null
+
 	var json := JSON.new()
 	var error := json.parse(json_str)
 	if error == OK:
