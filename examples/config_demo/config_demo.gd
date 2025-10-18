@@ -17,7 +17,7 @@ var demo_defaults := {
 }
 
 var _config_manager : CoreSystem.ConfigManager = CoreSystem.config_manager
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _ready():
 	# 1. 连接信号 (可选，但对于UI反馈有用)

@@ -75,7 +75,7 @@ var _strategies := {
 	"binary": BinarySaveStrategy.new(),
 	"json": JSONSaveStrategy.new(),
 }
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _init() -> void:
 	# 设置默认序列化策略

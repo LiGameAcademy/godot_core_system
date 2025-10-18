@@ -11,7 +11,7 @@ const SaveManager = CoreSystem.SaveManager
 @onready var label: Label = %Label
 
 @onready var _save_manager : CoreSystem.SaveManager = CoreSystem.save_manager
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _ready():
 	# 连接信号

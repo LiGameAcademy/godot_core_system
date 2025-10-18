@@ -30,7 +30,7 @@ var _serializer: SerializationStrategy
 var _compressor: CompressionStrategy
 var _encryptor: EncryptionStrategy
 
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _init(p_serializer = null, p_compressor = null, p_encryptor = null) -> void:
 	set_serialization_strategy(p_serializer if p_serializer else JSONSerializationStrategy.new())

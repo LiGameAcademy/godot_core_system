@@ -3,7 +3,7 @@ extends "./encryption_strategy.gd"
 ## Simple XOR encryption/decryption.
 ## NOTE: This is NOT cryptographically secure and is for demonstration/basic obfuscation only.
 
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func encrypt(bytes: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
 	if key.is_empty():
