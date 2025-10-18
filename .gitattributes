@@ -1,0 +1,23 @@
+# 核心设置：由 Git 自动判断是否为文本文件，并进行换行符处理
+* text=auto
+
+# 明确指定某些类型的文件为文本文件，并强制在存储库中使用 LF 换行符
+*.c text eol=lf
+*.h text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.md text eol=lf
+*.gd text eol=lf
+*.tscn text eol=lf
+*.tres text eol=lf
+
+# 对于必须在 Windows 环境下使用 CRLF 的文件（如批处理文件）
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 明确标记二进制文件，防止 Git 对其进行换行符等修改
+*.png binary
+*.jpg binary
+*.zip binary
+
+# 重新规范化命令：git add --renormalize .
