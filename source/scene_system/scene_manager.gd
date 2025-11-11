@@ -55,7 +55,7 @@ var _resource_manager : CoreSystem.ResourceManager:
 	get:
 		return CoreSystem.resource_manager
 ## 日志管理器
-var _logger : CoreSystem.Logger:
+var _logger : CoreSystem.CoreLogger:
 	get:
 		return CoreSystem.logger
 

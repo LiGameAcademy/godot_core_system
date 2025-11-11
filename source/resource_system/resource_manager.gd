@@ -27,7 +27,7 @@ var _lazy_load_time: float = 0.0
 ## 待加载资源数量
 var _loading_count: int = 0
 
-var _logger: CoreSystem.Logger:
+var _logger: CoreSystem.CoreLogger:
 	get:
 		return CoreSystem.logger
 

@@ -29,7 +29,7 @@ const SETTING_AUTO_SAVE: String = SETTING_CONFIG_SYSTEM + "auto_save"
 var _config_file : ConfigFile = ConfigFile.new()
 var _modified : bool = false
 
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _init() -> void:
 	# 加载配置

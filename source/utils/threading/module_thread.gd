@@ -15,7 +15,7 @@ signal all_tasks_finished_on_thread(thread_name: StringName)
 # --- 私有变量 ---
 var _threads: Dictionary = {}     # 存储: { StringName: SingleThread }
 var _mutex := Mutex.new()        # 保护 _threads 字典的访问
-var _logger : CoreSystem.Logger = CoreSystem.logger # 假设 Logger 可用
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger # 假设 CoreLogger 可用
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:

@@ -2,7 +2,7 @@ extends Node
 
 const RandomPicker = CoreSystem.RandomPicker
 
-var _logger: CoreSystem.Logger = CoreSystem.logger
+var _logger: CoreSystem.CoreLogger = CoreSystem.logger
 var _picker : RandomPicker
 
 func _ready() -> void:

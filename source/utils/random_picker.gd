@@ -2,7 +2,7 @@ extends RefCounted
 
 var _remove_after_pick: bool
 var _item_pool: Array[Dictionary]
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 var _alias: Array[int] = []
 var _prob: Array[float] = []

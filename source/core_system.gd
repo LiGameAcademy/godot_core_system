@@ -6,7 +6,7 @@ extends Node
 const AudioManager = preload("./audio_system/audio_manager.gd")
 const EventBus = preload("./event_system/event_bus.gd")
 const InputManager = preload("./input_system/input_manager.gd")
-const Logger = preload("./logger/logger.gd")
+const CoreLogger = preload("./logger/core_logger.gd")
 const ResourceManager = preload("./resource_system/resource_manager.gd")
 const SceneManager = preload("./scene_system/scene_manager.gd")
 const TimeManager = preload("./time_system/time_manager.gd")
@@ -23,7 +23,7 @@ const ModuleThread = preload("./utils/threading/module_thread.gd")
 const RandomPicker = preload("./utils/random_picker.gd")
 const AsyncIOManager = preload("./utils/async_io_manager.gd")
 
-@onready var logger : Logger = _get_module("logger"):								## 日志管理器
+@onready var logger : CoreLogger = _get_module("logger"):								## 日志管理器
 	get:
 		if not logger:
 			logger = _get_module("logger")
@@ -95,7 +95,7 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"audio_manager": AudioManager,
 	"event_bus": EventBus,
 	"input_manager": InputManager,
-	"logger": Logger,
+	"logger": CoreLogger,
 	"resource_manager": ResourceManager,
 	"scene_manager": SceneManager,
 	"time_manager": TimeManager,
