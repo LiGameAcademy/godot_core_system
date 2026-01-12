@@ -26,9 +26,9 @@ var _task_id_map: Dictionary = {} # 映射: { int_id_from_thread: string_id_for_
 var _io_thread: SingleThread # 假设 SingleThread 已被正确 Preload
 
 # Strategy Instances
-var _serializer: SerializationStrategy
-var _compressor: CompressionStrategy
-var _encryptor: EncryptionStrategy
+var _serializer: SerializationStrategy				## 序列化策略
+var _compressor: CompressionStrategy				## 压缩策略
+var _encryptor: EncryptionStrategy					## 加密策略
 
 var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
@@ -99,7 +99,7 @@ func read_file_async(path: String, encryption_key: String = "") -> String:
 	var key_bytes := encryption_key.to_utf8_buffer()
 
 	# Create the read task callable
-	var read_task := func() -> Dictionary:
+	var read_task : Callable = func() -> Dictionary:
 		var result_data = _execute_read_operation(path, key_bytes)
 		return { "success": result_data != null, "result": result_data }
 

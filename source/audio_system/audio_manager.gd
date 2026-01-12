@@ -7,7 +7,20 @@ enum AudioType {
 	VOICE,				## 语音
 	AMBIENT,			## 环境音
 }
+# 配置键名常量 (推荐)
+const MASTER_VOLUME_KEY = "master_volume"
+const MUSIC_VOLUME_KEY = "music_volume"
+const SFX_VOLUME_KEY = "sfx_volume"
+const VOICE_VOLUME_KEY = "voice_volume"
+const AMBIENT_VOLUME_KEY = "ambient_volume"
 
+# 将类型映射到配置键 (可选，但有助于一致性)
+const TYPE_TO_CONFIG_KEY = {
+	AudioType.MUSIC: MUSIC_VOLUME_KEY,
+	AudioType.SOUND_EFFECT: SFX_VOLUME_KEY,
+	AudioType.VOICE: VOICE_VOLUME_KEY,
+	AudioType.AMBIENT: AMBIENT_VOLUME_KEY,
+}
 ## 音频通道配置
 const DEFAULT_BUSES = {
 	AudioType.MUSIC: "Music",			## 背景音乐通道
@@ -27,14 +40,27 @@ var _current_music: AudioStreamPlayer = null
 var _audio_cache: Dictionary = {}
 ## 音量设置
 var _volumes: Dictionary = {}
+## 主音量设置
+var _master_volume: float = 1.0
+
+var _config_manager : CoreSystem.ConfigManager = CoreSystem.config_manager
+var _logger : CoreSystem.Logger = CoreSystem.logger
 
 func _ready() -> void:
 	# 设置默认值
 	audio_node_root = self
 	_setup_audio_buses()
 	
+	# 从配置加载主音量 (使用统一定义的 Key)
+	_master_volume = _config_manager.get_value("audio", MASTER_VOLUME_KEY, 1.0)
+	set_master_volume(_master_volume) # 应用加载的值 (仅应用到AudioServer和内部变量)
+
+	# 从配置加载分类音量 (使用统一定义的 Key)
 	for type in AudioType.values():
-		_volumes[type] = 1.0
+		var config_key = TYPE_TO_CONFIG_KEY.get(type)
+		if config_key:
+			_volumes[type] = _config_manager.get_value("audio", config_key, 1.0)
+			set_volume(type, _volumes[type]) # 应用加载的值 (仅应用到AudioServer和内部变量)
 		_audio_players[type] = []
 
 ## 预加载音频资源
@@ -109,14 +135,41 @@ func play_voice(path: String, volume: float = 1.0) -> AudioStreamPlayer:
 		return player
 	return null
 
+## 设置主音量
+## [param volume] 音量
+func set_master_volume(volume: float) -> bool:
+	var bus_name : String = "Master"
+	_master_volume = clamp(volume, 0.0, 1.0)
+	var bus_index = AudioServer.get_bus_index(bus_name)
+	if bus_index != -1:
+		AudioServer.set_bus_volume_db(bus_index, linear_to_db(_master_volume))
+		return true
+	_logger.error("AudioManager: 未找到名为 '%s' 的主音频总线!" % bus_name)
+	return false
+
 ## 设置音量
 ## [param type] 音频类型
 ## [param volume] 音量
-func set_volume(type: AudioType, volume: float) -> void:
+func set_volume(type: AudioType, volume: float) -> bool:
 	_volumes[type] = clamp(volume, 0.0, 1.0)
-	var bus_idx = AudioServer.get_bus_index(DEFAULT_BUSES[type])
+	var bus_name : String = DEFAULT_BUSES[type]
+	var bus_idx = AudioServer.get_bus_index(bus_name)
 	if bus_idx != -1:
 		AudioServer.set_bus_volume_db(bus_idx, linear_to_db(_volumes[type]))
+		return true
+	_logger.error("AudioManager: 未找到名为 '%s' 的音频总线!" % bus_name)
+	return false
+
+## 获取音量
+## [param type] 音频类型
+## [return] 音量
+func get_volume(type: AudioType) -> float:
+	return _volumes[type]
+
+## 获取主音量
+## [return] 主音量
+func get_master_volume() -> float:
+	return _master_volume
 
 ## 停止所有音频
 func stop_all() -> void:
@@ -126,6 +179,16 @@ func stop_all() -> void:
 	for type in _audio_players:
 		for player in _audio_players[type]:
 			player.stop()
+
+## 根据总线名称获取音频类型
+## [param bus_name] 音频总线名称 (例如 "Music", "SFX")
+## [return] AudioType 枚举值，如果找不到则返回 null
+func get_audio_type_from_bus_name(bus_name: String) -> AudioType:
+	for type in DEFAULT_BUSES:
+		if DEFAULT_BUSES[type] == bus_name:
+			return type
+	_logger.error("AudioManager: 未找到名为 '%s' 的音频总线!" % bus_name)
+	return AudioType.SOUND_EFFECT
 
 ## 获取音频资源
 ## [param path] 音频路径
