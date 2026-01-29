@@ -23,6 +23,8 @@ const ModuleThread = preload("./utils/threading/module_thread.gd")
 const RandomPicker = preload("./utils/random_picker.gd")
 const AsyncIOManager = preload("./utils/async_io_manager.gd")
 
+const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
+
 @onready var logger : CoreLogger = _get_module("logger"):								## 日志管理器
 	get:
 		if not logger:

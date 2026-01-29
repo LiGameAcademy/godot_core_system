@@ -93,7 +93,7 @@ func _on_buff_acquired(buff_name: String):
 全局标签管理器，负责标签的注册和管理。
 
 - `register_tag(tag_name: String) -> void`: 注册新标签
-- `get_tag(tag_name: String) -> GameplayTag`: 获取标签对象
+- `get_tag(tag_name: String) -> CoreGameplayTag`: 获取标签对象
 - `has_tag(tag_name: String) -> bool`: 检查标签是否已注册
 
 ### GameplayTagContainer
@@ -106,16 +106,16 @@ func _on_buff_acquired(buff_name: String):
 - `has_all_tags(required_tags: Array, exact: bool = true) -> bool`: 检查是否有所有指定标签
 - `has_any_tags(required_tags: Array, exact: bool = true) -> bool`: 检查是否有任意指定标签
 - `get_tags() -> Array`: 获取所有标签名称
-- `get_all_tags() -> Array[GameplayTag]`: 获取所有标签对象（包括子标签）
+- `get_all_tags() -> Array[CoreGameplayTag]`: 获取所有标签对象（包括子标签）
 
-### GameplayTag
+### CoreGameplayTag
 
-标签对象，表示单个标签。
+标签对象，表示单个标签（核心系统的运行时对象）。
 
 - `name: StringName`: 标签名称
-- `parent: GameplayTag`: 父标签
-- `children: Array[GameplayTag]`: 子标签列表
-- `matches(other: GameplayTag, exact: bool) -> bool`: 检查是否匹配另一个标签
+- `parent: CoreGameplayTag`: 父标签
+- `children: Array[CoreGameplayTag]`: 子标签列表
+- `matches(other: CoreGameplayTag, exact: bool) -> bool`: 检查是否匹配另一个标签
 
 ## 最佳实践
 
