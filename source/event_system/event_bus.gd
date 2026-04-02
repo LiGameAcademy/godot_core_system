@@ -151,6 +151,31 @@ func subscribe(
 	if debug_mode:
 		print("[EventBus] Subscribed to event: %s with priority: %s" % [event_name, priority])
 
+
+## 与 [method subscribe] 相同，但在订阅前会移除 [b]同一 [Script][/b] 上其它实例的同类连接（#48）。
+## 适用于多次实例化同一脚本类、只希望保留「最后一次」订阅回调的场景；若需多实例各收一次事件，请用 [method subscribe]。
+func subscribe_unique_script(
+		event_name: String,
+		callback: Callable,
+		priority: Priority = Priority.NORMAL,
+		once: bool = false,
+		filter: Callable = func(_p): return true
+	) -> void:
+	var obj: Object = callback.get_object()
+	if obj:
+		var scr: Variant = obj.get_script()
+		if scr:
+			if not has_signal(event_name):
+				add_user_signal(event_name)
+			var to_drop: Array = []
+			for conn in get_signal_connection_list(event_name):
+				var o: Object = conn["callable"].get_object()
+				if o and o.get_script() == scr:
+					to_drop.append(conn["callable"])
+			for c in to_drop:
+				unsubscribe(event_name, c)
+	subscribe(event_name, callback, priority, once, filter)
+
 ## 取消订阅事件
 ## [param event_name] 事件名
 ## [param callback] 回调函数
