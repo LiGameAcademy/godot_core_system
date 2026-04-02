@@ -50,7 +50,8 @@ func register_state_machine(
 	
 	_state_machines[id] = state_machine
 	state_machine.agent = agent
-	state_machine.ready()
+	# 避免与 Node.ready（信号）同名解析冲突，显式按方法名调用 BaseState.ready()
+	state_machine.call("ready")
 	if not initial_state.is_empty():
 		start_state_machine(id, initial_state, msg)
 	state_machine_registered.emit(id)
@@ -70,7 +71,7 @@ func unregister_state_machine(id: StringName) -> void:
 ## 获取状态机
 ## [param id] 状态机ID
 func get_state_machine(id: StringName) -> BaseStateMachine:
-	return _state_machines.get(id)
+	return _state_machines.get(id) as BaseStateMachine
 
 ## 启动状态机
 ## [param id] 状态机ID
@@ -114,23 +115,38 @@ func get_all_state_machine_ids() -> Array[StringName]:
 
 ## 清除所有状态机
 func clear_state_machines() -> void:
-	for id in _state_machines.keys():
+	var ids: Array[StringName] = []
+	ids.assign(_state_machines.keys())
+	for id in ids:
 		unregister_state_machine(id)
 
-func _get_current_state_linked_tree() -> Array[BaseState]:
-	var current_state_linked_tree:  Array[BaseState] = []
-	for each in self.get_all_state_machines():
+func _get_current_state_linked_tree(root_id: StringName = &"") -> Array[BaseState]:
+	var current_state_linked_tree: Array[BaseState] = []
+	var machines: Array[BaseStateMachine] = []
+	if root_id.is_empty():
+		machines.assign(get_all_state_machines())
+	else:
+		var sm := get_state_machine(root_id)
+		if sm:
+			machines.append(sm)
+	for each in machines:
 		if each.is_active:
 			_recursive_get_active_state_id(each, current_state_linked_tree)
 	return current_state_linked_tree
 
-func _recursive_get_active_state_id(state_machine: BaseStateMachine, state_linked_tree: Array[BaseState]):
-	if state_machine.is_active:
-		state_linked_tree.append(state_machine)
-		if state_machine.current_state is BaseStateMachine:
-			return _recursive_get_active_state_id(state_machine.current_state, state_linked_tree)
-		else:
-			state_linked_tree.append(state_machine.current_state)
+func _recursive_get_active_state_id(state_machine: BaseStateMachine, state_linked_tree: Array[BaseState]) -> void:
+	if not state_machine.is_active:
+		return
+	state_linked_tree.append(state_machine)
+	# current_state 静态类型为 BaseState，嵌套子状态机需用 Variant 才能通过 is 收窄
+	var cur: Variant = state_machine.current_state
+	if cur == null:
+		return
+	if cur is BaseStateMachine:
+		_recursive_get_active_state_id(cur, state_linked_tree)
+	else:
+		state_linked_tree.append(cur as BaseState)
+
 func is_active(state_id: StringName) -> bool:
 	# 判断正处于指定状态机/状态
 	for each in _get_current_state_linked_tree():
@@ -138,11 +154,10 @@ func is_active(state_id: StringName) -> bool:
 			return true
 	return false
 
-func get_current_state() -> BaseState:
-	# 获取当前状态
-	var current_state_linked_tree = _get_current_state_linked_tree()
-	if current_state_linked_tree:
-		return current_state_linked_tree[-1]
-	else:
-		return null 
-		
+## 获取「叶子」当前状态（嵌套状态机时取最内层）
+## [param root_id] 若指定，只遍历该 ID 对应的状态机链；否则合并所有已注册且活跃根状态机的链并取最后一项（多根时语义模糊，建议传 root_id）
+func get_current_state(root_id: StringName = &"") -> BaseState:
+	var current_state_linked_tree := _get_current_state_linked_tree(root_id)
+	if current_state_linked_tree.is_empty():
+		return null
+	return current_state_linked_tree[-1]
