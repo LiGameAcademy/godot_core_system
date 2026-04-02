@@ -20,7 +20,7 @@ var is_active: bool = false
 var _is_ready
 
 var is_debug: bool = false
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func ready() -> void:
 	if _is_ready: 

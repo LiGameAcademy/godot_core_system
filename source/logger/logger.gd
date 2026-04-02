@@ -1,6 +1,6 @@
 extends Node
 
-## 日志工具
+## 日志工具（与引擎内置 Logger 区分）
 
 ## 日志级别枚举
 enum LogLevel {

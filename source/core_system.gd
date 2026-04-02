@@ -4,7 +4,8 @@ extends Node
 const AudioManager = preload("res://addons/godot_core_system/source/audio_system/audio_manager.gd")
 const EventBus = preload("res://addons/godot_core_system/source/event_system/event_bus.gd")
 const InputManager = preload("res://addons/godot_core_system/source/input_system/input_manager.gd")
-const Logger = preload("res://addons/godot_core_system/source/logger/logger.gd")
+## 日志模块脚本（避免使用名 Logger，与引擎内置 Logger 冲突）
+const CoreLogger = preload("res://addons/godot_core_system/source/logger/logger.gd")
 const ResourceManager = preload("res://addons/godot_core_system/source/resource_system/resource_manager.gd")
 const SceneManager = preload("res://addons/godot_core_system/source/scene_system/scene_manager.gd")
 const TimeManager = preload("res://addons/godot_core_system/source/time_system/time_manager.gd")
@@ -38,12 +39,12 @@ var input_manager : InputManager:
 		return _get_module("input_manager")
 	set(value):
 		push_error("input_manager is read-only")
-## Logger
-var logger : Logger:
+## 日志（实现类 class_name 为 CoreLogger；属性名不用 logger，避免与引擎内置 Logger 混淆）
+var logger : CoreLogger:
 	get:
-		return _get_module("logger")
+		return _get_module("logger") as CoreLogger
 	set(value):
-		push_error("logger is read-only")
+		push_error("core_logger is read-only")
 ## 资源管理器
 var resource_manager : ResourceManager:
 	get:
@@ -111,7 +112,7 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"audio_manager": AudioManager,
 	"event_bus": EventBus,
 	"input_manager": InputManager,
-	"logger": Logger,
+	"logger": CoreLogger,
 	"resource_manager": ResourceManager,
 	"scene_manager": SceneManager,
 	"time_manager": TimeManager,
@@ -155,6 +156,6 @@ func _get_module(module_id: StringName) -> Node:
 			var module : Node = _create_module(module_id)
 			_modules[module_id] = module
 		else:
-			logger.warning("模块未启用：" + module_id)
+			push_warning("模块未启用：" + module_id)
 			return null
 	return _modules[module_id]
