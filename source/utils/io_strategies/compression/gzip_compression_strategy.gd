@@ -9,8 +9,6 @@ const DECOMPRESSION_BUFFER_MULTIPLIER = 10
 # 解压缩缓冲区最小大小 (防止估算为0)
 const MIN_DECOMPRESSION_BUFFER_SIZE = 1024
 
-
-
 ## 使用 Gzip 压缩字节数据
 func compress(bytes: PackedByteArray) -> PackedByteArray:
 	if bytes.is_empty():
