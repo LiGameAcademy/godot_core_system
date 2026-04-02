@@ -306,7 +306,11 @@ func _do_scene_switch(
 			"scene_path": old_scene.scene_file_path,
 			"data": old_scene.save_state() if old_scene.has_method("save_state") else {},
 		})
-		old_scene.get_parent().remove_child(old_scene)
+		var old_parent: Node = old_scene.get_parent()
+		if old_parent:
+			old_parent.remove_child(old_scene)
+		# push_to_stack 时父节点与当前场景树仍在同一帧内变更，延后一帧再往下走，避免无法移除/释放 (#44)
+		await get_tree().process_frame
 	else:
 		# 如果不需要保存状态，则直接销毁当前场景
 		if old_scene:
