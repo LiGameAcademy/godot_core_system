@@ -44,7 +44,7 @@ var _volumes: Dictionary = {}
 var _master_volume: float = 1.0
 
 var _config_manager : CoreSystem.ConfigManager = CoreSystem.config_manager
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _ready() -> void:
 	# 设置默认值

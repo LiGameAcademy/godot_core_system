@@ -4,11 +4,11 @@ extends Node
 
 # 系统类
 const AudioManager = preload("./audio_system/audio_manager.gd")
-const EventBus = preload("./event_system/event_bus.gd")
+const CoreEventBus = preload("./event_system/event_bus.gd")
 const InputManager = preload("./input_system/input_manager.gd")
 const CoreLogger = preload("./logger/core_logger.gd")
 const ResourceManager = preload("./resource_system/resource_manager.gd")
-const SceneManager = preload("./scene_system/scene_manager.gd")
+const CoreSceneManager = preload("./scene_system/scene_manager.gd")
 const TimeManager = preload("./time_system/time_manager.gd")
 const SaveManager = preload("./save_system/save_manager.gd")
 const ConfigManager = preload("./config_system/config_manager.gd")
@@ -40,7 +40,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not audio_manager:
 			audio_manager = _get_module("audio_manager")
 		return audio_manager
-@onready var event_bus : EventBus = _get_module("event_bus"):						## 事件总线
+@onready var event_bus : CoreEventBus = _get_module("event_bus"):						## 事件总线
 	get:
 		if not event_bus:
 			event_bus = _get_module("event_bus")
@@ -55,7 +55,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not config_manager:
 			config_manager = _get_module("config_manager")
 		return config_manager
-@onready var scene_manager : SceneManager = _get_module("scene_manager"):			## 场景管理器
+@onready var scene_manager : CoreSceneManager = _get_module("scene_manager"):			## 场景管理器
 	get:
 		if not scene_manager:
 			scene_manager = _get_module("scene_manager")
@@ -95,11 +95,11 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 var _modules: Dictionary[StringName, Node] = {}
 var _module_scripts: Dictionary[StringName, Script] = {
 	"audio_manager": AudioManager,
-	"event_bus": EventBus,
+	"event_bus": CoreEventBus,
 	"input_manager": InputManager,
 	"logger": CoreLogger,
 	"resource_manager": ResourceManager,
-	"scene_manager": SceneManager,
+	"scene_manager": CoreSceneManager,
 	"time_manager": TimeManager,
 	"save_manager": SaveManager,
 	"config_manager": ConfigManager,
