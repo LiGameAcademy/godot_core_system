@@ -179,14 +179,21 @@ class MyStateMachine extends BaseStateMachine:
 
 ### StateMachineManager
 
-Global manager for all state machines in your game:
+**Optional**: Central registry for multiple `BaseStateMachine` instances and unified driving of `update` / `physics_update` / `handle_input`. For a single state machine, you can call `state_machine.update(delta)` from the owner's `_process` without registering.
+
 - Central registration of state machines
-- Global state machine updates
-- Debug information and monitoring
+- Global updates (per-registration flags can disable physics/input forwarding)
+- Debug information and monitoring (`is_active` / `get_current_state`; pass `root_id` when multiple roots)
 
 ```gdscript
-# Access the manager through CoreSystem
+# Default behavior matches older versions (all three drivers enabled)
 CoreSystem.state_machine_manager.register_state_machine("player", player_state_machine)
+
+# Only logic tick: disable physics and input forwarding from the manager
+CoreSystem.state_machine_manager.register_state_machine(
+    "flow", flow_state_machine, self, &"", {}, true, false, false
+)
+CoreSystem.state_machine_manager.set_registration_drive_flags("flow", true, false, false)
 ```
 
 ## Usage Example
@@ -209,9 +216,9 @@ class IdleState extends BaseState:
     
     func _handle_input(event: InputEvent) -> void:
         if event.is_action_pressed("move"):
-            switch_to("walk")
+            transition_to("walk")
         elif event.is_action_pressed("jump"):
-            switch_to("jump")
+            transition_to("jump")
 
 # Register with manager
 func _ready() -> void:
@@ -226,12 +233,19 @@ func _ready() -> void:
    - Use hierarchical state machines for complex behaviors
    - Consider using state factories for dynamic state creation
 
-2. **State Transitions**
+2. **State Transitions (hierarchical)**
+   - `BaseState.transition_to`: transition within the layer owned by `state_machine` (call on `state_machine` when you mean “my owner’s table”).
+   - `BaseStateMachine.transition_local`: transition **only** inside this machine’s `states` (prefer this name in nested state-machine scripts when you mean “inner only”).
+   - `BaseStateMachine.transition_to` is equivalent to `transition_local` on this class (leaf `transition_to` eventually reaches `transition_local`).
    - Use message passing for state communication
    - Validate state transitions
    - Handle cleanup in _exit()
 
-3. **Debugging**
+3. **Driving**
+   - When using `StateMachineManager`, turn off `run_physics` / `run_input` if unused to avoid per-frame overhead
+   - For a single machine, you may skip the manager and call `update` from the owner `_process`
+
+4. **Debugging**
    - Enable debug logging for state transitions
    - Use the built-in state monitoring tools
    - Add state validation checks
@@ -243,16 +257,18 @@ func _ready() -> void:
 - `exit()`: Exit the state
 - `update(delta: float)`: Update state logic
 - `handle_input(event: InputEvent)`: Process input
-- `switch_to(state_name: String, msg: Dictionary = {})`: Switch to another state
+- `transition_to(state_id: StringName, msg: Dictionary = {})`: Transition within the layer managed by `state_machine` (implemented via `BaseStateMachine.transition_local`)
 
 ### BaseStateMachine
 - `add_state(name: String, state: BaseState)`: Register a new state
 - `remove_state(name: String)`: Remove a registered state
 - `start(initial_state: String)`: Start the state machine
 - `stop()`: Stop the state machine
-- `switch_to(state_name: String, msg: Dictionary = {})`: Switch to a state
+- `transition_local(state_id: StringName, msg: Dictionary = {})`: Transition only within this machine’s `states` (explicit “inner only” API)
+- `transition_to(state_id: StringName, msg: Dictionary = {})`: Equivalent to `transition_local` on this class; leaf `transition_to` dispatches here
 
 ### StateMachineManager
-- `register_state_machine(name: String, state_machine: BaseStateMachine)`: Register a state machine
+- `register_state_machine(id, state_machine, agent = null, initial_state = &"", msg = {}, run_update = true, run_physics = true, run_input = true)`: Register; the three booleans control forwarding from `_process` / `_physics_process` / `_input` (defaults preserve legacy behavior)
+- `set_registration_drive_flags(id, run_update, run_physics, run_input)`: Change drive flags at runtime
 - `unregister_state_machine(name: String)`: Unregister a state machine
 - `get_state_machine(name: String) -> BaseStateMachine`: Get a registered state machine
