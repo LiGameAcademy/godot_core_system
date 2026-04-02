@@ -275,16 +275,21 @@ func _get_save_path(save_id: String) -> String:
 	return _save_strategy.get_save_path(Setting.get_setting_value("save_system/save_directory"), save_id)
 
 # 清理旧的自动存档
-func _clean_old_auto_saves() -> void:
+func _clean_old_auto_saves() -> bool:
 	var saves = await get_save_list()
 	var auto_saves = saves.filter(func(save):
 		var save_id = save.get("save_id")
 		return save_id.begins_with(auto_save_prefix)
 	)
-	
+
 	if auto_saves.size() > max_auto_saves:
 		for i in range(max_auto_saves, auto_saves.size()):
-			delete_save(auto_saves[i].id)
+			var sid: String = str(auto_saves[i].get("save_id", ""))
+			if sid.is_empty():
+				continue
+			if not delete_save(sid):
+				return false
+	return true
 
 # 生成时间戳
 func _get_timestamp() -> String:
