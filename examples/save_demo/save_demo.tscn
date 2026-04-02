@@ -1,130 +1,136 @@
-[gd_scene load_steps=3 format=3 uid="uid://fa8kbn7t2exb"]
+[gd_scene format=3 uid="uid://fa8kbn7t2exb"]
 
 [ext_resource type="Script" uid="uid://d2i3gjmx5dc4d" path="res://addons/godot_core_system/examples/save_demo/save_demo.gd" id="1_ysvbt"]
 [ext_resource type="Script" uid="uid://tp7fgwa0ysst" path="res://addons/godot_core_system/examples/save_demo/player.gd" id="2_masrl"]
 
-[node name="SaveDemo" type="Node2D"]
+[node name="SaveDemo" type="Node2D" unique_id=1533005688]
 script = ExtResource("1_ysvbt")
 
-[node name="Player" type="Node" parent="."]
+[node name="Player" type="Node" parent="." unique_id=620567871]
 script = ExtResource("2_masrl")
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=1546787145]
 
-[node name="MarginContainer2" type="MarginContainer" parent="UI"]
+[node name="MarginContainer2" type="MarginContainer" parent="UI" unique_id=504579867]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2" unique_id=1914170668]
 layout_mode = 2
 
-[node name="MarginContainer2" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer"]
+[node name="MarginContainer2" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer" unique_id=900656331]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Panel" type="Panel" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2"]
+[node name="Panel" type="Panel" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2" unique_id=1625993386]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2" unique_id=1974419569]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer"]
+[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer" unique_id=1122638712]
 layout_mode = 2
 text = "玩家数据"
 
-[node name="MarginContainer" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer" unique_id=1602854583]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer" unique_id=340721787]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer/HBoxContainer" unique_id=1380036704]
 layout_mode = 2
 text = "玩家名"
 
-[node name="LineEditName" type="LineEdit" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer/HBoxContainer"]
+[node name="LineEditName" type="LineEdit" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer/HBoxContainer" unique_id=509067945]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MarginContainer2" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer"]
+[node name="MarginContainer2" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer" unique_id=199787583]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer2"]
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer2" unique_id=238220107]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer2/HBoxContainer"]
+[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer2/HBoxContainer" unique_id=1012161955]
 layout_mode = 2
 text = "玩家等级"
 
-[node name="LineEditLevel" type="LineEdit" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer2/HBoxContainer"]
+[node name="LineEditLevel" type="LineEdit" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer2/HBoxContainer" unique_id=500354677]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MarginContainer3" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer"]
+[node name="MarginContainer3" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer" unique_id=1308842602]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer3"]
+[node name="HBoxContainer" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer3" unique_id=983429985]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer3/HBoxContainer"]
+[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer3/HBoxContainer" unique_id=1329527981]
 layout_mode = 2
 text = "玩家经验"
 
-[node name="LineEditExp" type="LineEdit" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer3/HBoxContainer"]
+[node name="LineEditExp" type="LineEdit" parent="UI/MarginContainer2/HBoxContainer/MarginContainer2/VBoxContainer/MarginContainer3/HBoxContainer" unique_id=457592307]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="UI/MarginContainer2/HBoxContainer" unique_id=287043243]
 layout_mode = 2
 
-[node name="Panel" type="Panel" parent="UI/MarginContainer2/HBoxContainer/MarginContainer"]
+[node name="Panel" type="Panel" parent="UI/MarginContainer2/HBoxContainer/MarginContainer" unique_id=1728515627]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer" unique_id=1923167221]
 layout_mode = 2
 
-[node name="StatusLabel" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer" unique_id=675470972]
 unique_name_in_owner = true
 layout_mode = 2
 horizontal_alignment = 1
 
-[node name="SaveList" type="ItemList" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="SaveList" type="ItemList" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer" unique_id=1491455217]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Buttons" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="Buttons" type="HBoxContainer" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer" unique_id=302047086]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 8
 alignment = 1
 
-[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
+[node name="Label" type="Label" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons" unique_id=1965554720]
 unique_name_in_owner = true
 layout_mode = 2
 text = "自动存档：？"
 
-[node name="CreateButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
+[node name="CreateButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons" unique_id=1107130485]
 layout_mode = 2
 text = "创建存档"
 
-[node name="LoadButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
+[node name="LoadButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons" unique_id=1746311704]
 layout_mode = 2
 text = "加载存档"
 
-[node name="DeleteButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons"]
+[node name="DeleteButton" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons" unique_id=2028664908]
 layout_mode = 2
 text = "删除存档"
+
+[node name="TestIssue51Button" type="Button" parent="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons" unique_id=588309344]
+unique_name_in_owner = true
+layout_mode = 2
+text = "测试 #51 自动存档清理"
 
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/CreateButton" to="." method="_on_create_button_pressed"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/LoadButton" to="." method="_on_load_button_pressed"]
 [connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/DeleteButton" to="." method="_on_delete_button_pressed"]
+[connection signal="pressed" from="UI/MarginContainer2/HBoxContainer/MarginContainer/VBoxContainer/Buttons/TestIssue51Button" to="." method="_on_test_issue51_pressed"]
