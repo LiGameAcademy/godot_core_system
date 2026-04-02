@@ -103,6 +103,11 @@ func reset_config() -> void:
 	_logger.info("Config cleared in memory. Manual save required to persist emptiness or defaults.")
 	# 移除: if auto_save: save_config()
 
+
+## 与 [method reset_config] 等价（部分示例/文档使用的命名，#40）
+func reset_to_default() -> void:
+	reset_config()
+
 ## 设置配置值 (移除自动保存)
 func set_value(section: String, key: String, value: Variant) -> void:
 	var current_value = get_value(section, key, null)
