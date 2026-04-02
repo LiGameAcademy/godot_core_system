@@ -135,6 +135,27 @@ func start_state_machine(
 	state_machine.start(initial_state, msg)
 	state_machine_started.emit(id)
 
+
+## 将已注册状态机切换到 [param state_id]（任意代码可通过管理器跳转，#14）。
+## 若该机尚未 [method BaseStateMachine.start]，则等价于 [method start_state_machine]。
+func transition_state_machine(
+		id: StringName,
+		state_id: StringName,
+		msg: Dictionary = {}
+	) -> bool:
+	var state_machine: BaseStateMachine = get_state_machine(id)
+	if not state_machine:
+		push_error("State machine %s does not exist" % id)
+		return false
+	if not state_machine.has_state(state_id):
+		push_error("State %s is not registered on state machine %s" % [state_id, id])
+		return false
+	if state_machine.current_state == null:
+		start_state_machine(id, state_id, msg)
+		return true
+	state_machine.transition_local(state_id, msg)
+	return true
+
 ## 停止状态机
 ## [param id] 状态机ID
 func stop_state_machine(id: StringName) -> void:
