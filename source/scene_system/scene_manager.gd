@@ -133,7 +133,7 @@ func change_scene_async(
 		# 加载新场景
 		new_scene = _resource_manager.get_instance(scene_path)
 		if not new_scene:
-			var scene_resource : PackedScene = _resource_manager.get_cached_resource(scene_path)
+			var scene_resource : PackedScene = _resource_manager.load_resource(scene_path)
 			new_scene = scene_resource.instantiate()
 
 		if not new_scene:
