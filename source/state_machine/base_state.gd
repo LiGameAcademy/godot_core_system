@@ -1,7 +1,8 @@
 extends RefCounted
 class_name BaseState
 
-## 基础状态类
+## 基础状态类（运行时逻辑对象，由 [BaseStateMachine] 持有；不进场景树）
+## 生命周期：子类实现 [_enter] / [_exit]；可选 [method ready] / [method dispose] 做一次性资源准备与释放。
 
 # 信号
 ## 状态进入
@@ -10,7 +11,7 @@ signal state_entered(msg: Dictionary)
 signal state_exited
 
 var state_id : StringName = &""
-## 状态机引用
+## 状态机引用（请通过 [method bind_to_state_machine] 或 [method BaseStateMachine.add_state] 设置，勿依赖直接赋值到内层子类时的引擎行为）
 var state_machine : BaseStateMachine = null
 ## 代理者
 var agent: Object = null : set = _agent_setter
@@ -73,18 +74,26 @@ func handle_input(event: InputEvent) -> void:
 		return
 	_handle_input(event)
 
-## 切换状态
-func switch_to(state_id: StringName, msg: Dictionary = {}) -> void:
+## 在 [b]所属[/b] 状态机（[member state_machine]）所管理的那一层子状态里切换到 [param state_id]。
+## 实现为调用 [method BaseStateMachine.transition_local]：沿「谁 add_state 了我」这一层切换，[b]不[/b]区分叶子还是子状态机脚本；要改的是 [b]外层[/b] 状态机时，应对 [member state_machine] 调用本方法（见 [method BaseStateMachine] 类说明）。
+func transition_to(state_id: StringName, msg: Dictionary = {}) -> void:
 	if not state_machine:
-		_logger.error("State machine is not set!")
+		_logger.error(
+			"State machine is not set (state_id=%s). Ensure this state was added via BaseStateMachine.add_state()."
+			% state_id
+		)
 		return
-	
+
 	if not state_machine.has_state(state_id):
 		_logger.error("State %s does not exist!" % state_id)
 		return
 
-	if state_machine:
-		state_machine.switch(state_id, msg)
+	state_machine.transition_local(state_id, msg)
+
+
+## 已弃用：请使用 [method transition_to]。
+func switch_to(state_id: StringName, msg: Dictionary = {}) -> void:
+	transition_to(state_id, msg)
 
 ## 获取变量
 func get_variable(key: StringName) -> Variant:

@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[English](README_en.md) | 简体中文
+简体中文 | [English](README_en.md)
 
 ![Godot v4.4](https://img.shields.io/badge/Godot-v4.4-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
@@ -36,7 +36,9 @@
   - 🎬 **场景系统** : 简化场景转换和管理
   - 🏷️ **标签系统** : 灵活的对象标签和分类系统
   - 🔄 **触发器系统** : 事件驱动的触发器系统，支持条件和动作
+- 更多实用工具类：
   - ⚡ **分帧执行器** : 性能优化工具，将耗时任务分散到多帧执行
+  - 
 
 ## 🚀 快速开始
 
