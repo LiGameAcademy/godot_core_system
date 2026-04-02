@@ -1,9 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8p4u5yqjbqx4"]
+[gd_scene load_steps=2 format=3 uid="uid://cco4m2yoj046j"]
 
-[ext_resource type="Script" uid="uid://dfdgghw16y273" path="res://addons/godot_core_system/examples/input_demo/event_processor/processor_demo.gd" id="1_yvxu8"]
+[ext_resource type="Script" uid="uid://dfdgghw16y273" path="res://addons/godot_core_system/examples/input_demo/event_processor/processor_demo.gd" id="1_avsbf"]
 
 [node name="ProcessorDemo" type="CanvasLayer"]
-script = ExtResource("1_yvxu8")
+script = ExtResource("1_avsbf")
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 3

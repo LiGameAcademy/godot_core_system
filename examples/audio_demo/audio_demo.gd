@@ -5,10 +5,10 @@ const AudioManager = CoreSystem.AudioManager
 @onready var audio_manager : AudioManager = CoreSystem.audio_manager
 
 # 预加载的音频资源路径
-const AUDIO_PATHS = {
-	"bgm": "res://addons/godot_core_system/examples/audio_demo/assets/music/bgm.ogg",
-	"click": "res://addons/godot_core_system/examples/audio_demo/assets/sfx/click.ogg",
-	"voice": "res://addons/godot_core_system/examples/audio_demo/assets/voice/congratulations.ogg"
+var AUDIO_PATHS := {
+	"bgm": FileDirHandler.get_object_script_dir(self) + "/assets/music/bgm.ogg",
+	"click": FileDirHandler.get_object_script_dir(self) + "/assets/sfx/click.ogg",
+	"voice": FileDirHandler.get_object_script_dir(self) + "/assets/voice/congratulations.ogg"
 }
 
 func _ready():

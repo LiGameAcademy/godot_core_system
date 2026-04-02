@@ -75,6 +75,14 @@ func handle_input(event: InputEvent) -> void:
 
 ## 切换状态
 func switch_to(state_id: StringName, msg: Dictionary = {}) -> void:
+	if not state_machine:
+		_logger.error("State machine is not set!")
+		return
+	
+	if not state_machine.has_state(state_id):
+		_logger.error("State %s does not exist!" % state_id)
+		return
+
 	if state_machine:
 		state_machine.switch(state_id, msg)
 

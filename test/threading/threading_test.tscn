@@ -1,0 +1,97 @@
+[gd_scene load_steps=2 format=3 uid="uid://cpxvndrjkspev"]
+
+[ext_resource type="Script" uid="uid://bop8d7pno8wt0" path="res://addons/godot_core_system/test/threading/threading_test.gd" id="1_n8wov"]
+
+[node name="ThreadingTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_n8wov")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "线程系统性能测试"
+horizontal_alignment = 1
+
+[node name="InfoLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "本测试比较在处理大量数据时，不同线程策略的性能差异
+特别关注主线程的响应性和整体处理时间"
+horizontal_alignment = 1
+
+[node name="ButtonsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="SyncBtn" type="Button" parent="MarginContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "同步执行测试"
+
+[node name="SingleThreadBtn" type="Button" parent="MarginContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "单线程异步测试"
+
+[node name="ModuleThreadBtn" type="Button" parent="MarginContainer/VBoxContainer/ButtonsContainer"]
+custom_minimum_size = Vector2(150, 40)
+layout_mode = 2
+text = "模块线程多任务测试"
+
+[node name="ProgressContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ProgressBar" type="ProgressBar" parent="MarginContainer/VBoxContainer/ProgressContainer"]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="StatusContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="FPSLabel" type="Label" parent="MarginContainer/VBoxContainer/StatusContainer"]
+layout_mode = 2
+text = "FPS: 0"
+
+[node name="TimeLabel" type="Label" parent="MarginContainer/VBoxContainer/StatusContainer"]
+layout_mode = 2
+text = "时间: 0ms"
+
+[node name="StatusLabel" type="Label" parent="MarginContainer/VBoxContainer/StatusContainer"]
+layout_mode = 2
+text = "状态: 空闲"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResultsContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/ButtonsContainer/SingleThreadBtn" to="." method="_on_single_thread_btn_pressed"]

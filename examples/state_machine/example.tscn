@@ -4,3 +4,28 @@
 
 [node name="Example" type="Node2D"]
 script = ExtResource("1_spsyk")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 32.0
+offset_right = 608.0
+offset_bottom = 341.0
+theme_override_font_sizes/font_size = 10
+text = "按键操作：
+- Enter (ui_accept): 
+    - 在菜单中：开始游戏
+    - 在探索中：进入战斗
+- Tab (ui_focus_next):
+    - 在探索中：开始对话
+- Esc (ui_cancel):
+    - 在游戏中：暂停（将保存当前游戏状态）
+    - 在暂停中：继续（将恢复到之前的游戏状态）
+    - 在战斗/对话中：返回探索
+- Home (ui_home):
+    - 在暂停中：返回主菜单"
+
+[node name="StateLabel" type="Label" parent="."]
+offset_right = 576.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 18
+text = "当前状态: 无"

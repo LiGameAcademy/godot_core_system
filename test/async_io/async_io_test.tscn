@@ -1,0 +1,51 @@
+[gd_scene load_steps=2 format=3 uid="uid://bne3wj44oyn1n"]
+
+[ext_resource type="Script" uid="uid://b08y8uiry6ouw" path="res://addons/godot_core_system/test/async_io/async_io_test.gd" id="1_l8kbg"]
+
+[node name="AsyncIoTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_l8kbg")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LogLabel" type="RichTextLabel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+
+[node name="TestBasicBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "基础测试 (读/写/删)"
+
+[node name="TestCompressBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "压缩测试 (读/写/删)"
+
+[node name="TestEncryptBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "加密测试 (读/写/删)"
+
+[node name="TestAllBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "组合策略测试 (读/写/删)"
+
+[node name="ClearLogBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+text = "清除日志"

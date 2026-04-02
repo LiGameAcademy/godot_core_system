@@ -1,9 +1,9 @@
-[gd_scene load_steps=2 format=3 uid="uid://c8p4u5yqjbqx4"]
+[gd_scene load_steps=2 format=3 uid="uid://cw1k6bjqeyk61"]
 
-[ext_resource type="Script" uid="uid://df0qapeeoahmq" path="res://addons/godot_core_system/examples/input_demo/input_state/combo_demo.gd" id="1_yvxu8"]
+[ext_resource type="Script" uid="uid://df0qapeeoahmq" path="res://addons/godot_core_system/examples/input_demo/input_state/combo_demo.gd" id="1_ttwky"]
 
 [node name="ComboDemo" type="CanvasLayer"]
-script = ExtResource("1_yvxu8")
+script = ExtResource("1_ttwky")
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 3

@@ -72,7 +72,6 @@ func unregister_state_machine(id: StringName) -> void:
 func get_state_machine(id: StringName) -> BaseStateMachine:
 	return _state_machines.get(id)
 
-
 ## 启动状态机
 ## [param id] 状态机ID
 ## [param initial_state] 初始状态
@@ -91,7 +90,6 @@ func start_state_machine(
 	
 	state_machine.start(initial_state, msg)
 	state_machine_started.emit(id)
-
 
 ## 停止状态机
 ## [param id] 状态机ID
