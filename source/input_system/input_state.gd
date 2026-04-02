@@ -17,7 +17,9 @@ class ActionState:
 	var last_press_time: float = 0.0
 	## 上次释放时间
 	var last_release_time: float = 0.0
-	
+	## 上次产生 just_pressed / just_released 边沿的时间（毫秒，用于防抖）
+	var _last_edge_tick_msec: int = -1_000_000_000
+
 	func _init() -> void:
 		reset()
 	
@@ -30,16 +32,27 @@ class ActionState:
 		press_time = 0.0
 		last_press_time = 0.0
 		last_release_time = 0.0
+		_last_edge_tick_msec = -1_000_000_000
 	
 	## 更新状态
 	## [param is_pressed] 是否按下
 	## [param input_strength] 输入强度
-	func update(is_pressed: bool, input_strength: float) -> void:
+	## [param debounce_ms] 若 >0，忽略与上一边沿间隔小于该毫秒的 just 边沿（机械键盘抖动 #50）
+	func update(is_pressed: bool, input_strength: float, debounce_ms: float = 0.0) -> void:
 		var current_time = Time.get_ticks_msec() / 1000.0
 		
 		# 更新按下/释放状态
-		just_pressed = is_pressed and not pressed
-		just_released = not is_pressed and pressed
+		var would_just_pressed := is_pressed and not pressed
+		var would_just_released := not is_pressed and pressed
+		just_pressed = would_just_pressed
+		just_released = would_just_released
+		if debounce_ms > 0.0 and (would_just_pressed or would_just_released):
+			var now_msec := Time.get_ticks_msec()
+			if now_msec - _last_edge_tick_msec < debounce_ms:
+				just_pressed = false
+				just_released = false
+			else:
+				_last_edge_tick_msec = now_msec
 		pressed = is_pressed
 		
 		# 更新强度
@@ -55,6 +68,9 @@ class ActionState:
 ## 动作状态字典
 var _action_states: Dictionary = {}
 
+## 边沿防抖（毫秒）。>0 时压缩过密的 just_pressed/just_released（如机械键盘触点抖动，#50）。默认 0 关闭。
+var edge_debounce_ms: float = 0.0
+
 ## 更新动作状态
 ## [param action_name] 动作名称
 ## [param is_pressed] 是否按下
@@ -63,7 +79,7 @@ func update_action(action_name: String, is_pressed: bool, strength: float) -> vo
 	if not _action_states.has(action_name):
 		_action_states[action_name] = ActionState.new()
 	
-	_action_states[action_name].update(is_pressed, strength)
+	_action_states[action_name].update(is_pressed, strength, edge_debounce_ms)
 
 ## 获取动作状态
 ## [param action_name] 动作名称
