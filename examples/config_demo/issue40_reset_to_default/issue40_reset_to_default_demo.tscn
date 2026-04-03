@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://b8rsjpo2fkrkr"]
+
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/config_demo/issue40_reset_to_default/issue40_reset_to_default_demo.gd" id="1_script"]
+
+[node name="Issue40ResetToDefaultDemo" type="Control" unique_id=1963131868]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1259089007]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.14, 0.18, 1)
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1182769015]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="VBox" unique_id=34660428]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "ConfigManager · reset_to_default（Issue #40）"
+
+[node name="StatusLabel" type="RichTextLabel" parent="VBox" unique_id=54154668]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="Buttons" type="HBoxContainer" parent="VBox" unique_id=628448235]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SetCustom" type="Button" parent="VBox/Buttons" unique_id=44374460]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "写入自定义值"
+
+[node name="ResetToDefault" type="Button" parent="VBox/Buttons" unique_id=515660579]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "reset_to_default()"
+
+[node name="ResetConfig" type="Button" parent="VBox/Buttons" unique_id=2066156001]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "reset_config()（等价）"
+
+[connection signal="pressed" from="VBox/Buttons/SetCustom" to="." method="_on_set_custom_pressed"]
+[connection signal="pressed" from="VBox/Buttons/ResetToDefault" to="." method="_on_reset_to_default_pressed"]
+[connection signal="pressed" from="VBox/Buttons/ResetConfig" to="." method="_on_reset_config_pressed"]
