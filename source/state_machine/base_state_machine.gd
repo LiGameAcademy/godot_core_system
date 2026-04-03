@@ -1,7 +1,12 @@
 extends BaseState
 class_name BaseStateMachine
 
-## 基础状态机类, 状态机本身也是一个状态。
+## 基础状态机类；继承 [BaseState]，因此可作为「子状态机」嵌套进另一台状态机。
+## 子状态 tick 先委托给 [member current_state]，再执行本机 [_update] / [_physics_update] / [_handle_input]（默认可为空）。
+##
+## [b]分层语义（避免与 [method BaseState.transition_to] 混淆）：[/b]
+## [code]transition_local[/code] / [code]transition_to[/code]（本类）仅在本机 [member states] 内切换。
+## 子状态机作为「状态」时，若要切换 [b]外层[/b] 状态机，应对 [member BaseState.state_machine] 调用 [method BaseState.transition_to]（例如 [code]state_machine.transition_to(&"...")[/code]），[b]不要[/b]在无 [member BaseState.state_machine] 前缀时把「本机」与「外层」混读。
 
 # 信号
 ## 状态改变
@@ -25,21 +30,25 @@ func enter(msg: Dictionary = {}) -> bool:
 	return current_state.enter(msg)
 
 ## 更新
+## 子状态委托后，直接调用本机 _update，避免再经 BaseState.update 多一层转发（语义与 super 等价）
 func update(delta: float) -> void:
 	if is_active and current_state:
 		current_state.update(delta)
-	super(delta)
+	if is_active:
+		_update(delta)
 
 ## 物理更新
 func physics_update(delta: float) -> void:
 	if is_active and current_state:
 		current_state.physics_update(delta)
-	super(delta)
+	if is_active:
+		_physics_update(delta)
 
 func handle_input(event: InputEvent) -> void:
 	if is_active and current_state:
 		current_state.handle_input(event)
-	super(event)
+	if is_active:
+		_handle_input(event)
 
 func exit() -> bool:
 	if not super():
@@ -128,24 +137,35 @@ func remove_state(state_id: StringName) -> void:
 func has_state(state_id: StringName) -> bool:
 	return states.has(state_id)
 
-## 切换状态
-func switch(state_id: StringName, msg: Dictionary = {}) -> void:
+## 仅在本机 [member states] 内切换到 [param state_id]（[b]不[/b] 经过 [member BaseState.state_machine]）。
+## 子状态机脚本里要表达「只切内层」时优先用此名，与 [method BaseState.transition_to]（沿所属关系切换一层）区分开。
+func transition_local(state_id: StringName, msg: Dictionary = {}) -> void:
 	if not states.has(state_id):
 		push_error("Attempting to transition to non-existent state: %s" % state_id)
 		return
-	
+
 	var from_state = current_state
 	if current_state:
 		previous_state = get_current_state_name()
 		current_state.exit()
-	
+
 	current_state = states[state_id]
 	if not current_state:
 		push_error("Attempting to transition to non-existent state: %s" % state_id)
 		return
-	
+
 	current_state.enter(msg)
 	state_changed.emit(from_state, current_state)
+
+
+## 等同于 [method transition_local]：叶子状态通过 [method BaseState.transition_to] 会调到此处；在 [BaseStateMachine] 上直接调用时也表示「本机 states」。
+func transition_to(state_id: StringName, msg: Dictionary = {}) -> void:
+	transition_local(state_id, msg)
+
+
+## 已弃用：请使用 [method transition_local] 或 [method transition_to]。
+func switch(state_id: StringName, msg: Dictionary = {}) -> void:
+	transition_local(state_id, msg)
 
 
 ## 获取变量

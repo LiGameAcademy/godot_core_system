@@ -93,7 +93,7 @@ func _on_buff_acquired(buff_name: String):
 Global tag manager responsible for tag registration and management.
 
 - `register_tag(tag_name: String) -> void`: Register new tag
-- `get_tag(tag_name: String) -> GameplayTag`: Get tag object
+- `get_tag(tag_name: String) -> CoreGameplayTag`: Get tag object
 - `has_tag(tag_name: String) -> bool`: Check if tag is registered
 
 ### GameplayTagContainer
@@ -106,16 +106,16 @@ Tag container node for managing a single object's tag collection.
 - `has_all_tags(required_tags: Array, exact: bool = true) -> bool`: Check if has all specified tags
 - `has_any_tags(required_tags: Array, exact: bool = true) -> bool`: Check if has any specified tags
 - `get_tags() -> Array`: Get all tag names
-- `get_all_tags() -> Array[GameplayTag]`: Get all tag objects (including child tags)
+- `get_all_tags() -> Array[CoreGameplayTag]`: Get all tag objects (including child tags)
 
-### GameplayTag
+### CoreGameplayTag
 
-Tag object representing a single tag.
+Tag object representing a single tag (runtime object for core system).
 
 - `name: StringName`: Tag name
-- `parent: GameplayTag`: Parent tag
-- `children: Array[GameplayTag]`: Child tags list
-- `matches(other: GameplayTag, exact: bool) -> bool`: Check if matches another tag
+- `parent: CoreGameplayTag`: Parent tag
+- `children: Array[CoreGameplayTag]`: Child tags list
+- `matches(other: CoreGameplayTag, exact: bool) -> bool`: Check if matches another tag
 
 ## Best Practices
 

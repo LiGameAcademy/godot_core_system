@@ -9,8 +9,6 @@ const DECOMPRESSION_BUFFER_MULTIPLIER = 10
 # 解压缩缓冲区最小大小 (防止估算为0)
 const MIN_DECOMPRESSION_BUFFER_SIZE = 1024
 
-
-
 ## 使用 Gzip 压缩字节数据
 func compress(bytes: PackedByteArray) -> PackedByteArray:
 	if bytes.is_empty():
@@ -21,19 +19,39 @@ func compress(bytes: PackedByteArray) -> PackedByteArray:
 func decompress(bytes: PackedByteArray) -> PackedByteArray:
 	if bytes.is_empty():
 		return bytes
-	
-	# 估算解压缩后的大小。需要足够大，否则解压会失败或不完整。
-	var estimated_size = bytes.size() * DECOMPRESSION_BUFFER_MULTIPLIER
-	# 确保缓冲区大小至少为最小值
-	estimated_size = max(estimated_size, MIN_DECOMPRESSION_BUFFER_SIZE)
-	
-	var decompressed_bytes = bytes.decompress(estimated_size, COMPRESSION_MODE)
-	
-	# 注意：Godot 3.x/4.x 的 decompress 在缓冲区不足或其他错误时
-	# 可能只返回部分数据或空数组，而不会抛出异常。
-	# 无法完美检测解压是否完全成功，只能依赖后续数据校验。
+
+	# RFC 1952：GZIP 尾部的 ISIZE（最后 4 字节，小端）为未压缩长度 mod 2^32。
+	# 高压缩比时「压缩包大小 × 倍数」会远小于真实未压缩大小，必须用 ISIZE 或逐步放大缓冲区。
+	var estimated_size: int = _estimate_gzip_uncompressed_size(bytes)
+	var decompressed_bytes := bytes.decompress(estimated_size, COMPRESSION_MODE)
+
+	var attempt := 0
+	while decompressed_bytes.is_empty() and not bytes.is_empty() and attempt < 6:
+		attempt += 1
+		estimated_size = max(estimated_size * 4, int(bytes.size() * pow(10, attempt)))
+		estimated_size = max(estimated_size, MIN_DECOMPRESSION_BUFFER_SIZE)
+		decompressed_bytes = bytes.decompress(estimated_size, COMPRESSION_MODE)
+
 	if decompressed_bytes.is_empty() and not bytes.is_empty():
-		push_warning("Gzip Decompression resulted in empty bytes. Buffer size (%d) might be insufficient or data corrupted." % estimated_size)
-	
+		push_warning(
+			"Gzip decompression failed after retries. Last buffer size %d, input size %d."
+			% [estimated_size, bytes.size()]
+		)
+
 	return decompressed_bytes
+
+
+func _estimate_gzip_uncompressed_size(bytes: PackedByteArray) -> int:
+	if bytes.size() < 10:
+		return max(bytes.size() * DECOMPRESSION_BUFFER_MULTIPLIER, MIN_DECOMPRESSION_BUFFER_SIZE)
+	# 尾 4 字节 ISIZE
+	var isize: int = (
+		bytes[bytes.size() - 4]
+		| (bytes[bytes.size() - 3] << 8)
+		| (bytes[bytes.size() - 2] << 16)
+		| (bytes[bytes.size() - 1] << 24)
+	)
+	if isize > 0:
+		return max(isize, MIN_DECOMPRESSION_BUFFER_SIZE)
+	return max(bytes.size() * DECOMPRESSION_BUFFER_MULTIPLIER, MIN_DECOMPRESSION_BUFFER_SIZE)
  

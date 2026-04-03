@@ -1,5 +1,7 @@
 extends Node2D
 
+## 配置管理器综合示例（加载 / 修改 / 保存 / [code]reset_config[/code] + [code]config_reset[/code] 应用默认值）。
+
 @onready var status_label: Label = $UI/StatusLabel
 @onready var config_tree: Tree = $UI/ConfigTree
 @onready var auto_save_label: Label = %AutoSaveLabel
@@ -17,7 +19,7 @@ var demo_defaults := {
 }
 
 var _config_manager : CoreSystem.ConfigManager = CoreSystem.config_manager
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _ready():
 	# 1. 连接信号 (可选，但对于UI反馈有用)
@@ -116,8 +118,7 @@ func _on_save_button_pressed():
 ## 重置配置按钮回调
 func _on_reset_button_pressed():
 	status_label.text = "重置配置..."
-	_config_manager.reset_config() # 同步清空
-	# reset_config 会发出 config_reset 信号，连接到 _on_config_reset
+	_config_manager.reset_config()
 	# status_label.text = "配置已清空，正在应用默认值..." (由 _on_config_reset 处理)
 
 # --- 信号处理 ---

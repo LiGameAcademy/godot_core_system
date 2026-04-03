@@ -11,3 +11,4 @@
 
 - **[待发布]** - 查看 [unreleased.md](./changelogs/unreleased.md)
 - **[0.0.2]** - 查看 [v0.0.2.md](./changelogs/v0.0.2.md)
+- **[latest]** - 查看 [latest.md](./changelogs/latest.md)

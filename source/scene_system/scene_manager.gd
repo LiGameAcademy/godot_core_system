@@ -55,7 +55,7 @@ var _resource_manager : CoreSystem.ResourceManager:
 	get:
 		return CoreSystem.resource_manager
 ## 日志管理器
-var _logger : CoreSystem.Logger:
+var _logger : CoreSystem.CoreLogger:
 	get:
 		return CoreSystem.logger
 
@@ -133,7 +133,7 @@ func change_scene_async(
 		# 加载新场景
 		new_scene = _resource_manager.get_instance(scene_path)
 		if not new_scene:
-			var scene_resource : PackedScene = _resource_manager.get_cached_resource(scene_path)
+			var scene_resource : PackedScene = _resource_manager.load_resource(scene_path)
 			new_scene = scene_resource.instantiate()
 
 		if not new_scene:
@@ -306,7 +306,11 @@ func _do_scene_switch(
 			"scene_path": old_scene.scene_file_path,
 			"data": old_scene.save_state() if old_scene.has_method("save_state") else {},
 		})
-		old_scene.get_parent().remove_child(old_scene)
+		var old_parent: Node = old_scene.get_parent()
+		if old_parent:
+			old_parent.remove_child(old_scene)
+		# push_to_stack 时父节点与当前场景树仍在同一帧内变更，延后一帧再往下走，避免无法移除/释放 (#44)
+		await get_tree().process_frame
 	else:
 		# 如果不需要保存状态，则直接销毁当前场景
 		if old_scene:

@@ -5,6 +5,7 @@ extends Node
 ## 1. 输入系统初始化
 ## 2. 基本输入检测
 ## 3. 配置管理
+## 边沿防抖（Issue #50，无需机械键盘验收）：见 [code]../edge_debounce_issue50/issue50_edge_debounce_demo.tscn[/code]
 
 @onready var input_manager = CoreSystem.input_manager
 @onready var status_label = $UI/StatusLabel

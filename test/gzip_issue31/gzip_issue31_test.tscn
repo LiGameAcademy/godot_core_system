@@ -1,0 +1,43 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8gzip31test01"]
+
+[ext_resource type="Script" path="res://addons/godot_core_system/test/gzip_issue31/gzip_issue31_test.gd" id="1_script"]
+
+[node name="GzipIssue31Test" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+
+[node name="HintLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+text = "Issue #31：高压缩比 GZIP 解压。点击运行后查看控制台与下方日志。若旧策略输出长度为 0、当前策略 PASS，即符合预期。"
+
+[node name="LogLabel" type="RichTextLabel" parent="VBoxContainer"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+
+[node name="RunBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "运行测试"
+
+[node name="ClearBtn" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "清除日志"

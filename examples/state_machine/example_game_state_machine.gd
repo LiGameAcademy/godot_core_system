@@ -15,7 +15,7 @@ class MenuState extends BaseState:
 
     func _handle_input(event: InputEvent) -> void:
         if event.is_action_pressed("ui_accept"):
-            switch_to(&"gameplay")
+            transition_to(&"gameplay")
 
 ## 游戏状态（包含子状态机）
 class GameplayState extends BaseStateMachine:
@@ -35,7 +35,8 @@ class GameplayState extends BaseStateMachine:
     func _handle_input(event: InputEvent) -> void:
         if event.is_action_pressed("ui_cancel"):
             print("退出游戏状态 ui_cancel")
-            switch_to(&"pause", {"resume": true}) # 传递resume标记
+            # Outer layer: use state_machine.transition_to. Inner-only: transition_local / self.transition_to on this BSM.
+            state_machine.transition_to(&"pause", {"resume": true})
     
     func _exit() -> void:
         print("退出游戏状态")
@@ -48,9 +49,9 @@ class GameplayState extends BaseStateMachine:
         
         func _handle_input(event: InputEvent) -> void:
             if event.is_action_pressed("ui_accept"):
-                switch_to(&"battle")
+                transition_to(&"battle")
             elif event.is_action_pressed("ui_focus_next"):
-                switch_to(&"dialog")
+                transition_to(&"dialog")
     
     ## 战斗状态
     class BattleState extends BaseState:
@@ -63,7 +64,7 @@ class GameplayState extends BaseStateMachine:
         func _handle_input(event: InputEvent) -> void:
             if event.is_action_pressed("ui_cancel"):
                 print("退出战斗状态 ui_cancel")
-                switch_to(&"explore")
+                transition_to(&"explore")
     
     ## 对话状态
     class DialogState extends BaseState:
@@ -72,7 +73,7 @@ class GameplayState extends BaseStateMachine:
         
         func _handle_input(event: InputEvent) -> void:
             if event.is_action_pressed("ui_cancel"):
-                switch_to(&"explore")
+                transition_to(&"explore")
 
 ## 暂停状态
 class PauseState extends BaseState:
@@ -81,6 +82,6 @@ class PauseState extends BaseState:
     
     func _handle_input(event: InputEvent) -> void:
         if event.is_action_pressed("ui_cancel"):
-            switch_to(&"gameplay", {"resume": true}) # 传递resume标记
+            transition_to(&"gameplay", {"resume": true}) # 传递resume标记
         elif event.is_action_pressed("ui_home"):
-            switch_to(&"menu")
+            transition_to(&"menu")

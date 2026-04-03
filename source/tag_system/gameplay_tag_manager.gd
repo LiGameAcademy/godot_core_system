@@ -34,7 +34,7 @@ func _exit_tree() -> void:
 func _register_tag_from_path(path: String) -> void:
 	var parts := path.split(".")
 	var current_path := ""
-	var parent: GameplayTag
+	var parent: CoreGameplayTag
 	
 	for part in parts:
 		if current_path.is_empty():
@@ -43,7 +43,7 @@ func _register_tag_from_path(path: String) -> void:
 			current_path += "." + part
 			
 		if not _registered_tags.has(current_path):
-			var tag := GameplayTag.create(part)
+			var tag := CoreGameplayTag.create(part)
 			if parent:
 				parent.add_child(tag)
 			_registered_tags[current_path] = tag
@@ -52,7 +52,7 @@ func _register_tag_from_path(path: String) -> void:
 
 ## 获取标签
 ## 如果标签不存在，会自动注册
-func get_tag(tag_path: String) -> GameplayTag:
+func get_tag(tag_path: String) -> CoreGameplayTag:
 	var tag := _registered_tags.get(tag_path)
 	if not tag:
 		_register_tag_from_path(tag_path)
@@ -62,8 +62,8 @@ func get_tag(tag_path: String) -> GameplayTag:
 
 ## 获取所有匹配的标签
 ## 包括父标签和子标签
-func get_matching_tags(tag_path: String) -> Array[GameplayTag]:
-	var result: Array[GameplayTag] = []
+func get_matching_tags(tag_path: String) -> Array[CoreGameplayTag]:
+	var result: Array[CoreGameplayTag] = []
 	var target_tag := get_tag(tag_path)  # 先精确获取目标标签
 	if not target_tag:
 		return result
@@ -81,18 +81,18 @@ func get_matching_tags(tag_path: String) -> Array[GameplayTag]:
 
 ## 创建标签容器
 ## owner: 容器所属的对象，用于自动注册
-func create_tag_container(owner: Object = null) -> GameplayTagContainer:
+func create_tag_container(tag_owner: Object = null) -> GameplayTagContainer:
 	var container := GameplayTagContainer.new()
-	if owner:
-		container.owner = owner
-		container.tag_added.connect(_on_container_tag_added.bind(owner))
-		container.tag_removed.connect(_on_container_tag_removed.bind(owner))
-		_object_to_tags[owner.get_instance_id()] = weakref(container)
+	if tag_owner:
+		#container.owner = tag_owner
+		container.tag_added.connect(_on_container_tag_added.bind(tag_owner))
+		container.tag_removed.connect(_on_container_tag_removed.bind(tag_owner))
+		_object_to_tags[tag_owner.get_instance_id()] = weakref(container)
 	return container
 
 ## 从字符串数组创建标签容器
-func create_tag_container_from_strings(tag_strings: Array, owner: Object = null) -> GameplayTagContainer:
-	var container := create_tag_container(owner)
+func create_tag_container_from_strings(tag_strings: Array, tag_owner: Object = null) -> GameplayTagContainer:
+	var container := create_tag_container(tag_owner)
 	for tag_string in tag_strings:
 		container.add_tag(tag_string)
 	return container
@@ -156,17 +156,17 @@ func get_objects_with_any_tags(tag_paths: Array[String], exact: bool = true) -> 
 	return result
 
 ## 当容器添加标签时
-func _on_container_tag_added(tag: GameplayTag, owner: Object) -> void:
-	var object_id = owner.get_instance_id()
+func _on_container_tag_added(tag: CoreGameplayTag, tag_owner: Object) -> void:
+	var object_id = tag_owner.get_instance_id()
 	var tag_path = tag.get_full_path()
 	
 	if not _tag_to_objects.has(tag_path):
 		_tag_to_objects[tag_path] = {}
-	_tag_to_objects[tag_path][object_id] = weakref(owner)
+	_tag_to_objects[tag_path][object_id] = weakref(tag_owner)
 
 ## 当容器移除标签时
-func _on_container_tag_removed(tag: GameplayTag, owner: Object) -> void:
-	var object_id = owner.get_instance_id()
+func _on_container_tag_removed(tag: CoreGameplayTag, tag_owner: Object) -> void:
+	var object_id = tag_owner.get_instance_id()
 	var tag_path = tag.get_full_path()
 	
 	if _tag_to_objects.has(tag_path):

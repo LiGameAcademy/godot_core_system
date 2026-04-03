@@ -18,7 +18,9 @@ const SETTING_SAVE_SYSTEM_AUTO_SAVE := Setting.SETTING_SAVE_SYSTEM_AUTO_SAVE
 signal save_created(save_id: String, metadata: Dictionary)		# 存档创建
 signal save_loaded(save_id: String, metadata: Dictionary)		# 存档加载
 signal save_deleted(save_id: String)							# 存档删除
-signal auto_save_created(save_id: String)						# 自动存档创建
+signal auto_save_started()									# 自动存档开始
+signal auto_save_succeeded(save_id: String)					# 自动存档成功
+signal auto_save_failed()									# 自动存档失败
 
 # 配置属性
 @export var save_directory: String:
@@ -75,7 +77,7 @@ var _strategies := {
 	"binary": BinarySaveStrategy.new(),
 	"json": JSONSaveStrategy.new(),
 }
-var _logger : CoreSystem.Logger = CoreSystem.logger
+var _logger : CoreSystem.CoreLogger = CoreSystem.logger
 
 func _init() -> void:
 	# 设置默认序列化策略
@@ -172,12 +174,15 @@ func delete_save(save_id: String) -> bool:
 
 # 创建自动存档
 func create_auto_save() -> String:
+	auto_save_started.emit() # 发出开始信号
+	
 	var auto_save_id = _get_auto_save_id()
 	
 	# 创建新存档
 	var success = await create_save(auto_save_id)
 	if not success:
 		CoreSystem.logger.error("Failed to create auto save: %s" % auto_save_id)
+		auto_save_failed.emit() # 发出失败信号
 		return ""
 	
 	# 清理旧的自动存档
@@ -185,8 +190,8 @@ func create_auto_save() -> String:
 	if not cleanup_success:
 		CoreSystem.logger.warning("Failed to clean old auto saves")
 	
-	# 发送信号
-	auto_save_created.emit(auto_save_id)
+	# 发送成功信号
+	auto_save_succeeded.emit(auto_save_id)
 	return auto_save_id
 
 # 获取所有存档列表
@@ -270,16 +275,21 @@ func _get_save_path(save_id: String) -> String:
 	return _save_strategy.get_save_path(Setting.get_setting_value("save_system/save_directory"), save_id)
 
 # 清理旧的自动存档
-func _clean_old_auto_saves() -> void:
+func _clean_old_auto_saves() -> bool:
 	var saves = await get_save_list()
 	var auto_saves = saves.filter(func(save):
 		var save_id = save.get("save_id")
 		return save_id.begins_with(auto_save_prefix)
 	)
-	
+
 	if auto_saves.size() > max_auto_saves:
 		for i in range(max_auto_saves, auto_saves.size()):
-			delete_save(auto_saves[i].id)
+			var sid: String = str(auto_saves[i].get("save_id", ""))
+			if sid.is_empty():
+				continue
+			if not delete_save(sid):
+				return false
+	return true
 
 # 生成时间戳
 func _get_timestamp() -> String:

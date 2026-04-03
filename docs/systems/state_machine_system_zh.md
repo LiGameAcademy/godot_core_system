@@ -179,14 +179,22 @@ class MyStateMachine extends BaseStateMachine:
 
 #### StateMachineManager（状态机管理器）
 
-游戏中所有状态机的全局管理器：
+**可选组件**：用于集中注册多台 `BaseStateMachine` 并统一驱动 `update` / `physics_update` / `handle_input`。若项目里只有一台状态机，也可在持有者（如 `Node`）的 `_process` 里直接调用 `state_machine.update(delta)`，**不必**注册到管理器。
+
 - 状态机的中央注册
-- 全局状态机更新
-- 调试信息和监控
+- 全局状态机更新（可按注册项关闭 physics/input，减少无意义回调）
+- 调试信息与监控（`is_active` / `get_current_state` 等，多根状态机时建议传 `root_id`）
 
 ```gdscript
-# 通过 CoreSystem 访问管理器
+# 通过 CoreSystem 访问管理器（默认与旧版一致：三类驱动均开启）
 CoreSystem.state_machine_manager.register_state_machine("player", player_state_machine)
+
+# 仅需逻辑更新、自行处理输入时，可关闭管理器内的 physics / input
+CoreSystem.state_machine_manager.register_state_machine(
+    "flow", flow_state_machine, self, &"", {}, true, false, false
+)
+# 或注册后运行时修改：
+CoreSystem.state_machine_manager.set_registration_drive_flags("flow", true, false, false)
 ```
 
 ## 使用示例
@@ -209,9 +217,9 @@ class IdleState extends BaseState:
     
     func _handle_input(event: InputEvent) -> void:
         if event.is_action_pressed("move"):
-            switch_to("walk")
+            transition_to("walk")
         elif event.is_action_pressed("jump"):
-            switch_to("jump")
+            transition_to("jump")
 
 # 注册到管理器
 func _ready() -> void:
@@ -226,12 +234,19 @@ func _ready() -> void:
    - 对复杂行为使用层级状态机
    - 考虑使用状态工厂进行动态状态创建
 
-2. **状态转换**
+2. **状态转换（分层）**
+   - [method BaseState.transition_to]：在 [member BaseState.state_machine] 所管理的那一层里切换（叶子对父机、子状态机要改外层时对 [member BaseState.state_machine] 调用）。
+   - [method BaseStateMachine.transition_local]：只在本机子状态表内切换；子状态机脚本里要强调「只动内层」时优先用此名。
+   - [method BaseStateMachine.transition_to] 在本类中与 [method BaseStateMachine.transition_local] 等价；叶子经 [method BaseState.transition_to] 会调到 [method BaseStateMachine.transition_local]。
    - 使用消息传递进行状态通信
    - 验证状态转换
    - 在 _exit() 中处理清理工作
 
-3. **调试**
+3. **驱动方式**
+   - 使用 `StateMachineManager` 时，按需要关闭 `run_physics` / `run_input`，避免每帧空转
+   - 单台状态机可不用管理器，在持有者 `_process` 中调用 `update` 即可
+
+4. **调试**
    - 启用状态转换的调试日志
    - 使用内置的状态监控工具
    - 添加状态验证检查
@@ -243,16 +258,18 @@ func _ready() -> void:
 - `exit()`: 退出状态
 - `update(delta: float)`: 更新状态逻辑
 - `handle_input(event: InputEvent)`: 处理输入
-- `switch_to(state_name: String, msg: Dictionary = {})`: 切换到另一个状态
+- `transition_to(state_id: StringName, msg: Dictionary = {})`: 在 [member state_machine] 所管理的那一层子状态里切换（内部调用 [method BaseStateMachine.transition_local]）
 
 ### BaseStateMachine（基础状态机）
 - `add_state(name: String, state: BaseState)`: 注册新状态
 - `remove_state(name: String)`: 移除已注册的状态
 - `start(initial_state: String)`: 启动状态机
 - `stop()`: 停止状态机
-- `switch_to(state_name: String, msg: Dictionary = {})`: 切换到指定状态
+- `transition_local(state_id: StringName, msg: Dictionary = {})`: 仅在本机子状态表内切换（显式 API，推荐在子状态机脚本里表达「只切内层」时使用）
+- `transition_to(state_id: StringName, msg: Dictionary = {})`: 与 `transition_local` 等价；叶子通过 [method BaseState.transition_to] 会调到此处
 
 ### StateMachineManager（状态机管理器）
-- `register_state_machine(name: String, state_machine: BaseStateMachine)`: 注册状态机
+- `register_state_machine(id, state_machine, agent = null, initial_state = &"", msg = {}, run_update = true, run_physics = true, run_input = true)`: 注册状态机；后三个布尔参数控制是否由管理器在 `_process` / `_physics_process` / `_input` 中转发（默认均为 `true`，与旧版一致）
+- `set_registration_drive_flags(id, run_update, run_physics, run_input)`: 运行时修改上述驱动开关
 - `unregister_state_machine(name: String)`: 注销状态机
 - `get_state_machine(name: String) -> BaseStateMachine`: 获取已注册的状态机
