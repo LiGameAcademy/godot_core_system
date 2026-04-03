@@ -20,7 +20,6 @@ func _ready():
 	_save_manager.save_created.connect(_on_save_created)
 	_save_manager.save_loaded.connect(_on_save_loaded)
 	_save_manager.save_deleted.connect(_on_save_deleted)
-	_save_manager.auto_save_succeeded.connect(_on_auto_save_succeeded)
 	#_save_manager.auto_save_created.connect(_on_auto_save_created)
 
 	line_edit_name.text_changed.connect(_on_name_text_changed)

@@ -2,7 +2,7 @@ extends Control
 
 const CoreSceneManager = CoreSystem.CoreSceneManager
 
-@onready var scene_manager = CoreSystem.scene_manager
+@onready var scene_manager : CoreSceneManager = CoreSystem.scene_manager
 @onready var label = $Label
 @onready var source_label = $SourceLabel
 
