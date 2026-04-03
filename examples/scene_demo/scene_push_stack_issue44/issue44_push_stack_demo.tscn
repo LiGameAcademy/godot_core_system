@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://bcawi0xnkuom"]
+
+[ext_resource type="Script" uid="uid://x148xycdjji5" path="res://addons/godot_core_system/examples/scene_demo/scene_push_stack_issue44/issue44_push_stack_demo.gd" id="1_script"]
+
+[node name="Issue44PushStackDemo" type="Control" unique_id=474323459]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=2069818543]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.12, 0.14, 0.18, 1)
+
+[node name="VBox" type="VBoxContainer" parent="." unique_id=1303709182]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="VBox" unique_id=1862492209]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "SceneManager · push_to_stack（Issue #44）"
+
+[node name="StatusLabel" type="RichTextLabel" parent="VBox" unique_id=980394371]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="Buttons" type="HBoxContainer" parent="VBox" unique_id=654796034]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PushScene1" type="Button" parent="VBox/Buttons" unique_id=830009949]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "进入 scene1（push 当前入栈）"
+
+[node name="PushScene2" type="Button" parent="VBox/Buttons" unique_id=1226650902]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "进入 scene2 + 淡入（push）"
+
+[node name="Pop" type="Button" parent="VBox/Buttons" unique_id=459525941]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "pop_scene_async（若栈非空）"
+
+[connection signal="pressed" from="VBox/Buttons/PushScene1" to="." method="_on_push_scene1_pressed"]
+[connection signal="pressed" from="VBox/Buttons/PushScene2" to="." method="_on_push_scene2_pressed"]
+[connection signal="pressed" from="VBox/Buttons/Pop" to="." method="_on_pop_pressed"]

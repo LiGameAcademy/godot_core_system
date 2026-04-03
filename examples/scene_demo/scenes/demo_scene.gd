@@ -1,8 +1,8 @@
 extends Control
 
-const SceneManager = CoreSystem.SceneManager
+const CoreSceneManager = CoreSystem.CoreSceneManager
 
-@onready var scene_manager : SceneManager = CoreSystem.scene_manager
+@onready var scene_manager : CoreSceneManager = CoreSystem.scene_manager
 @onready var label = $Label
 @onready var source_label = $SourceLabel
 
@@ -48,6 +48,6 @@ func restore_state(data: Dictionary) -> void:
 func _on_back_button_pressed() -> void:
 	if scene_manager:
 		scene_manager.pop_scene_async(
-			SceneManager.TransitionEffect.NONE,
+			CoreSceneManager.TransitionEffect.NONE,
 			0.5
 		)

@@ -103,6 +103,7 @@ func reset_config() -> void:
 	_logger.info("Config cleared in memory. Manual save required to persist emptiness or defaults.")
 	# 移除: if auto_save: save_config()
 
+
 ## 设置配置值 (移除自动保存)
 func set_value(section: String, key: String, value: Variant) -> void:
 	var current_value = get_value(section, key, null)
@@ -117,10 +118,11 @@ func set_value(section: String, key: String, value: Variant) -> void:
 ## 获取配置值
 ## [param section] 配置段
 ## [param key] 键
-## [param p_default_override] 默认值
+## [param p_default_override] 默认值（可为 [code]null[/code]；缺键时直接返回，不交给 [ConfigFile]，避免 Godot 4 对「缺键 + nil 默认」报错）
 ## [return] 值
 func get_value(section: String, key: String, p_default_value: Variant) -> Variant:
-	# 直接从 ConfigFile 获取，如果不存在则返回调用者提供的 p_default_value
+	if not _config_file.has_section_key(section, key):
+		return p_default_value
 	return _config_file.get_value(section, key, p_default_value)
 
 ## 获取配置段中实际存在于文件中的所有键值对
@@ -135,8 +137,8 @@ func get_section(section: String) -> Dictionary:
 
 	var file_keys = _config_file.get_section_keys(section)
 	for key in file_keys:
-		# 直接从 ConfigFile 获取值，不传递默认值，因为我们只关心文件中的内容
-		result[key] = _config_file.get_value(section, key)
+		# 键必存在于文件中；经 [method get_value] 读取，避免两参 [ConfigFile.get_value] 与 nil 默认问题
+		result[key] = get_value(section, key, null)
 
 	return result.duplicate() # 返回副本
 
@@ -149,7 +151,7 @@ func set_section(section: String, value: Dictionary) -> void:
 
 	# 1. 遍历新字典，设置或覆盖值
 	for key in value:
-		var current_value = _config_file.get_value(section, key, null) # 获取当前文件中的值
+		var current_value := get_value(section, key, null) # 获取当前文件中的值（缺键时不会向 ConfigFile 传 nil 默认）
 		if current_value != value[key]: # 仅在值确实改变时设置
 			_config_file.set_value(section, key, value[key])
 			changed = true
