@@ -1,8 +1,8 @@
 extends Node2D
 
-const EventBus = CoreSystem.EventBus
+const CoreEventBus = CoreSystem.CoreEventBus
 
-var event_bus : EventBus = CoreSystem.event_bus
+var event_bus : CoreEventBus = CoreSystem.event_bus
 
 func _ready():
 	# 启用调试模式和历史记录
@@ -66,6 +66,10 @@ func _start_demo():
 	for event in history:
 		print("事件：%s，参数：%s" % [event.event_name, event.payload])
 	
+	# 6. Issue #48：subscribe_unique_script（同脚本多实例时仅保留最后一次订阅）
+	print("\n6. Issue #48 · subscribe_unique_script：")
+	_run_issue48_test()
+	
 	print("\n=== EventBus演示结束 ===")
 
 ## 玩家移动事件回调
@@ -88,3 +92,49 @@ func _on_player_attack_once(weapon, damage):
 ## 过滤器订阅事件回调
 func _on_player_move_right(direction, distance):
 	print("过滤器订阅：玩家向右移动了%d单位" % [distance])
+
+
+const _ISSUE48_EVENT := "issue48_demo"
+
+## Issue #48：验证 [method CoreEventBus.subscribe_unique_script] — 同一 [Script] 的多个实例对同一事件订阅时，新订阅会移除旧实例上的同类连接。
+func _run_issue48_test() -> void:
+	var a := Issue48Listener.new("A")
+	var b := Issue48Listener.new("B")
+	var other := Issue48OtherListener.new("其它脚本")
+
+	event_bus.subscribe_unique_script(_ISSUE48_EVENT, Callable(a, "on_issue48"))
+	print("  仅 A 订阅 unique_script 后，订阅数: %d（期望 1）" % event_bus.get_subscriber_count(_ISSUE48_EVENT))
+
+	event_bus.subscribe_unique_script(_ISSUE48_EVENT, Callable(b, "on_issue48"))
+	print("  B 再 subscribe_unique_script 后，订阅数: %d（期望 1，A 已被移除）" % event_bus.get_subscriber_count(_ISSUE48_EVENT))
+
+	print("  推送事件（应只有 B 响应）：")
+	event_bus.push_event(_ISSUE48_EVENT, ["round1"])
+
+	event_bus.subscribe(_ISSUE48_EVENT, Callable(other, "on_issue48"))
+	print("  其它脚本用普通 subscribe 追加后，订阅数: %d（期望 2）" % event_bus.get_subscriber_count(_ISSUE48_EVENT))
+
+	print("  再次推送（B 与 其它脚本 各响应一次）：")
+	event_bus.push_event(_ISSUE48_EVENT, ["round2"])
+
+
+## #48 测试用：同脚本多实例（与 [method CoreEventBus.subscribe_unique_script] 配对）
+class Issue48Listener extends RefCounted:
+	var label: String
+
+	func _init(p_label: String) -> void:
+		label = p_label
+
+	func on_issue48(msg: String) -> void:
+		print("    [Issue48 同脚本·%s] %s" % [label, msg])
+
+
+## #48 对照：不同脚本，不应被 subscribe_unique_script 误删
+class Issue48OtherListener extends RefCounted:
+	var label: String
+
+	func _init(p_label: String) -> void:
+		label = p_label
+
+	func on_issue48(msg: String) -> void:
+		print("    [Issue48 其它脚本·%s] %s" % [label, msg])
