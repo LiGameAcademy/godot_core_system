@@ -152,8 +152,8 @@ func transition_state_machine(
 		return false
 	if state_machine.current_state == null:
 		start_state_machine(id, state_id, msg)
-		return true
-	state_machine.transition_local(state_id, msg)
+	else:
+		state_machine.transition_local(state_id, msg)
 	return true
 
 ## 停止状态机
