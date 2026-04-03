@@ -1,13 +1,13 @@
-[gd_scene load_steps=2 format=3 uid="uid://dwqi32p3ht1by"]
+[gd_scene format=3 uid="uid://dwqi32p3ht1by"]
 
 [ext_resource type="Script" uid="uid://c6apg2ynhay8p" path="res://addons/godot_core_system/examples/scene_demo/scene_demo.gd" id="1_v8g4f"]
 
-[node name="SceneDemo" type="Node2D"]
+[node name="SceneDemo" type="Node2D" unique_id=370180069]
 script = ExtResource("1_v8g4f")
 
-[node name="UI" type="CanvasLayer" parent="."]
+[node name="UI" type="CanvasLayer" parent="." unique_id=1138350108]
 
-[node name="StatusLabel" type="Label" parent="UI"]
+[node name="StatusLabel" type="Label" parent="UI" unique_id=1376782140]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -18,7 +18,7 @@ offset_bottom = 79.0
 grow_horizontal = 2
 horizontal_alignment = 1
 
-[node name="PreloadStatus" type="Label" parent="UI"]
+[node name="PreloadStatus" type="Label" parent="UI" unique_id=958660551]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -29,7 +29,7 @@ offset_bottom = 46.0
 grow_horizontal = 2
 horizontal_alignment = 1
 
-[node name="Buttons" type="VBoxContainer" parent="UI"]
+[node name="Buttons" type="VBoxContainer" parent="UI" unique_id=1258227168]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -42,15 +42,15 @@ offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Scene1Button" type="Button" parent="UI/Buttons"]
+[node name="Scene1Button" type="Button" parent="UI/Buttons" unique_id=965899593]
 layout_mode = 2
 text = "场景1 (无转场)"
 
-[node name="Scene2Button" type="Button" parent="UI/Buttons"]
+[node name="Scene2Button" type="Button" parent="UI/Buttons" unique_id=1774381505]
 layout_mode = 2
 text = "场景2 (淡入淡出)"
 
-[node name="Scene3Button" type="Button" parent="UI/Buttons"]
+[node name="Scene3Button" type="Button" parent="UI/Buttons" unique_id=47701300]
 layout_mode = 2
 text = "场景3 (滑动)"
 

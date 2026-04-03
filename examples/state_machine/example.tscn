@@ -1,20 +1,22 @@
-[gd_scene load_steps=2 format=3 uid="uid://bwgvla1fa1o42"]
+[gd_scene format=3 uid="uid://bwgvla1fa1o42"]
 
 [ext_resource type="Script" uid="uid://mmwadm71pi7m" path="res://addons/godot_core_system/examples/state_machine/example.gd" id="1_spsyk"]
 
-[node name="Example" type="Node2D"]
+[node name="Example" type="Node2D" unique_id=1205275322]
 script = ExtResource("1_spsyk")
 
-[node name="Label" type="Label" parent="."]
+[node name="Label" type="Label" parent="." unique_id=749288763]
 offset_left = 8.0
 offset_top = 32.0
 offset_right = 608.0
 offset_bottom = 341.0
-theme_override_font_sizes/font_size = 10
+theme_override_font_sizes/font_size = 22
 text = "按键操作：
 - Enter (ui_accept): 
     - 在菜单中：开始游戏
     - 在探索中：进入战斗
+- Shift + Tab (ui_focus_prev):
+	- 暂停（直接跳转）
 - Tab (ui_focus_next):
     - 在探索中：开始对话
 - Esc (ui_cancel):
@@ -24,8 +26,8 @@ text = "按键操作：
 - Home (ui_home):
     - 在暂停中：返回主菜单"
 
-[node name="StateLabel" type="Label" parent="."]
+[node name="StateLabel" type="Label" parent="." unique_id=918824028]
 offset_right = 576.0
 offset_bottom = 40.0
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 30
 text = "当前状态: 无"
