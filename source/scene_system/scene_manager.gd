@@ -180,11 +180,16 @@ func add_sub_scene(
 		parent_node: Node,
 		scene_path: String,
 		scene_data: Dictionary = {}) -> Node:
-	var scene_resource = _resource_manager.load_resource(scene_path)
-	var sub_scene = scene_resource.instantiate()
+	# init_state可以使用@onready节点，父节点必须已经入树。
+	if not is_instance_valid(parent_node) or not parent_node.is_inside_tree() or parent_node.is_queued_for_deletion():
+		return null
+	var scene_resource: PackedScene = _resource_manager.load_resource(scene_path) as PackedScene
+	if scene_resource == null or not scene_resource.can_instantiate():
+		return null
+	var sub_scene: Node = scene_resource.instantiate()
+	parent_node.add_child(sub_scene)
 	if sub_scene.has_method("init_state"):
 		sub_scene.init_state(scene_data)
-	parent_node.add_child(sub_scene)
 	return sub_scene
 
 ## 获取当前场景
