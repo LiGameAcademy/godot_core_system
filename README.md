@@ -147,3 +147,5 @@ See [state machines](docs/systems/state_machine_system.md) for value flows, beha
 Native main-scene switching and optional persistent fades are available through [CoreScenes](docs/systems/native_scenes.md), with a standalone example and C# behavior mapping. Legacy scene APIs remain available.
 
 Exclusive engine pause/speed ownership and snapshot restoration are available through [CoreTime scopes](docs/systems/core_time_scope.md), with a standalone example and matching C# lifecycle behavior.
+
+For synchronous snapshot events and disposable scene-owned tokens with C# lifecycle parity, see [minimal CoreEventBus](docs/systems/core_event_bus.md). Legacy event extensions remain separate.

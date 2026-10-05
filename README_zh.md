@@ -146,3 +146,5 @@ func _ready():
 原生主场景切换与独立淡入淡出见 [CoreScenes](docs/systems/native_scenes.md)，提供独立示例、生命周期检查及 C# 行为映射；旧场景接口继续保留。
 
 引擎暂停/倍速的独占作用域及退出恢复见 [CoreTime](docs/systems/core_time_scope.md)，与 C# 生命周期对齐；旧 TimeManager 的私有时钟仍独立保留。
+
+与 C# 对齐的同步发布、快照分发及订阅令牌见 [最小 CoreEventBus](docs/systems/core_event_bus.md)。旧优先级、过滤与延迟事件模块保留为独立扩展。
