@@ -44,7 +44,7 @@
 
 ### 系统要求
 
-- Godot Engine 4.4+
+- 随附 Windows x64 持久化扩展需要 Godot Engine 4.7+（已验证 4.7.2）。
 - 基本的 GDScript 和 Godot 引擎知识
 
 ### 安装步骤
@@ -148,3 +148,5 @@ func _ready():
 引擎暂停/倍速的独占作用域及退出恢复见 [CoreTime](docs/systems/core_time_scope.md)，与 C# 生命周期对齐；旧 TimeManager 的私有时钟仍独立保留。
 
 与 C# 对齐的同步发布、快照分发及订阅令牌见 [最小 CoreEventBus](docs/systems/core_event_bus.md)。旧优先级、过滤与延迟事件模块保留为独立扩展。
+
+与 C# 对齐的版本化 JSON 见 [CoreSaveStore](docs/systems/core_save_store.md)。Windows x64 的安全替换使用随附 [原生扩展](native/atomic_file/README.md)，导出时需要包含 DLL；其他平台需独立验证打包。旧存档管理器格式保留。

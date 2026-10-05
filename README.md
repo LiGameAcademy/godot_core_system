@@ -41,8 +41,10 @@ A highly modular and extensible core system framework designed for Godot 4.4+
 
 ### System Requirements
 
-- Godot Engine 4.4+
+- Godot Engine 4.7+ for the included Windows x64 persistence extension (validated on 4.7.2).
 - Basic knowledge of GDScript and Godot Engine
+
+The independent [versioned JSON service](docs/systems/core_save_store.md) uses a small [Windows x64 native replacement extension](native/atomic_file/README.md). Include its DLL when exporting; other platforms need their own validated packaging. This service does not change the legacy save manager's format.
 
 ### Installation Steps
 
