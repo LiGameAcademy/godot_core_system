@@ -1,87 +1,63 @@
 extends BaseStateMachine
 class_name ExampleGameStateMachine
 
-
 func _ready() -> void:
-    # 添加主要状态
-    add_state(&"menu", MenuState.new())
-    add_state(&"gameplay", GameplayState.new())
-    add_state(&"pause", PauseState.new())
+	add_state(&"menu", MenuState.new())
+	add_state(&"gameplay", GameplayState.new())
+	add_state(&"pause", PauseState.new())
 
-## 菜单状态
 class MenuState extends BaseState:
-    func _enter(_msg := {}) -> void:
-        print("进入菜单状态")
+	func _enter(_msg: Dictionary = {}) -> void:
+		print("Entered menu state")
+	func _handle_input(event: InputEvent) -> void:
+		if event.is_action_pressed("ui_accept"):
+			transition_to(&"gameplay")
 
-    func _handle_input(event: InputEvent) -> void:
-        if event.is_action_pressed("ui_accept"):
-            transition_to(&"gameplay")
-
-## 游戏状态（包含子状态机）
 class GameplayState extends BaseStateMachine:
-    func _ready() -> void:
-        # 添加子状态
-        add_state(&"explore", ExploreState.new())		# 添加探索状态
-        add_state(&"battle", BattleState.new())		# 添加战斗状态
-        add_state(&"dialog", DialogState.new())		# 添加对话状态
-        print("gameplay state ready")
-    
-    func _enter(msg := {}) -> void:
-        print("进入游戏状态")
-        # 如果msg中指定了resume，则恢复到上一个状态
-        if current_state == null:  # 只在没有当前状态时才启动
-            start(&"explore", {}, msg.get("resume", false))
-    
-    func _handle_input(event: InputEvent) -> void:
-        if event.is_action_pressed("ui_cancel"):
-            print("退出游戏状态 ui_cancel")
-            # Outer layer: use state_machine.transition_to. Inner-only: transition_local / self.transition_to on this BSM.
-            state_machine.transition_to(&"pause", {"resume": true})
-    
-    func _exit() -> void:
-        print("退出游戏状态")
-        stop()
-    
-    ## 探索状态
-    class ExploreState extends BaseState:
-        func _enter(_msg := {}) -> void:
-            print("进入探索状态")
-        
-        func _handle_input(event: InputEvent) -> void:
-            if event.is_action_pressed("ui_accept"):
-                transition_to(&"battle")
-            elif event.is_action_pressed("ui_focus_next"):
-                transition_to(&"dialog")
-    
-    ## 战斗状态
-    class BattleState extends BaseState:
-        func _enter(_msg := {}) -> void:
-            print("进入战斗状态")
-        
-        func _exit() -> void:
-            print("退出战斗状态")
+	func _ready() -> void:
+		add_state(&"explore", ExploreState.new())
+		add_state(&"battle", BattleState.new())
+		add_state(&"dialog", DialogState.new())
+	func _enter(msg: Dictionary = {}) -> void:
+		print("Entered gameplay state")
+		start(&"explore", {}, bool(msg.get("resume", false)))
+	func _handle_input(event: InputEvent) -> void:
+		if event.is_action_pressed("ui_cancel"):
+			# The owner chooses the outer layer; transition_local selects this table.
+			state_machine.transition_to(&"pause", {"resume": true})
+	func _exit() -> void:
+		print("Exited gameplay state")
 
-        func _handle_input(event: InputEvent) -> void:
-            if event.is_action_pressed("ui_cancel"):
-                print("退出战斗状态 ui_cancel")
-                transition_to(&"explore")
-    
-    ## 对话状态
-    class DialogState extends BaseState:
-        func _enter(_msg := {}) -> void:
-            print("进入对话状态")
-        
-        func _handle_input(event: InputEvent) -> void:
-            if event.is_action_pressed("ui_cancel"):
-                transition_to(&"explore")
+	class ExploreState extends BaseState:
+		func _enter(_msg: Dictionary = {}) -> void:
+			print("Entered explore state")
+		func _handle_input(event: InputEvent) -> void:
+			if event.is_action_pressed("ui_accept"):
+				transition_to(&"battle")
+			elif event.is_action_pressed("ui_focus_next"):
+				transition_to(&"dialog")
 
-## 暂停状态
+	class BattleState extends BaseState:
+		func _enter(_msg: Dictionary = {}) -> void:
+			print("Entered battle state")
+		func _exit() -> void:
+			print("Exited battle state")
+		func _handle_input(event: InputEvent) -> void:
+			if event.is_action_pressed("ui_cancel"):
+				transition_to(&"explore")
+
+	class DialogState extends BaseState:
+		func _enter(_msg: Dictionary = {}) -> void:
+			print("Entered dialog state")
+		func _handle_input(event: InputEvent) -> void:
+			if event.is_action_pressed("ui_cancel"):
+				transition_to(&"explore")
+
 class PauseState extends BaseState:
-    func _enter(_msg := {}) -> void:
-        print("进入暂停状态")
-    
-    func _handle_input(event: InputEvent) -> void:
-        if event.is_action_pressed("ui_cancel"):
-            transition_to(&"gameplay", {"resume": true}) # 传递resume标记
-        elif event.is_action_pressed("ui_home"):
-            transition_to(&"menu")
+	func _enter(_msg: Dictionary = {}) -> void:
+		print("Entered pause state")
+	func _handle_input(event: InputEvent) -> void:
+		if event.is_action_pressed("ui_cancel"):
+			transition_to(&"gameplay", {"resume": true})
+		elif event.is_action_pressed("ui_home"):
+			transition_to(&"menu")
