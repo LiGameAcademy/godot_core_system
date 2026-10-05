@@ -1,199 +1,231 @@
 extends BaseState
 class_name BaseStateMachine
 
-## 基础状态机类；继承 [BaseState]，因此可作为「子状态机」嵌套进另一台状态机。
-## 子状态 tick 先委托给 [member current_state]，再执行本机 [_update] / [_physics_update] / [_handle_input]（默认可为空）。
-##
-## [b]分层语义（避免与 [method BaseState.transition_to] 混淆）：[/b]
-## [code]transition_local[/code] / [code]transition_to[/code]（本类）仅在本机 [member states] 内切换。
-## 子状态机作为「状态」时，若要切换 [b]外层[/b] 状态机，应对 [member BaseState.state_machine] 调用 [method BaseState.transition_to]（例如 [code]state_machine.transition_to(&"...")[/code]），[b]不要[/b]在无 [member BaseState.state_machine] 前缀时把「本机」与「外层」混读。
-
-# 信号
-## 状态改变
+## Optional nested behavior machine. Registration is fixed while running.
 signal state_changed(from_state: BaseState, to_state: BaseState)
 
-## 当前状态
 var current_state: BaseState = null
-## 状态字典
 var states: Dictionary[StringName, BaseState] = {}
-## 变量字典
 var values: Dictionary = {}
-## 上一个状态
 var previous_state: StringName = &""
-
-func enter(msg: Dictionary = {}) -> bool:
-	if not super(msg):
-		return false
-	if current_state == null:
-		_logger.error("Entering null state!")
-		return false
-	return current_state.enter(msg)
-
-## 更新
-## 子状态委托后，直接调用本机 _update，避免再经 BaseState.update 多一层转发（语义与 super 等价）
-func update(delta: float) -> void:
-	if is_active and current_state:
-		current_state.update(delta)
-	if is_active:
-		_update(delta)
-
-## 物理更新
-func physics_update(delta: float) -> void:
-	if is_active and current_state:
-		current_state.physics_update(delta)
-	if is_active:
-		_physics_update(delta)
-
-func handle_input(event: InputEvent) -> void:
-	if is_active and current_state:
-		current_state.handle_input(event)
-	if is_active:
-		_handle_input(event)
-
-func exit() -> bool:
-	if not super():
-		return false
-	if current_state:
-		current_state.exit()
-		current_state = null
-	return true
+## Optional pure predicate: (from_id, to_id) -> bool.
+var can_transition: Callable = Callable()
+var _changing: bool = false
+var _driving: bool = false
+var _paused: bool = false
 
 func ready() -> void:
+	if _is_ready or _preparing or _disposed:
+		return
 	super()
-	for state in states.values():
+	_preparing = true
+	for state: BaseState in states.values():
 		state.ready()
+	_preparing = false
 
 func dispose() -> void:
-	for state in states.values():
+	if _changing or _preparing or _disposed:
+		return
+	stop()
+	_changing = true
+	for state: BaseState in states.values():
 		state.dispose()
+		state.state_machine = null
 	super()
+	states.clear()
+	values.clear()
+	previous_state = &""
+	_changing = false
 
-## 启动状态机
-## [param initial_state] 初始状态ID
-## [param msg] 传递给状态的消息
-## [param resume] 是否恢复到上一个状态
-func start(initial_state: StringName = &"", msg: Dictionary = {}, resume: bool = false) -> void:
-	if current_state != null:
-		_logger.warning("State machine is already running!")
-		return
-	
-	var target_state = initial_state
-	if resume and not previous_state.is_empty():
-		target_state = previous_state
-	
-	if target_state.is_empty():
-		target_state = states.keys()[0] if not states.is_empty() else &""
-	
-	if target_state.is_empty():
-		push_error("No state to start with!")
-		return
-	
-	current_state = states.get(target_state)
+## A nested state may select its initial child in _enter.
+func enter(msg: Dictionary = {}) -> bool:
+	if is_active or _changing or _disposed:
+		return false
+	ready()
+	is_active = true
+	_paused = false
+	_enter(msg)
 	if current_state == null:
-		push_error("Attempting to start with non-existent state: %s" % target_state)
+		start(&"", msg)
+	if current_state == null:
+		is_active = false
+		return false
+	state_entered.emit(msg)
+	return true
+
+func exit() -> bool:
+	if not is_active or _changing:
+		return false
+	stop()
+	_changing = true
+	_exit()
+	state_exited.emit()
+	_changing = false
+	return true
+
+func update(delta: float) -> void:
+	if not _can_drive() or not is_finite(delta) or delta < 0.0:
 		return
-	
-	current_state.enter(msg)
-	is_active = true
-	_debug("Starting state: %s" % target_state)
+	_driving = true
+	current_state.update(delta)
+	if _can_continue():
+		_update(delta)
+	_driving = false
 
-## 停止状态机
-func stop() -> void:
-	if current_state:
-		previous_state = get_current_state_name()
-		current_state.exit()
+func physics_update(delta: float) -> void:
+	if not _can_drive() or not is_finite(delta) or delta < 0.0:
+		return
+	_driving = true
+	current_state.physics_update(delta)
+	if _can_continue():
+		_physics_update(delta)
+	_driving = false
+
+func handle_input(event: InputEvent) -> void:
+	if not _can_drive() or event == null:
+		return
+	_driving = true
+	var original: BaseState = current_state
+	current_state.handle_input(event)
+	if _can_continue() and current_state == original:
+		_handle_input(event)
+	_driving = false
+
+func start(initial_state: StringName = &"", msg: Dictionary = {}, resume_previous: bool = false) -> bool:
+	if current_state != null or _changing or _preparing or _disposed:
+		return false
+	ready()
+	var target: StringName = initial_state
+	if resume_previous and not previous_state.is_empty():
+		target = previous_state
+	if target.is_empty() and not states.is_empty():
+		target = states.keys()[0]
+	if not states.has(target):
+		return false
+	_changing = true
+	current_state = states[target]
+	is_active = true
+	_paused = false
+	var entered: bool = current_state.enter(msg)
+	if not entered:
 		current_state = null
+		is_active = false
+	_changing = false
+	return entered
+
+func stop() -> bool:
+	if _changing or current_state == null:
+		return false
+	_changing = true
+	var old: BaseState = current_state
+	previous_state = old.state_id
+	current_state = null
 	is_active = false
-	_debug("Stopping state machine: %s" % state_id)
+	_paused = false
+	old.exit()
+	_changing = false
+	return true
 
-
-## 暂停状态机
+## Pause only suppresses driving; it does not exit the active state.
 func pause() -> void:
-	is_active = false
+	if current_state != null and not _changing:
+		_paused = true
 
-## 恢复状态机
 func resume() -> void:
-	is_active = true
+	if current_state != null and not _changing:
+		_paused = false
 
-## 添加状态
-func add_state(state_id: StringName, new_state: BaseState) -> BaseState:
-	states[state_id] = new_state
+func is_paused() -> bool:
+	return _paused
+
+func add_state(id: StringName, new_state: BaseState) -> BaseState:
+	if _disposed or _changing or (_preparing and _is_ready) or current_state != null or id.is_empty() or new_state == null or states.has(id):
+		return null
+	if new_state == self or new_state.state_machine != null or new_state.is_active or new_state.disposed:
+		return null
+	var ancestor: BaseStateMachine = state_machine
+	while ancestor != null:
+		if ancestor == new_state:
+			return null
+		ancestor = ancestor.state_machine
+	states[id] = new_state
 	new_state.state_machine = self
 	new_state.agent = agent
 	new_state.is_debug = is_debug
-	new_state.state_id = state_id
-	_debug("Adding state: %s" % state_id)
+	new_state.state_id = id
+	if _is_ready:
+		new_state.ready()
 	return new_state
 
-## 移除状态
-func remove_state(state_id: StringName) -> void:
-	if current_state == states.get(state_id):
-		current_state.exit()
+func remove_state(id: StringName) -> void:
+	if _changing or current_state != null or not states.has(id):
+		return
+	var removed: BaseState = states[id]
+	states.erase(id)
+	removed.dispose()
+	removed.state_machine = null
+
+func has_state(id: StringName) -> bool:
+	return states.has(id)
+
+## Explicitly uses this machine's table, including on nested machines.
+func transition_local(target: StringName, msg: Dictionary = {}) -> bool:
+	if _changing or not is_active or _paused or current_state == null or not states.has(target):
+		return false
+	if current_state == states[target]:
+		return false
+	_changing = true
+	var old: BaseState = current_state
+	if can_transition.is_valid() and not can_transition.call(old.state_id, target):
+		_changing = false
+		return false
+	previous_state = old.state_id
+	current_state = null
+	old.exit()
+	current_state = states[target]
+	var entered: bool = current_state.enter(msg)
+	if entered:
+		state_changed.emit(old, current_state)
+	else:
 		current_state = null
-	_debug("Removing state: %s" % state_id)
-	states.erase(state_id)
+		is_active = false
+	_changing = false
+	return entered
 
-## 检查状态是否存在
-func has_state(state_id: StringName) -> bool:
-	return states.has(state_id)
+func transition_to(target: StringName, msg: Dictionary = {}) -> void:
+	transition_local(target, msg)
 
-## 仅在本机 [member states] 内切换到 [param state_id]（[b]不[/b] 经过 [member BaseState.state_machine]）。
-## 子状态机脚本里要表达「只切内层」时优先用此名，与 [method BaseState.transition_to]（沿所属关系切换一层）区分开。
-func transition_local(state_id: StringName, msg: Dictionary = {}) -> void:
-	if not states.has(state_id):
-		push_error("Attempting to transition to non-existent state: %s" % state_id)
-		return
+## Compatibility alias.
+func switch(target: StringName, msg: Dictionary = {}) -> void:
+	transition_local(target, msg)
 
-	var from_state = current_state
-	if current_state:
-		previous_state = get_current_state_name()
-		current_state.exit()
-
-	current_state = states[state_id]
-	if not current_state:
-		push_error("Attempting to transition to non-existent state: %s" % state_id)
-		return
-
-	current_state.enter(msg)
-	state_changed.emit(from_state, current_state)
-
-
-## 等同于 [method transition_local]：叶子状态通过 [method BaseState.transition_to] 会调到此处；在 [BaseStateMachine] 上直接调用时也表示「本机 states」。
-func transition_to(state_id: StringName, msg: Dictionary = {}) -> void:
-	transition_local(state_id, msg)
-
-
-## 已弃用：请使用 [method transition_local] 或 [method transition_to]。
-func switch(state_id: StringName, msg: Dictionary = {}) -> void:
-	transition_local(state_id, msg)
-
-
-## 获取变量
 func get_variable(key: StringName) -> Variant:
 	return values.get(key)
 
-
-## 设置变量
 func set_variable(key: StringName, value: Variant) -> void:
 	values[key] = value
 
-
-## 检查变量是否存在
 func has_variable(key: StringName) -> bool:
 	return values.has(key)
 
-
-## 移除变量
 func erase_variable(key: StringName) -> void:
 	values.erase(key)
 
-
-## 获取当前状态名称
 func get_current_state_name() -> StringName:
 	return current_state.state_id if current_state else &""
 
-
 func _agent_setter(value: Object) -> void:
 	agent = value
-	for state in states.values():
-		state.agent = agent
+	for state: BaseState in states.values():
+		state.agent = value
+
+func _can_continue() -> bool:
+	return is_active and not _paused and current_state != null
+
+func _can_drive() -> bool:
+	return _can_continue() and not _changing and not _driving
+
+
+## Lifecycle mutation is rejected while callbacks are running.
+func is_busy() -> bool:
+	return _changing or _preparing

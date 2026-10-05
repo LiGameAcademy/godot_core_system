@@ -140,3 +140,6 @@ If you encounter any issues or have suggestions:
     <strong>Built by Liweimin0512 with ❤️</strong><br>
     <sub>Making game development easier</sub>
 </div>
+## State and timer semantics
+
+See [state machines](docs/systems/state_machine_system.md) for value flows, behavior lifecycle, optional nested driving and compatibility changes, and [independent timer](docs/systems/core_timer.md) for deterministic countdown rules.
