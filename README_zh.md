@@ -142,3 +142,5 @@ func _ready():
   <strong>由 老李游戏学院 用 ❤️ 构建</strong><br>
   <sub>让游戏开发变得更简单</sub>
 </div>
+
+原生主场景切换与独立淡入淡出见 [CoreScenes](docs/systems/native_scenes.md)，提供独立示例、生命周期检查及 C# 行为映射；旧场景接口继续保留。

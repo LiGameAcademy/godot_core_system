@@ -1,0 +1,26 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/native_scenes/native_scene_example.gd" id="1"]
+[node name="NativeSceneExample" type="Control"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+title = "Scene A"
+next_scene = "res://addons/godot_core_system/examples/native_scenes/scene_b.tscn"
+[node name="Background" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.04, 0.12, 0.19, 1)
+[node name="Layout" type="VBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 580.0
+offset_bottom = 240.0
+[node name="Title" type="Label" parent="Layout"]
+text = "Scene A"
+[node name="Status" type="Label" parent="Layout"]
+text = "Ready. Fade and scene switching use a persistent host."
+[node name="Next" type="Button" parent="Layout"]
+text = "Switch to the other scene"

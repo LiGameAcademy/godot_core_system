@@ -143,3 +143,5 @@ If you encounter any issues or have suggestions:
 ## State and timer semantics
 
 See [state machines](docs/systems/state_machine_system.md) for value flows, behavior lifecycle, optional nested driving and compatibility changes, and [independent timer](docs/systems/core_timer.md) for deterministic countdown rules.
+
+Native main-scene switching and optional persistent fades are available through [CoreScenes](docs/systems/native_scenes.md), with a standalone example and C# behavior mapping. Legacy scene APIs remain available.
