@@ -1,8 +1,8 @@
-# Godot 核心系统
+﻿# Godot 鏍稿績绯荤粺
 
 <div align="center">
 
-简体中文 | [English](README.md)
+绠€浣撲腑鏂?| [English](README.md)
 
 ![Godot v4.7.2](https://img.shields.io/badge/Godot-v4.7.2-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
@@ -11,142 +11,24 @@
 [![GitHub forks](https://img.shields.io/github/forks/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/network)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-一个为 Godot 4.7.2 设计的高度模块化、易扩展的核心系统框架
-
-当前明确支持并验证 Godot 4.7.2，旧版本兼容性留待后续验证。
-
-[快速开始](#-快速开始) •
-[文档](docs/) •
-[示例](examples/) •
-[贡献](docs/CONTRIBUTING.md) •
-[支持与帮助](#-支持与帮助)
+涓€涓负 Godot 4.7.2 璁捐鐨勯珮搴︽ā鍧楀寲銆佹槗鎵╁睍鐨勬牳蹇冪郴缁熸鏋?
+褰撳墠鏄庣‘鏀寔骞堕獙璇?Godot 4.7.2锛屾棫鐗堟湰鍏煎鎬х暀寰呭悗缁獙璇併€?
+[蹇€熷紑濮媇(#-蹇€熷紑濮? 鈥?[鏂囨。](docs/) 鈥?[绀轰緥](examples/) 鈥?[璐＄尞](docs/CONTRIBUTING.md) 鈥?[鏀寔涓庡府鍔(#-鏀寔涓庡府鍔?
 
 </div>
 
-## ✨ 特性
+## 鉁?鐗规€?
+- 馃敡 **鎻掍欢鏋舵瀯** : 鏄撲簬鎵╁睍鍜岃嚜瀹氫箟
+- 馃摫 **椤圭洰璁剧疆闆嗘垚** : 閫氳繃 Godot 鐨勯」鐩缃厤缃墍鏈夌郴缁?- 馃洜锔?**寮€鍙戝伐鍏?* : 鍐呯疆璋冭瘯鍜屽紑鍙戝伐鍏?- ManagerOfManagers : MOM 缁撴瀯锛屾槗鎵╁睍鍜岃嚜瀹氫箟
+  - 馃幃 **鐘舵€佹満绯荤粺** : 鐏垫椿寮哄ぇ鐨勬父鎴忛€昏緫鐘舵€佺鐞?  - 馃捑 **搴忓垪鍖栫郴缁?* : 鏄撶敤鐨勫瓨妗?璇绘。鍔熻兘鍜岄厤缃鐞?  - 馃幍 **闊抽绯荤粺** : 鍏ㄩ潰鐨勯煶棰戠鐞嗭紝鏀寔鍒嗙被鍜岃繃娓?  - 馃幆 **杈撳叆绯荤粺** : 缁熶竴鐨勮緭鍏ュ鐞嗭紝鏀寔鍔ㄤ綔鏄犲皠鍜屼簨浠剁鐞?  - 馃摑 **鏃ュ織绯荤粺** : 璇︾粏鐨勬棩蹇楃郴缁燂紝鏀寔澶氱杈撳嚭閫氶亾
+  - 馃帹 **璧勬簮绯荤粺** : 楂樻晥鐨勮祫婧愬姞杞藉拰绠＄悊
+  - 馃幀 **鍦烘櫙绯荤粺** : 绠€鍖栧満鏅浆鎹㈠拰绠＄悊
+  - 馃彿锔?**鏍囩绯荤粺** : 鐏垫椿鐨勫璞℃爣绛惧拰鍒嗙被绯荤粺
+  - 馃攧 **瑙﹀彂鍣ㄧ郴缁?* : 浜嬩欢椹卞姩鐨勮Е鍙戝櫒绯荤粺锛屾敮鎸佹潯浠跺拰鍔ㄤ綔
+- 鏇村瀹炵敤宸ュ叿绫伙細
+  - 鈿?**鍒嗗抚鎵ц鍣?* : 鎬ц兘浼樺寲宸ュ叿锛屽皢鑰楁椂浠诲姟鍒嗘暎鍒板甯ф墽琛?  - 
 
-- 🔧 **插件架构** : 易于扩展和自定义
-- 📱 **项目设置集成** : 通过 Godot 的项目设置配置所有系统
-- 🛠️ **开发工具** : 内置调试和开发工具
-- ManagerOfManagers : MOM 结构，易扩展和自定义
-  - 🎮 **状态机系统** : 灵活强大的游戏逻辑状态管理
-  - 💾 **序列化系统** : 易用的存档/读档功能和配置管理
-  - 🎵 **音频系统** : 全面的音频管理，支持分类和过渡
-  - 🎯 **输入系统** : 统一的输入处理，支持动作映射和事件管理
-  - 📝 **日志系统** : 详细的日志系统，支持多种输出通道
-  - 🎨 **资源系统** : 高效的资源加载和管理
-  - 🎬 **场景系统** : 简化场景转换和管理
-  - 🏷️ **标签系统** : 灵活的对象标签和分类系统
-  - 🔄 **触发器系统** : 事件驱动的触发器系统，支持条件和动作
-- 更多实用工具类：
-  - ⚡ **分帧执行器** : 性能优化工具，将耗时任务分散到多帧执行
-  - 
-
-## 🚀 快速开始
-
-### 系统要求
+## 馃殌 蹇€熷紑濮?
+### 绯荤粺瑕佹眰
 
 - Godot Engine 4.7.2
-- 基本的 GDScript 和 Godot 引擎知识
-
-### 安装步骤
-
-1. 从[发布页面](https://github.com/Liweimin0512/godot_core_system/releases)下载最新版本
-2. 将 `godot_core_system` 文件夹复制到你的 Godot 项目的 `addons` 目录下
-3. 在 Godot 编辑器中启用插件：
-   - 打开项目设置（Project -> Project Settings）
-   - 切换到插件标签页（Plugins）
-   - 找到 "Godot Core System" 并启用
-
-### 基础使用
-
-```gdscript
-extends Node
-
-func _ready():
- # 通过 CoreSystem 单例访问各个管理器
- CoreSystem.state_machine_manager  # 状态机管理器
- CoreSystem.save_manager          # 存档管理器
- CoreSystem.audio_manager         # 音频管理器
- CoreSystem.input_manager         # 输入管理器
- CoreSystem.logger               # 日志管理器
- CoreSystem.resource_manager     # 资源管理器
- CoreSystem.scene_manager        # 场景管理器
- CoreSystem.tag_manager         # 标签管理器
- CoreSystem.trigger_manager     # 触发器管理器
-```
-
-## 📚 文档
-
-每个系统的详细文档：
-
-| 系统名称           | 功能描述                           | 文档链接                                |
-|-------------------|----------------------------------|----------------------------------------|
-| 状态机系统         | 游戏逻辑状态管理                   | [查看文档](docs/systems/state_machine_system_zh.md) |
-| 音频系统           | 音频管理和过渡                     | [查看文档](docs/systems/audio_system_zh.md)       |
-| 输入系统           | 输入处理和事件管理                 | [查看文档](docs/systems/input_system_zh.md)       |
-| 日志系统           | 多通道日志记录                     | [查看文档](docs/systems/logger_system_zh.md)      |
-| 资源系统           | 资源加载和管理                     | [查看文档](docs/systems/resource_system_zh.md)    |
-| 场景系统           | 场景转换和管理                     | [查看文档](docs/systems/scene_system_zh.md)       |
-| 标签系统           | 对象标签和分类                     | [查看文档](docs/systems/tag_system_zh.md)         |
-| 触发器系统         | 事件驱动的触发器和条件             | [查看文档](docs/systems/trigger_system_zh.md)       |
-| 配置系统           | 配置管理                           | [查看文档](docs/systems/config_system_zh.md)        |
-| 存档系统           | 游戏存档管理                       | [查看文档](docs/systems/save_system_zh.md)          |
-
-每个工具的详细文档：
-
-| 工具名称           | 功能描述                          | 文档链接                                |
-|-------------------|-----------------------------------|----------------------------------------|
-| 分帧执行器         | 性能优化工具                       | [查看文档](docs/utils/frame_splitter_zh.md)       |
-| 异步 IO 管理器     | 非阻塞的文件读写、策略化处理       | [查看文档](docs/utils/async_io_manager_zh.md)   |
-| 线程系统           | 简化多线程管理                     | [查看文档](docs/utils/threading_system_zh.md)     |
-| 随机选择器         | 带权重的随机选择工具               | [查看文档](docs/utils/random_picker_zh.md)      |
-
-## 🌟 示例项目
-
-访问我们的[示例项目](examples/)，了解框架的实际应用场景和使用方式。
-
-### 完整游戏示例
-
-- [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - 一个使用 godot_core_system 框架开发的 2D 平台游戏示例，展示了框架在实际游戏开发中的应用。
-- [Exocave : 2d平台跳跃解密游戏。以重力翻转为核心机制](https://github.com/youer0219/Exocave) - 使用 godot_core_system 框架的 scene_system。
-
-## 🤝 参与贡献
-
-我们欢迎各种形式的贡献！无论是新功能、bug 修复，还是文档改进。详情请查看[贡献指南](docs/CONTRIBUTING.md)。
-
-## 📄 开源协议
-
-本项目采用 MIT 开源协议 - 查看 [LICENSE](LICENSE) 文件了解详情。
-
-## 💖 支持与帮助
-
-如果你遇到问题或有任何建议：
-
-1. 查看[详细文档](docs/)
-2. 搜索[已存在的 issues](https://github.com/Liweimin0512/godot_core_system/issues)
-3. 创建新的[issue](https://github.com/Liweimin0512/godot_core_system/issues/new)
-
-### 社区交流
-
-- 加入我们的 [Discord 社区](https://discord.gg/V5nuzC2BcJ)
-- 关注我们的 [itch.io](https://godot-li.itch.io/) 主页
-- 为项目点亮 ⭐ 以示支持！
-
-## 🙏 致谢
-
-- 感谢所有为项目做出贡献的开发者！
-- 感谢[老李游戏学院](https://wx.zsxq.com/group/28885154818841)的每一位同学！
-
----
-
-<div align="center">
-  <strong>由 老李游戏学院 用 ❤️ 构建</strong><br>
-  <sub>让游戏开发变得更简单</sub>
-</div>
-
-原生主场景切换与独立淡入淡出见 [CoreScenes](docs/systems/native_scenes.md)，提供独立示例、生命周期检查及 C# 行为映射；旧场景接口继续保留。
-
-引擎暂停/倍速的独占作用域及退出恢复见 [CoreTime](docs/systems/core_time_scope.md)，与 C# 生命周期对齐；旧 TimeManager 的私有时钟仍独立保留。
-
-与 C# 对齐的同步发布、快照分发及订阅令牌见 [最小 CoreEventBus](docs/systems/core_event_bus.md)。旧优先级、过滤与延迟事件模块保留为独立扩展。

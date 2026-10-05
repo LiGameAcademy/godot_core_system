@@ -1,8 +1,8 @@
-# Godot Core System
+﻿# Godot Core System
 
 <div align="center">
 
-English | [简体中文](README_zh.md)
+English | [绠€浣撲腑鏂嘳(README_zh.md)
 
 ![Godot v4.7.2](https://img.shields.io/badge/Godot-v4.7.2-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
@@ -15,36 +15,34 @@ A highly modular and extensible core system framework designed for Godot 4.7.2
 
 Godot 4.7.2 is the currently verified supported version. Compatibility with older releases will be verified separately.
 
-[Getting Started](#-getting-started) •
-[Documentation](docs/) •
-[Examples](examples/) •
-[Contributing](docs/CONTRIBUTING.md) •
-[Support and Help](#-support--help)
+[Getting Started](#-getting-started) 鈥?[Documentation](docs/) 鈥?[Examples](examples/) 鈥?[Contributing](docs/CONTRIBUTING.md) 鈥?[Support and Help](#-support--help)
 
 </div>
 
-## ✨ Features
+## 鉁?Features
 
-- 🎮 **State Machine System** - Flexible and powerful state management for game logic
-- 💾 **Serialization System** - Easy-to-use save/load functionality with config management
-- 🎵 **Audio System** - Comprehensive audio management with categories and transitions
-- 🎯 **Input System** - Unified input handling with action mapping and event management
-- 📝 **Logger System** - Detailed logging system with multiple output channels
-- 🎨 **Resource System** - Efficient resource loading and management
-- 🎬 **Scene System** - Scene transition and management made easy
-- 🏷️ **Tag System** - Flexible object tagging and categorization system
-- 🔄 **Trigger System** - Event-driven trigger system with conditions and actions
-- ⚡ **Frame Splitter** - Performance optimization tool for distributing heavy tasks across frames
-- 🔧 **Plugin Architecture** - Easy to extend and customize
-- 📱 **Project Settings Integration** - Configure all systems through Godot's project settings
-- 🛠️ **Development Tools** - Built-in debugging and development tools
+- 馃幃 **State Machine System** - Flexible and powerful state management for game logic
+- 馃捑 **Serialization System** - Easy-to-use save/load functionality with config management
+- 馃幍 **Audio System** - Comprehensive audio management with categories and transitions
+- 馃幆 **Input System** - Unified input handling with action mapping and event management
+- 馃摑 **Logger System** - Detailed logging system with multiple output channels
+- 馃帹 **Resource System** - Efficient resource loading and management
+- 馃幀 **Scene System** - Scene transition and management made easy
+- 馃彿锔?**Tag System** - Flexible object tagging and categorization system
+- 馃攧 **Trigger System** - Event-driven trigger system with conditions and actions
+- 鈿?**Frame Splitter** - Performance optimization tool for distributing heavy tasks across frames
+- 馃敡 **Plugin Architecture** - Easy to extend and customize
+- 馃摫 **Project Settings Integration** - Configure all systems through Godot's project settings
+- 馃洜锔?**Development Tools** - Built-in debugging and development tools
 
-## 🚀 Getting Started
+## 馃殌 Getting Started
 
 ### System Requirements
 
 - Godot Engine 4.7.2
 - Basic knowledge of GDScript and Godot Engine
+
+The independent [versioned JSON service](docs/systems/core_save_store.md) uses a small [Windows x64 native replacement extension](native/atomic_file/README.md). Include its DLL when exporting; other platforms need their own validated packaging. This service does not change the legacy save manager's format.
 
 ### Installation Steps
 
@@ -73,7 +71,7 @@ func _ready():
     CoreSystem.trigger_manager     # Trigger Manager
 ```
 
-## 📚 Documentation
+## 馃摎 Documentation
 
 Detailed documentation for each system:
 
@@ -99,7 +97,7 @@ Detailed documentation for each utility:
 | Threading System     | Simplified multi-threading management | [View Docs](docs/utils/threading_system.md)     |
 | Random Picker        | Weighted random selection tool        | [View Docs](docs/utils/random_picker.md)      |
 
-## 🌟 Example Projects
+## 馃専 Example Projects
 
 Visit our [example projects](examples/) to understand the framework's practical applications and best practices.
 
@@ -108,15 +106,15 @@ Visit our [example projects](examples/) to understand the framework's practical 
 - [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - A 2D platform game example developed using the godot_core_system framework, demonstrating practical application of the framework in actual game development.
 - [Exocave : 2d platform jumping puzzle game. Gravity flip as the core mechanism](https://github.com/youer0219/Exocave) - Developed using the godot_core_system framework's scene_system.
 
-## 🤝 Contributing
+## 馃 Contributing
 
 We welcome all forms of contributions! Whether it's new features, bug fixes, or documentation improvements. See our [Contributing Guidelines](docs/CONTRIBUTING.md) for details.
 
-## 📄 License
+## 馃搫 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 💖 Support & Help
+## 馃挅 Support & Help
 
 If you encounter any issues or have suggestions:
 
@@ -128,18 +126,18 @@ If you encounter any issues or have suggestions:
 
 - Join our [Discord Community](https://discord.gg/V5nuzC2BcJ)
 - Follow us on [itch.io](https://godot-li.itch.io/)
-- Star ⭐ the project to show your support!
+- Star 猸?the project to show your support!
 
-## 🙏 Acknowledgments
+## 馃檹 Acknowledgments
 
 - Thanks to all developers who contributed to this project!
 - Special thanks to every student at [Li's Game Academy](https://wx.zsxq.com/group/28885154818841)!
-- Built with ❤️ by the Godot community
+- Built with 鉂わ笍 by the Godot community
 
 ---
 
 <div align="center">
-    <strong>Built by Liweimin0512 with ❤️</strong><br>
+    <strong>Built by Liweimin0512 with 鉂わ笍</strong><br>
     <sub>Making game development easier</sub>
 </div>
 ## State and timer semantics
