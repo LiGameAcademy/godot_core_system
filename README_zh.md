@@ -150,3 +150,5 @@ func _ready():
 与 C# 对齐的同步发布、快照分发及订阅令牌见 [最小 CoreEventBus](docs/systems/core_event_bus.md)。旧优先级、过滤与延迟事件模块保留为独立扩展。
 
 与 C# 对齐的版本化 JSON 见 [CoreSaveStore](docs/systems/core_save_store.md)。Windows x64 的安全替换使用随附 [原生扩展](native/atomic_file/README.md)，导出时需要包含 DLL；其他平台需独立验证打包。旧存档管理器格式保留。
+
+与 C# 对齐的键鼠重绑定见 [CoreInputs](docs/systems/core_inputs.md)：显式动作组、配置校验、冲突检查、默认恢复和独立捕获/持久化示例。旧录制、缓冲与虚拟轴保留为独立扩展。
