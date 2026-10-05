@@ -44,6 +44,8 @@ Godot 4.7.2 is the currently verified supported version. Compatibility with olde
 
 The independent [versioned JSON service](docs/systems/core_save_store.md) uses a small [Windows x64 native replacement extension](native/atomic_file/README.md). Include its DLL when exporting; other platforms need their own validated packaging. This service does not change the legacy save manager's format.
 
+The independent [input rebinding service](docs/systems/core_inputs.md) edits an explicit action group, preserves joypad inputs, and provides a standalone capture and persistence example.
+
 ### Installation Steps
 
 1. Download the latest release from the [releases page](https://github.com/Liweimin0512/godot_core_system/releases)
