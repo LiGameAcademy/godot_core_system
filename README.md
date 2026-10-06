@@ -155,3 +155,5 @@ Exclusive engine pause/speed ownership and snapshot restoration are available th
 For synchronous snapshot events and disposable scene-owned tokens with C# lifecycle parity, see [minimal CoreEventBus](docs/systems/core_event_bus.md). Legacy event extensions remain separate.
 
 Local classification and rule conditions with dual-language parity are available through [CoreTags](docs/systems/core_tags.md), with a [standalone example](examples/tags/README.md). Legacy object tagging remains a separate extension.
+
+The [character tag demo](examples/tag_demo/README.md) also uses local CoreTags without AutoLoad. Old tag classes are deprecated adapters; see the [migration changes](docs/systems/tag_system.md).

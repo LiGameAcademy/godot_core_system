@@ -1,100 +1,68 @@
 extends Resource
 class_name GameplayTagContainer
 
-## 标签列表
-var _tags: Array[CoreGameplayTag] = []
-
-## 当添加标签时发出
+## Deprecated compatibility facade. CoreTags is the sole membership authority.
 signal tag_added(tag: CoreGameplayTag)
-## 当移除标签时发出
 signal tag_removed(tag: CoreGameplayTag)
 
-var _tag_manager : CoreSystem.GameplayTagManager:
-	get:
-		if not _tag_manager:
-			_tag_manager = CoreSystem.tag_manager
-		return _tag_manager
+var _tags: CoreTags = CoreTags.new()
+var _records: Dictionary[String, CoreGameplayTag] = {}
 
-
-## 添加标签
-## 可以直接传入标签路径字符串或CoreGameplayTag对象
-func add_tag(tag) -> void:
-	var tag_obj: CoreGameplayTag
-	if tag is String:
-		tag_obj = _tag_manager.get_tag(tag)
-		if not tag_obj:
-			push_error("Tag not found: %s" % tag)
-			return
-	else:
-		tag_obj = tag
-	
-	if not has_tag(tag_obj):
-		_tags.append(tag_obj)
-		tag_added.emit(tag_obj)
-
-
-## 移除标签
-## 可以直接传入标签路径字符串或CoreGameplayTag对象
-func remove_tag(tag) -> void:
-	var tag_obj: CoreGameplayTag
-	if tag is String:
-		tag_obj = _tag_manager.get_tag(tag)
-		if not tag_obj:
-			push_error("Tag not found: %s" % tag)
-			return
-	else:
-		tag_obj = tag
-	
-	if _tags.has(tag_obj):
-		_tags.erase(tag_obj)
-		tag_removed.emit(tag_obj)
-
-
-## 是否有指定标签
-## 可以直接传入标签路径字符串或CoreGameplayTag对象
-func has_tag(tag, exact: bool = true) -> bool:
-	var tag_obj: CoreGameplayTag
-	if tag is String:
-		tag_obj = _tag_manager.get_tag(tag)
-		if not tag_obj:
-			push_error("Tag not found: %s" % tag)
-			return false
-	else:
-		tag_obj = tag
-		
-	for existing_tag in _tags:
-		if existing_tag.matches(tag_obj, exact):
-			return true
-	return false
-
-
-## 是否有所有指定标签
-## 可以直接传入标签路径字符串数组或CoreGameplayTag数组
-func has_all_tags(required_tags: Array, exact: bool = true) -> bool:
-	for tag in required_tags:
-		if not has_tag(tag, exact):
-			return false
+func add_tag(tag: Variant) -> bool:
+	var path: String = _path_from(tag)
+	if not _validate(path) or _tags.has(path):
+		return false
+	var record: CoreGameplayTag = tag as CoreGameplayTag if tag is CoreGameplayTag else CoreGameplayTag.create(path)
+	_records[path] = record
+	_tags.add(path)
+	tag_added.emit(record)
 	return true
 
+func remove_tag(tag: Variant) -> bool:
+	var path: String = _path_from(tag)
+	if not _validate(path) or not _tags.has(path):
+		return false
+	var record: CoreGameplayTag = _records[path]
+	_records.erase(path)
+	_tags.remove(path)
+	tag_removed.emit(record)
+	return true
 
-## 是否有任意指定标签
-## 可以直接传入标签路径字符串数组或CoreGameplayTag数组
+func has_tag(tag: Variant, exact: bool = true) -> bool:
+	return _tags.has(_path_from(tag), exact)
+
+func has_all_tags(required_tags: Array, exact: bool = true) -> bool:
+	return _tags.has_all(_paths_from(required_tags), exact)
+
 func has_any_tags(required_tags: Array, exact: bool = true) -> bool:
-	for tag in required_tags:
-		if has_tag(tag, exact):
-			return true
-	return false
+	return _tags.has_any(_paths_from(required_tags), exact)
 
+## Full explicit paths; no leaf-name truncation or implicit ancestor insertion.
+func get_tags() -> Array[String]:
+	return _tags.snapshot()
 
-## 获取所有标签
-func get_tags() -> Array:
-	return _tags.map(func(tag: CoreGameplayTag): return tag.name)
-
-
-## 获取所有标签(包括子标签)
+## Legacy object payloads for explicit membership only, in sorted path order.
 func get_all_tags() -> Array[CoreGameplayTag]:
 	var result: Array[CoreGameplayTag] = []
-	for tag in _tags:
-		result.append(tag)
-		result.append_array(tag.get_all_children())
+	for path: String in _tags.snapshot():
+		result.append(_records[path])
 	return result
+
+func _path_from(tag: Variant) -> String:
+	if tag is String:
+		return tag
+	if tag is CoreGameplayTag:
+		return (tag as CoreGameplayTag).get_full_path()
+	return ""
+
+func _paths_from(tags: Array) -> Array[String]:
+	var result: Array[String] = []
+	for tag: Variant in tags:
+		result.append(_path_from(tag))
+	return result
+
+func _validate(path: String) -> bool:
+	if CoreTags.is_valid_path(path):
+		return true
+	push_error("Expected a valid full path or initialized CoreGameplayTag record.")
+	return false

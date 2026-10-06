@@ -86,7 +86,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not trigger_manager:
 			trigger_manager = _get_module("trigger_manager")
 		return trigger_manager
-@onready var tag_manager : GameplayTagManager = _get_module("tag_manager"):							## 标签管理器
+var tag_manager : GameplayTagManager:							## Deprecated lazy tag compatibility adapter
 	get:
 		if not tag_manager:
 			tag_manager = _get_module("tag_manager")
@@ -112,7 +112,9 @@ var _module_scripts: Dictionary[StringName, Script] = {
 
 ## 检查模块是否启用
 func is_module_enabled(module_id: StringName) -> bool:
-	var setting_name = "godot_core_system/module_enable/" + module_id
+	var setting_name: String = "godot_core_system/module_enable/" + String(module_id)
+	if module_id == &"tag_manager" and not ProjectSettings.has_setting(setting_name):
+		setting_name = "godot_core_system/module_enable/gameplay_tag_manager"
 	# 如果设置不存在，默认为启用
 	if not ProjectSettings.has_setting(setting_name):
 		return true

@@ -2,68 +2,83 @@
 extends RefCounted
 class_name CoreGameplayTag
 
-## 核心系统标签对象（运行时）
-## 用于标签的层级结构管理和运行时操作
-## 注意：与godot_ability_system的GameplayTag（Resource）区分
+## Deprecated path record. Use CoreTags for runtime ownership and rule queries.
+var name: String:
+	get:
+		return _path.get_slice(".", _path.get_slice_count(".") - 1)
+	set(_value):
+		push_error("Tag identity is read-only; create a new full-path record.")
+var parent: CoreGameplayTag:
+	get:
+		return _parent_ref.get_ref() as CoreGameplayTag if _parent_ref != null else null
+	set(_value):
+		push_error("Use add_child/remove_child to update legacy metadata.")
+var children: Array[CoreGameplayTag]:
+	get:
+		var result: Array[CoreGameplayTag] = []
+		for reference: WeakRef in _children_refs.duplicate():
+			var child: CoreGameplayTag = reference.get_ref() as CoreGameplayTag
+			if child == null:
+				_children_refs.erase(reference)
+			else:
+				result.append(child)
+		return result
+	set(_value):
+		push_error("Child metadata is a read-only snapshot.")
 
-## 标签名称
-var name: String
+var _path: String = ""
+var _parent_ref: WeakRef
+var _children_refs: Array[WeakRef] = []
 
-## 父标签
-var parent: CoreGameplayTag
-
-## 子标签
-var children: Array[CoreGameplayTag] = []
-
-static func create(tag_name: String) -> CoreGameplayTag:
-	var tag := CoreGameplayTag.new()
-	tag.name = tag_name
+static func create(full_path: String) -> CoreGameplayTag:
+	if not CoreTags.is_valid_path(full_path):
+		push_error("Invalid tag path; use a valid full path.")
+		return null
+	var tag: CoreGameplayTag = CoreGameplayTag.new()
+	tag._path = full_path
 	return tag
 
-## 添加子标签
-func add_child(child: CoreGameplayTag) -> void:
-	if not child in children:
-		children.append(child)
-		child.parent = self
-
-## 移除子标签
-func remove_child(child: CoreGameplayTag) -> void:
+## Weak metadata links never change path identity. Only direct full-path children fit.
+func add_child(child: CoreGameplayTag) -> bool:
+	if child == null or child == self or _path.is_empty():
+		push_error("Cannot attach a null or self tag.")
+		return false
+	var separator: int = child._path.rfind(".")
+	if separator < 0 or child._path.substr(0, separator) != _path:
+		push_error("Child path must be a direct descendant of the parent path.")
+		return false
 	if child in children:
-		children.erase(child)
-		child.parent = null
+		return false
+	var previous: CoreGameplayTag = child.parent
+	if previous != null:
+		previous.remove_child(child)
+	_children_refs.append(weakref(child))
+	child._parent_ref = weakref(self)
+	return true
 
-## 获取完整路径
+func remove_child(child: CoreGameplayTag) -> bool:
+	for reference: WeakRef in _children_refs.duplicate():
+		var existing: CoreGameplayTag = reference.get_ref() as CoreGameplayTag
+		if existing == null:
+			_children_refs.erase(reference)
+		elif existing == child:
+			_children_refs.erase(reference)
+			if child.parent == self:
+				child._parent_ref = null
+			return true
+	return false
+
 func get_full_path() -> String:
-	if parent:
-		return parent.get_full_path() + "." + name
-	return name
+	return _path
 
-## 获取所有子标签（递归）
 func get_all_children() -> Array[CoreGameplayTag]:
 	var result: Array[CoreGameplayTag] = []
-	for child in children:
+	for child: CoreGameplayTag in children:
 		result.append(child)
 		result.append_array(child.get_all_children())
 	return result
 
-## 检查是否匹配目标标签
-## exact: 是否精确匹配。如果为false，则会检查层级关系
 func matches(other: CoreGameplayTag, exact: bool = true) -> bool:
-	if exact:
-		return get_full_path() == other.get_full_path()
-	
-	# 检查是否是目标标签的父标签
-	var current := other
-	while current:
-		if current == self:
-			return true
-		current = current.parent
-	
-	# 检查是否是目标标签的子标签
-	current = self
-	while current:
-		if current == other:
-			return true
-		current = current.parent
-	
-	return false
+	if other == null or not CoreTags.is_valid_path(_path) or not CoreTags.is_valid_path(other._path):
+		return false
+	return _path == other._path or (not exact and _path.begins_with(other._path + "."))
