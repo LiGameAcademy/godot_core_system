@@ -151,8 +151,8 @@ func set_section(section: String, value: Dictionary) -> void:
 
 	# 1. 遍历新字典，设置或覆盖值
 	for key in value:
-		var current_value := get_value(section, key, null) # 获取当前文件中的值（缺键时不会向 ConfigFile 传 nil 默认）
-		if current_value != value[key]: # 仅在值确实改变时设置
+		var current_value: Variant = get_value(section, key, null)
+		if _is_value_modified(current_value, value[key]):
 			_config_file.set_value(section, key, value[key])
 			changed = true
 
@@ -185,6 +185,9 @@ func _is_value_modified(current: Variant, new: Variant) -> bool:
 	if current == null and new == null:
 		return false
 	if current == null or new == null:
+		return true
+	# Godot不允许所有不同类型直接比较；配置迁移/修复坏值应视为变化。
+	if typeof(current) != typeof(new):
 		return true
 
 	# 处理数组

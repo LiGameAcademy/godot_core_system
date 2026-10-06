@@ -65,7 +65,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not time_manager:
 			time_manager = _get_module("time_manager")
 		return time_manager
-@onready var save_manager : SaveManager = _get_module("save_manager"):				## 存档管理器
+@onready var save_manager : SaveManager = _get_module("save_manager") if is_module_enabled("save_manager") else null:				## 存档管理器
 	get:
 		if not save_manager:
 			save_manager = _get_module("save_manager")
