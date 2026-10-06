@@ -159,3 +159,5 @@ Local classification and rule conditions with dual-language parity are available
 The [character tag demo](examples/tag_demo/README.md) also uses local CoreTags without AutoLoad. Old tag classes are deprecated adapters; see the [migration changes](docs/systems/tag_system.md).
 
 Local [CoreTrigger](docs/systems/core_trigger.md) adds explicit condition/quota evaluation with a [standalone example](examples/triggers/README.md); event and timer ownership remain with the caller.
+
+Caller-owned [CoreGameSession](docs/systems/core_game_session.md) adds a fixed identity, lifecycle phases, commit-before-notification and optional pause/resume adapters. The [count/timer example](examples/game_session/README.md) uses two independent end rules without a global manager or game assets.
