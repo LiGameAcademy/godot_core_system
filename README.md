@@ -157,3 +157,5 @@ For synchronous snapshot events and disposable scene-owned tokens with C# lifecy
 Local classification and rule conditions with dual-language parity are available through [CoreTags](docs/systems/core_tags.md), with a [standalone example](examples/tags/README.md). Legacy object tagging remains a separate extension.
 
 The [character tag demo](examples/tag_demo/README.md) also uses local CoreTags without AutoLoad. Old tag classes are deprecated adapters; see the [migration changes](docs/systems/tag_system.md).
+
+Local [CoreTrigger](docs/systems/core_trigger.md) adds explicit condition/quota evaluation with a [standalone example](examples/triggers/README.md); event and timer ownership remain with the caller.
