@@ -1,8 +1,8 @@
 extends Node2D
 
-const CoreEventBus = CoreSystem.CoreEventBus
+const LegacyEventBus = CoreSystem.LegacyEventBus
 
-var event_bus : CoreEventBus = CoreSystem.event_bus
+var event_bus : LegacyEventBus = CoreSystem.event_bus
 
 func _ready():
 	# 启用调试模式和历史记录
@@ -96,7 +96,7 @@ func _on_player_move_right(direction, distance):
 
 const _ISSUE48_EVENT := "issue48_demo"
 
-## Issue #48：验证 [method CoreEventBus.subscribe_unique_script] — 同一 [Script] 的多个实例对同一事件订阅时，新订阅会移除旧实例上的同类连接。
+## Issue #48: [method LegacyEventBus.subscribe_unique_script] replaces subscriptions from older instances of the same Script.
 func _run_issue48_test() -> void:
 	var a := Issue48Listener.new("A")
 	var b := Issue48Listener.new("B")
@@ -118,7 +118,7 @@ func _run_issue48_test() -> void:
 	event_bus.push_event(_ISSUE48_EVENT, ["round2"])
 
 
-## #48 测试用：同脚本多实例（与 [method CoreEventBus.subscribe_unique_script] 配对）
+## Issue #48: multiple instances of one Script exercise unique subscription ownership.
 class Issue48Listener extends RefCounted:
 	var label: String
 
