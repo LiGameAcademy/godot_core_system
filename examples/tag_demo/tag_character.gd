@@ -1,24 +1,54 @@
 extends Node2D
+class_name CoreTagCharacter
 
-## 角色的标签容器
-var tag_container : GameplayTagContainer:
-	get:
-		if not tag_container:
-			tag_container = GameplayTagContainer.new()
-		return tag_container
+signal tags_changed
+signal attack_finished
 
-## 添加标签
-func add_tag(tag: String) -> void:
-	tag_container.add_tag(tag)
+@export var category: String = "character"
+@export var display_name: String = "Character"
+@export var base_color: Color = Color(0.2, 0.6, 1.0)
+@export var attack_duration: float = 2.0
+var model: CoreTagCharacterModel
+@onready var _visual: ColorRect = $ColorRect
+@onready var _label: Label = $Label
 
-## 移除标签
-func remove_tag(tag: String) -> void:
-	tag_container.remove_tag(tag)
+func _ready() -> void:
+	model = CoreTagCharacterModel.new(category)
+	model.tags.tag_added.connect(_on_tag_changed)
+	model.tags.tag_removed.connect(_on_tag_changed)
+	_label.text = display_name
+	_refresh_visual()
 
-## 检查是否有标签
-func has_tag(tag: String, exact: bool = true) -> bool:
-	return tag_container.has_tag(tag, exact)
+func _process(delta: float) -> void:
+	if model.advance(delta):
+		attack_finished.emit()
 
-## 获取所有标签
-func get_tags() -> Array:
-	return tag_container.get_tags()
+func _exit_tree() -> void:
+	model.tags.tag_added.disconnect(_on_tag_changed)
+	model.tags.tag_removed.disconnect(_on_tag_changed)
+
+func toggle_move() -> bool:
+	return model.toggle_move()
+
+func try_attack() -> bool:
+	return model.begin_attack(attack_duration)
+
+func add_tag(path: String) -> bool:
+	return model.tags.add(path)
+
+func remove_tag(path: String) -> bool:
+	return model.tags.remove(path)
+
+func has_tag(path: String, exact: bool = true) -> bool:
+	return model.tags.has(path, exact)
+
+func get_tags() -> Array[String]:
+	return model.tags.snapshot()
+
+func _on_tag_changed(_path: String) -> void:
+	_refresh_visual()
+	tags_changed.emit()
+
+func _refresh_visual() -> void:
+	_visual.color = Color.RED if model.tags.has("state.attacking") else (
+		Color.GREEN if model.tags.has("state.moving") else base_color)

@@ -87,7 +87,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not trigger_manager:
 			trigger_manager = _get_module("trigger_manager")
 		return trigger_manager
-@onready var tag_manager : GameplayTagManager = _get_module("tag_manager"):							## 标签管理器
+var tag_manager : GameplayTagManager:							## Deprecated lazy tag compatibility adapter
 	get:
 		if not tag_manager:
 			tag_manager = _get_module("tag_manager")
