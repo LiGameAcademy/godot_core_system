@@ -153,3 +153,5 @@ Native main-scene switching and optional persistent fades are available through 
 Exclusive engine pause/speed ownership and snapshot restoration are available through [CoreTime scopes](docs/systems/core_time_scope.md), with a standalone example and matching C# lifecycle behavior.
 
 For synchronous snapshot events and disposable scene-owned tokens with C# lifecycle parity, see [minimal CoreEventBus](docs/systems/core_event_bus.md). Legacy event extensions remain separate.
+
+Local classification and rule conditions with dual-language parity are available through [CoreTags](docs/systems/core_tags.md), with a [standalone example](examples/tags/README.md). Legacy object tagging remains a separate extension.
