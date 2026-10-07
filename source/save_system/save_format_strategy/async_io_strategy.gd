@@ -403,7 +403,15 @@ func _process_object_for_load(value: Dictionary) -> Object:
 	if value.has("script"):
 		object = ResourceLoader.load(value.script, "Script").new()
 	if value.has("resource_path"):
-		object = ResourceLoader.load(value.resource_path, "Resource")
+		# Saved mutable properties must not overwrite cached templates or dependencies.
+		var cache_mode: ResourceLoader.CacheMode = ResourceLoader.CACHE_MODE_REUSE
+		if not value.get("props", {}).is_empty():
+			cache_mode = ResourceLoader.CACHE_MODE_IGNORE_DEEP
+		object = ResourceLoader.load(value.resource_path, "Resource", cache_mode)
+
+	if not is_instance_valid(object):
+		CoreSystem.logger.error("Could not restore saved object: %s" % str(value))
+		return null
 
 	var prop_dict: Dictionary = value.props
 	for prop_key in prop_dict:
