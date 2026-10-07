@@ -15,7 +15,7 @@ func compress(bytes: PackedByteArray) -> Variant:
 		return bytes
 	var compressed: PackedByteArray = bytes.compress(COMPRESSION_MODE)
 	if compressed.is_empty():
-		CoreSystem.logger.error("Failed to compress non-empty data with Gzip.")
+		push_error("Failed to compress non-empty data with Gzip.")
 		return null
 	return compressed
 
@@ -27,9 +27,9 @@ func decompress(bytes: PackedByteArray) -> PackedByteArray:
 	# RFC 1952：GZIP 尾部的 ISIZE（最后 4 字节，小端）为未压缩长度 mod 2^32。
 	# 高压缩比时「压缩包大小 × 倍数」会远小于真实未压缩大小，必须用 ISIZE 或逐步放大缓冲区。
 	var estimated_size: int = _estimate_gzip_uncompressed_size(bytes)
-	var decompressed_bytes := bytes.decompress(estimated_size, COMPRESSION_MODE)
+	var decompressed_bytes: PackedByteArray = bytes.decompress(estimated_size, COMPRESSION_MODE)
 
-	var attempt := 0
+	var attempt: int = 0
 	while decompressed_bytes.is_empty() and not bytes.is_empty() and attempt < 6:
 		attempt += 1
 		estimated_size = max(estimated_size * 4, int(bytes.size() * pow(10, attempt)))

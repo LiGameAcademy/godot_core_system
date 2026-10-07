@@ -22,6 +22,8 @@ func _ready() -> void:
 	for script: Script in [AsyncStrategy, JSONStrategy, BinaryStrategy]:
 		var strategy: RefCounted = script.new()
 		var io: RefCounted = strategy.get("_io_manager")
+		_check(io.get("_io_thread") == null, "Construction leaves the IO worker dormant")
+		io.call("list_files_async", "res://")
 		var worker: RefCounted = io.get("_io_thread")
 		var io_ref: WeakRef = weakref(io)
 		var worker_ref: WeakRef = weakref(worker)
@@ -63,6 +65,7 @@ func _ready() -> void:
 	var refs: Array[WeakRef] = []
 	for strategy: RefCounted in manager.get("_strategies").values():
 		if strategy is AsyncStrategy:
+			strategy.get("_io_manager").call("list_files_async", "res://")
 			refs.append(weakref(strategy.get("_io_manager").get("_io_thread")))
 	remove_child(manager)
 	manager.free()
@@ -73,6 +76,7 @@ func _ready() -> void:
 	refs.clear()
 	for strategy: RefCounted in manager.get("_strategies").values():
 		if strategy is AsyncStrategy:
+			strategy.get("_io_manager").call("list_files_async", "res://")
 			refs.append(weakref(strategy.get("_io_manager").get("_io_thread")))
 	manager.free()
 	await get_tree().process_frame
