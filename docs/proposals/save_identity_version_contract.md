@@ -1,6 +1,6 @@
 # 存档对象身份与版本迁移提案（#76）
 
-状态：2026-10-07 用户已采纳以下兼容政策；运行实现、旧档夹具及集成验收尚未完成。
+状态：2026-10-07 用户已采纳以下兼容政策；显式对象登记与版本预检查已实现并独立验证，旧档转换、迁移链和 SaveManager 集成尚未完成。
 关联 [issue #76](https://github.com/LiGameAcademy/godot_core_system/issues/76)，核对 main `8d484f5`。
 待恢复状态跨存档污染由 #67 独立处理，本提案不替代其修复。
 
@@ -122,4 +122,16 @@ save_id、版本、阶段、失败原因、已应用/待恢复数量、未匹配
 | 同 game_version，不同 schema | 按 schema 处理；不同 game_version，同 schema 可读 |
 | resource/json/binary 的类型矩阵 | 各自报告支持与失败，Resource 修改 A 不污染 B/模板 |
 
-此 PR 当前记录已采纳政策、源码核对和验收标准；未实施身份接口、版本迁移或运行测试，issue 保持开放。后续实施必须与 #99 独立存档组合及现有失败/隔离回归共同验证。
+## 已实现的基础接口
+
+`source/save_system/save_object_registry.gd` 仅登记调用方提供的对象，使用弱引用，不查找场景或创建对象。`register_node(node, save_id)` 提供稳定 ID；省略 ID 时保存当前绝对路径。重复 ID 拒绝，同一对象重复登记相同身份幂等；改变身份前先 `unregister_node`。`resolve(kind, identity)` 返回仍有效的已登记对象，找不到返回 null；路径登记在场景改名后失效，稳定 ID 仍指向同一对象。`get_keys()` 给出排序后的有效身份，`clear()` 清理登记但不释放游戏对象。节点访问限主线程。
+
+`source/save_system/save_version_contract.gd` 的 `check(metadata, current_schema_version, legacy_schema_version)` 返回带 error、message、format_version、schema_version 的结果。缺少框架版本表示 legacy v0；缺少游戏 schema 使用调用方配置的旧 schema（默认 1）。框架当前版本为 1，已声明框架版本的存档必须声明游戏 schema。实际 JSON 解码产生的整数浮点值也能读取；布尔、字符串、非整数、非有限值等错误类型被拒绝。未来版本返回 ERR_UNAVAILABLE，损坏元数据返回 ERR_INVALID_DATA；检查不修改输入。
+
+旧 schema 通过 `check` 只表示可以进入后续转换阶段，**不表示已有完整迁移链或允许直接恢复**。`current_metadata` 只生成已完成转换的新快照元数据；不能用它把旧记录直接标记成新格式。该元数据复制会隔离字典和数组，不承诺其中的 Resource 独占；资源恢复隔离仍由 #99 快照拥有者负责。
+
+在 Windows、Godot 4.7.2 stable mono 的独立宿主中，只复制上述两个脚本和 `tests/standalone_save` 两个检查脚本，创建 config_version=5 的 project.godot，没有 CoreSystem 或其他模块。分别执行 `--headless --verbose --path <宿主> --script tests/standalone_save/save_version_checks.gd`（42 项）和 `save_identity_checks.gd`（24 项）。两次退出码 0，无脚本错误、对象或资源保留。沙箱拒绝 user:// 日志写入、系统证书读取，空宿主缺少 .NET assembly，属于环境诊断，不作为功能通过证据。
+
+版本案例包含真实 JSON 解码、无版本旧元数据、独立 schema、未来版本、损坏字段、检查与标记不修改原元数据。身份案例包含真实节点的场景改名、创建顺序互换、重复 ID、主线程限制、失效弱引用及清理不销毁对象。尚未验证真实旧档文件恢复、同 ID 的存档记录冲突、延迟恢复缓存、完整迁移链或三种格式的资源隔离。
+
+PR 保持 draft，issue 保持开放。后续实施必须接入 #99 独立存档组合，并与现有失败/隔离回归共同验证。
