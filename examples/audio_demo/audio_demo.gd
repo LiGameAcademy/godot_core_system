@@ -1,75 +1,53 @@
 extends Node2D
 
-const AudioManager = CoreSystem.AudioManager
+const Manager: GDScript = preload("../../source/audio_system/audio_manager.gd")
+const BUSES: Array[String] = ["Master", "Music", "SFX", "Voice", "Ambient"]
+const MUSIC: String = "res://addons/godot_core_system/examples/audio_demo/assets/music/bgm.ogg"
+const SOUND: String = "res://addons/godot_core_system/examples/audio_demo/assets/sfx/click.ogg"
+const VOICE: String = "res://addons/godot_core_system/examples/audio_demo/assets/voice/congratulations.ogg"
+var _manager: Manager
+var _mix: CoreAudioBusScope
+var _created: Array[String] = []
 
-@onready var audio_manager : AudioManager = CoreSystem.audio_manager
+func _ready() -> void:
+	# Only this standalone demo creates missing buses; the plugin never changes layouts.
+	for bus: String in BUSES:
+		if AudioServer.get_bus_index(bus) < 0:
+			AudioServer.add_bus()
+			AudioServer.set_bus_name(AudioServer.get_bus_count() - 1, bus)
+			_created.append(bus)
+	_mix = CoreAudioBusScope.new(BUSES)
+	if _mix.is_closed:
+		push_error("Audio demo requires exclusive bus ownership.")
+		return
+	_manager = Manager.new()
+	_manager.configure_mix(_mix)
+	add_child(_manager)
+	_manager.preload_audio(MUSIC, Manager.AudioType.MUSIC)
+	_manager.play_music(MUSIC, 1.0)
+	print("Audio demo: Space replaces music, S plays sound, V plays voice, M toggles music volume, Escape stops.")
 
-# 预加载的音频资源路径
-var AUDIO_PATHS := {
-	"bgm": FileDirHandler.get_object_script_dir(self) + "/assets/music/bgm.ogg",
-	"click": FileDirHandler.get_object_script_dir(self) + "/assets/sfx/click.ogg",
-	"voice": FileDirHandler.get_object_script_dir(self) + "/assets/voice/congratulations.ogg"
-}
+func _exit_tree() -> void:
+	if _manager != null:
+		_manager.stop_all()
+	if _mix != null:
+		_mix.close()
+	for bus: String in _created:
+		var index: int = AudioServer.get_bus_index(bus)
+		if index >= 0:
+			AudioServer.remove_bus(index)
 
-func _ready():
-	# 预加载音频资源
-	audio_manager.preload_audio(AUDIO_PATHS.bgm, AudioManager.AudioType.MUSIC)
-	audio_manager.preload_audio(AUDIO_PATHS.click, AudioManager.AudioType.SOUND_EFFECT)
-	audio_manager.preload_audio(AUDIO_PATHS.voice, AudioManager.AudioType.VOICE)
-	
-	# 延迟1秒后开始演示
-	await get_tree().create_timer(1.0).timeout
-	_start_demo()
-
-## 开始演示
-func _start_demo():
-	print("\n=== 开始音频系统演示 ===")
-	
-	# 1. 播放背景音乐（带淡入效果）
-	print("\n1. 播放背景音乐（2秒淡入）：")
-	audio_manager.play_music(AUDIO_PATHS.bgm, 2.0)
-	
-	await get_tree().create_timer(3.0).timeout
-	
-	# 2. 调整音乐音量
-	print("\n2. 调整音乐音量至50%：")
-	audio_manager.set_volume(AudioManager.AudioType.MUSIC, 0.5)
-	
-	await get_tree().create_timer(2.0).timeout
-	
-	# 3. 播放音效
-	print("\n3. 播放音效：")
-	for i in range(3):
-		audio_manager.play_sound(AUDIO_PATHS.click, 1.0)
-		await get_tree().create_timer(0.5).timeout
-	
-	# 4. 播放语音
-	print("\n4. 播放语音：")
-	audio_manager.play_voice(AUDIO_PATHS.voice, 1.0)
-	
-	await get_tree().create_timer(2.0).timeout
-	
-	# 5. 切换背景音乐（带淡出淡入效果）
-	print("\n5. 切换背景音乐（1秒淡出淡入）：")
-	audio_manager.play_music(AUDIO_PATHS.bgm, 1.0)
-	
-	await get_tree().create_timer(2.0).timeout
-	
-	# 6. 停止所有音频
-	print("\n6. 停止所有音频：")
-	audio_manager.stop_all()
-	
-	print("\n=== 音频系统演示结束 ===")
-
-func _input(event):
-	if event is InputEventKey and event.pressed:
-		match event.keycode:
-			# 按空格键重新开始演示
-			KEY_SPACE:
-				print("\n按下空格键，重新开始演示")
-				audio_manager.stop_all()
-				_start_demo()
-			# 按ESC键停止所有音频
-			KEY_ESCAPE:
-				print("\n按下ESC键，停止所有音频")
-				audio_manager.stop_all()
+func _input(event: InputEvent) -> void:
+	if _manager == null or not event is InputEventKey or not event.is_pressed() or event.is_echo():
+		return
+	match (event as InputEventKey).keycode:
+		KEY_SPACE:
+			_manager.play_music(MUSIC, 1.0)
+		KEY_S:
+			_manager.play_sound(SOUND)
+		KEY_V:
+			_manager.play_voice(VOICE)
+		KEY_M:
+			_manager.set_volume(Manager.AudioType.MUSIC, 0.5 if _manager.get_volume(Manager.AudioType.MUSIC) > 0.5 else 1.0)
+		KEY_ESCAPE:
+			_manager.stop_all()
