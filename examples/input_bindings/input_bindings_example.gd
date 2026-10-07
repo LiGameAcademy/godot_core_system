@@ -28,6 +28,9 @@ func _ready() -> void:
 	_report("Click Rebind, then press a key or click outside the controls. Escape cancels.")
 
 func _exit_tree() -> void:
+	capturing = false
+	if inputs != null:
+		inputs.close()
 	for action: StringName in _actions:
 		InputMap.erase_action(action)
 

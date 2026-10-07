@@ -3,8 +3,11 @@ extends RefCounted
 
 ## One explicit owner edits keyboard/mouse bindings for an existing action group.
 var _defaults: Dictionary[StringName, Array] = {}
+static var _owners: Dictionary[StringName, WeakRef] = {}
 
 func register_actions(actions: Array[StringName]) -> Error:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		return ERR_UNAVAILABLE
 	if not _defaults.is_empty():
 		return ERR_ALREADY_IN_USE
 	if actions.is_empty() or actions.size() > 64:
@@ -13,6 +16,8 @@ func register_actions(actions: Array[StringName]) -> Error:
 	for action: StringName in actions:
 		if String(action).is_empty() or String(action).length() > 128 or staged.has(action) or not InputMap.has_action(action):
 			return ERR_INVALID_PARAMETER
+		if _owners.has(action) and _owners[action].get_ref() != null:
+			return ERR_ALREADY_IN_USE
 		var events: Array[InputEvent] = InputMap.action_get_events(action)
 		for event: InputEvent in events:
 			if _editable(event) and _binding(event) == null:
@@ -22,6 +27,9 @@ func register_actions(actions: Array[StringName]) -> Error:
 	var checked: Error = validate_data(to_data())
 	if checked != OK:
 		_defaults.clear()
+	else:
+		for action: StringName in _defaults:
+			_owners[action] = weakref(self)
 	return checked
 
 func to_data() -> Dictionary:
@@ -83,6 +91,8 @@ func validate_data(data: Dictionary) -> Error:
 	return OK
 
 func apply_data(data: Dictionary) -> Error:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		return ERR_UNAVAILABLE
 	var checked: Error = validate_data(data)
 	if checked != OK:
 		return checked
@@ -95,16 +105,40 @@ func apply_data(data: Dictionary) -> Error:
 	return OK
 
 func restore_defaults() -> Error:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		return ERR_UNAVAILABLE
 	if _defaults.is_empty():
 		return ERR_UNCONFIGURED
 	for action: StringName in _defaults:
 		if not InputMap.has_action(action):
 			return ERR_DOES_NOT_EXIST
 	for action: StringName in _defaults:
-		InputMap.action_erase_events(action)
+		for event: InputEvent in InputMap.action_get_events(action):
+			if _editable(event):
+				InputMap.action_erase_event(action, event)
 		for event: InputEvent in _copy_events(_defaults[action]):
-			InputMap.action_add_event(action, event)
+			if _editable(event):
+				InputMap.action_add_event(action, event)
 	return OK
+
+func get_registered_actions() -> Array[StringName]:
+	var actions: Array[StringName] = []
+	actions.assign(_defaults.keys())
+	return actions
+
+## Release modification rights; keep the user's current global bindings.
+func close() -> void:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("CoreInputs.close must run on the main thread.")
+		return
+	for action: StringName in _defaults:
+		if _owners.has(action) and _owners[action].get_ref() == self:
+			_owners.erase(action)
+	_defaults.clear()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
+		close()
 
 static func _editable(event: InputEvent) -> bool:
 	return event is InputEventKey or event is InputEventMouseButton

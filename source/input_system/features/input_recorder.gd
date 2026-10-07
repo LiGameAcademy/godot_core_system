@@ -62,10 +62,10 @@ func start_playback() -> void:
 	_current_playback_index = 0
 	
 	# 计算时间偏移，使第一个记录立即播放
-	var time_offset = playback_start_time - _records[0].timestamp
+	var time_offset: float = playback_start_time - _records[0].timestamp
 	
 	# 调整所有记录的时间戳
-	for record in _records:
+	for record: InputRecord in _records:
 		record.timestamp += time_offset
 
 ## 停止回放
@@ -78,7 +78,7 @@ func record_input(action: String, pressed: bool, strength: float = 1.0) -> void:
 	if not is_recording:
 		return
 	
-	var record = InputRecord.new(action, pressed, strength)
+	var record: InputRecord = InputRecord.new(action, pressed, strength)
 	_records.append(record)
 	
 	# 限制记录数量
@@ -96,7 +96,7 @@ func clear_records() -> void:
 ## 设置最大记录数量
 ## [param max_count] 最大记录数量
 func set_max_records(max_count: int) -> void:
-	_max_records = max_count
+	_max_records = maxi(1, max_count)
 	
 	# 如果当前记录数量超过新的最大值，移除多余的记录
 	while _records.size() > _max_records:
@@ -119,9 +119,9 @@ func get_record_duration() -> float:
 ## [param end_time] 结束时间（相对于记录开始时间）
 ## [return] 记录列表
 func get_records_in_timeframe(start_time: float, end_time: float) -> Array:
-	var result = []
-	for record in _records:
-		var relative_time = record.timestamp - record_start_time
+	var result: Array[Dictionary] = []
+	for record: InputRecord in _records:
+		var relative_time: float = record.timestamp - record_start_time
 		if relative_time >= start_time and relative_time <= end_time:
 			result.append(record.to_dict())
 	return result
@@ -129,8 +129,8 @@ func get_records_in_timeframe(start_time: float, end_time: float) -> Array:
 ## 获取所有记录
 ## [return] 所有记录列表
 func get_all_records() -> Array:
-	var records = []
-	for record in _records:
+	var records: Array[Dictionary] = []
+	for record: InputRecord in _records:
 		records.append(record.to_dict())
 	return records
 
@@ -146,7 +146,7 @@ func get_playback_data(current_time: float) -> Dictionary:
 	if not is_playing or _records.is_empty() or _current_playback_index >= _records.size():
 		return {}
 	
-	var record = _records[_current_playback_index]
+	var record: InputRecord = _records[_current_playback_index]
 	if record.timestamp <= current_time:
 		_current_playback_index += 1
 		return record.to_dict()
@@ -168,12 +168,12 @@ func get_playback_progress() -> float:
 	if _records.is_empty() or not is_playing:
 		return 0.0
 	
-	var total_duration = get_total_duration()
+	var total_duration: float = get_total_duration()
 	if total_duration <= 0:
 		return 0.0
 	
-	var current_time = Time.get_ticks_msec() / 1000.0
-	var elapsed_time = current_time - playback_start_time
+	var current_time: float = Time.get_ticks_msec() / 1000.0
+	var elapsed_time: float = current_time - playback_start_time
 	return clamp(elapsed_time / total_duration, 0.0, 1.0)
 
 ## 检查是否有记录数据
@@ -209,18 +209,18 @@ func save_records_to_file(filepath: String) -> bool:
 	if _records.is_empty():
 		return false
 	
-	var file = FileAccess.open(filepath, FileAccess.WRITE)
+	var file: FileAccess = FileAccess.open(filepath, FileAccess.WRITE)
 	if not file:
 		return false
 	
 	# 保存记录数据
-	var save_data = {
+	var save_data: Dictionary = {
 		"version": "1.0",
 		"record_start_time": record_start_time,
 		"records": []
 	}
 	
-	for record in _records:
+	for record: InputRecord in _records:
 		save_data.records.append({
 			"action": record.action,
 			"pressed": record.pressed,
@@ -228,41 +228,45 @@ func save_records_to_file(filepath: String) -> bool:
 			"timestamp": record.timestamp
 		})
 	
-	var json_string = JSON.stringify(save_data)
-	file.store_string(json_string)
-	return true
+	var json_string: String = JSON.stringify(save_data)
+	var stored: bool = file.store_string(json_string)
+	var error: Error = file.get_error()
+	file.close()
+	return stored and error == OK
 
 ## 从文件加载记录
 ## [param filepath] 文件路径
 ## [return] 是否加载成功
 func load_records_from_file(filepath: String) -> bool:
-	var file = FileAccess.open(filepath, FileAccess.READ)
+	var file: FileAccess = FileAccess.open(filepath, FileAccess.READ)
 	if not file:
 		return false
 	
-	var json_string = file.get_as_text()
-	var json = JSON.new()
-	var parse_result = json.parse(json_string)
+	var json_string: String = file.get_as_text()
+	file.close()
+	var json: JSON = JSON.new()
+	var parse_result: Error = json.parse(json_string)
 	if parse_result != OK:
 		return false
 	
-	var save_data = json.get_data()
-	if not save_data is Dictionary or not save_data.has("records"):
+	var save_data: Variant = json.get_data()
+	if not save_data is Dictionary or not save_data.get("records") is Array:
 		return false
-	
-	# 清除现有记录
-	_records.clear()
-	record_start_time = save_data.get("record_start_time", 0.0)
-	
-	# 加载记录
-	for record_data in save_data.records:
-		if record_data is Dictionary:
-			var record = InputRecord.new(
-				record_data.get("action", ""),
-				record_data.get("pressed", false),
-				record_data.get("strength", 1.0)
-			)
-			record.timestamp = record_data.get("timestamp", 0.0)
-			_records.append(record)
-	
-	return not _records.is_empty()
+	var staged: Array[InputRecord] = []
+	for record_data: Variant in save_data.records:
+		if not record_data is Dictionary or not record_data.get("action") is String or not record_data.get("pressed") is bool:
+			return false
+		var strength: Variant = record_data.get("strength", 1.0)
+		var timestamp: Variant = record_data.get("timestamp", 0.0)
+		if not (strength is float or strength is int) or not (timestamp is float or timestamp is int):
+			return false
+		var record: InputRecord = InputRecord.new(record_data.action, record_data.pressed, float(strength))
+		record.timestamp = float(timestamp)
+		staged.append(record)
+	var start: Variant = save_data.get("record_start_time", 0.0)
+	if staged.is_empty() or not (start is float or start is int):
+		return false
+	_records = staged
+	record_start_time = float(start)
+	reset_playback()
+	return true
