@@ -150,6 +150,35 @@ io_manager.set_encryption_strategy(CoreSystem.AsyncIOManager.XOREncryptionStrate
 -   操作的成功/失败由 `io_completed` 信号中的 `success: bool` 参数指示。
 -   详细的错误消息（例如，文件未找到、权限被拒绝、解压缩失败）会使用 `CoreSystem.logger` 在内部记录。当操作失败时，请检查 Godot 的输出/日志以获取具体信息。
 
+### 写入策略的失败返回
+
+`serialize(data)`、`compress(bytes)`、`encrypt(bytes, key)` 成功时返回
+`PackedByteArray`，失败时返回 `null`。基类返回类型为 `Variant`，用于表达这两种
+结果；管理器逐阶段校验，再将带类型的字节数组传给下一阶段。空字节数组是合法内容。
+缺少序列化策略、使用未实现的基类策略或收到非字节结果时，写入在创建目录和
+打开目标文件之前终止，原文件不会被截断。完成信号为
+`io_completed(task_id, false, null)`。
+
+已有返回 `PackedByteArray` 的自定义重写仍可使用。如果旧策略以空数组表达失败，
+需要将返回类型改为 `Variant`，并在失败时返回 `null`。仅记录日志不能向管理器
+报告失败。直接调用策略的代码同样需要校验可空返回值，再将其作为字节数组使用。
+
+例如，仅接受字典的序列化策略可实现：
+
+```gdscript
+func serialize(data: Variant) -> Variant:
+    if not data is Dictionary:
+        return null
+    var dictionary: Dictionary = data
+    return JSON.stringify(dictionary).to_utf8_buffer()
+```
+
+管理器也会传播目录创建、文件打开及 `FileAccess.store_buffer()` / `get_error()`
+报告的错误。写入仍直接操作目标文件，打开后发生的失败可能留下部分内容；
+本次修改不提供原子替换或崩溃恢复。Godot 当前 `FileAccess` API 无法可靠观察
+延迟到 flush/close 阶段的错误。压缩或加密策略设为 `null` 仍表示跳过该阶段。
+读取策略契约和文件格式保持原状。
+
 ## API 参考
 
 ### 信号
@@ -188,4 +217,4 @@ io_manager.set_encryption_strategy(CoreSystem.AsyncIOManager.XOREncryptionStrate
 -   使用单个专用线程以避免过多的上下文切换并按顺序管理磁盘访问。
 -   操作被排队并由该线程逐一处理。
 -   对于非常大的文件，请考虑一次性读取/写入整个文件是否必要，或者流式传输/分块是否更合适（尽管此管理器不直接支持流式传输）。
--   压缩和加密会增加计算开销。根据您对安全性、文件大小与性能的需求来选择策略。 
+-   压缩和加密会增加计算开销。根据您对安全性、文件大小与性能的需求来选择策略。

@@ -10,10 +10,14 @@ const DECOMPRESSION_BUFFER_MULTIPLIER = 10
 const MIN_DECOMPRESSION_BUFFER_SIZE = 1024
 
 ## 使用 Gzip 压缩字节数据
-func compress(bytes: PackedByteArray) -> PackedByteArray:
+func compress(bytes: PackedByteArray) -> Variant:
 	if bytes.is_empty():
 		return bytes
-	return bytes.compress(COMPRESSION_MODE)
+	var compressed: PackedByteArray = bytes.compress(COMPRESSION_MODE)
+	if compressed.is_empty():
+		CoreSystem.logger.error("Failed to compress non-empty data with Gzip.")
+		return null
+	return compressed
 
 ## 使用 Gzip 解压缩字节数据
 func decompress(bytes: PackedByteArray) -> PackedByteArray:
