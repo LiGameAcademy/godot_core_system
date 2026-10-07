@@ -1,0 +1,117 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/localization_demo/localization_demo.gd" id="1"]
+[ext_resource type="PackedScene" path="res://addons/godot_core_system/source/localization_system/localization_manager.tscn" id="2"]
+[ext_resource type="Translation" path="res://addons/godot_core_system/examples/localization_demo/demo.en.translation" id="3"]
+[ext_resource type="Translation" path="res://addons/godot_core_system/examples/localization_demo/demo.zh_CN.translation" id="4"]
+[ext_resource type="Translation" path="res://addons/godot_core_system/examples/localization_demo/demo.zh_TW.translation" id="5"]
+
+[sub_resource type="SystemFont" id="Font"]
+font_names = PackedStringArray("Microsoft YaHei", "Noto Sans CJK SC", "Arial")
+
+[sub_resource type="Theme" id="Theme"]
+default_font = SubResource("Font")
+default_font_size = 20
+
+[node name="LocalizationDemo" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme")
+script = ExtResource("1")
+translations = Array[Translation]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
+
+[node name="LocalizationManager" parent="." instance=ExtResource("2")]
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.055, 0.08, 0.13, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 36
+
+[node name="Content" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "LOCALE_DEMO_TITLE"
+
+[node name="Hint" type="Label" parent="Margin/Content"]
+layout_mode = 2
+text = "LOCALE_DEMO_HINT"
+autowrap_mode = 3
+
+[node name="Languages" type="HFlowContainer" parent="Margin/Content"]
+layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+
+[node name="English" type="Button" parent="Margin/Content/Languages"]
+custom_minimum_size = Vector2(110, 44)
+layout_mode = 2
+text = "English"
+
+[node name="Simplified" type="Button" parent="Margin/Content/Languages"]
+custom_minimum_size = Vector2(110, 44)
+layout_mode = 2
+text = "简体中文"
+
+[node name="Traditional" type="Button" parent="Margin/Content/Languages"]
+custom_minimum_size = Vector2(110, 44)
+layout_mode = 2
+text = "繁體中文"
+
+[node name="Auto" type="Button" parent="Margin/Content/Languages"]
+custom_minimum_size = Vector2(160, 44)
+layout_mode = 2
+text = "LOCALE_DEMO_AUTO"
+
+[node name="Remember" type="CheckButton" parent="Margin/Content"]
+layout_mode = 2
+text = "LOCALE_DEMO_SAVE"
+button_pressed = true
+
+[node name="Coins" type="Label" parent="Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+
+[node name="Collect" type="Button" parent="Margin/Content"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+text = "LOCALE_DEMO_ADD"
+
+[node name="PlayerName" type="LineEdit" parent="Margin/Content"]
+layout_mode = 2
+auto_translate = false
+auto_translate_mode = 2
+text = "Hello"
+
+[node name="Status" type="Label" parent="Margin/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.77, 0.95, 1)
+autowrap_mode = 3
+
+[node name="Result" type="Label" parent="Margin/Content"]
+layout_mode = 2
+autowrap_mode = 3

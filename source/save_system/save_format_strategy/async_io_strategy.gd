@@ -9,6 +9,11 @@ func _init() -> void:
 	_io_manager = CoreSystem.AsyncIOManager.new()
 
 
+## 终止后台工作；关闭后此策略不再接受存取请求。
+func close() -> void:
+	_io_manager.close()
+
+
 ## 设置加密密钥
 func set_encryption_key(key: String) -> void:
 	_encryption_key = key
@@ -18,6 +23,8 @@ func set_encryption_key(key: String) -> void:
 func save(path: String, data: Dictionary) -> bool:
 	var processed_data: Dictionary = _process_data_for_save(data)
 	var task_id: String = _io_manager.write_file_async(path, processed_data, _encryption_key)
+	if task_id.is_empty():
+		return false
 	var result: Array = await _wait_for_task(task_id)
 	return result[1]
 
@@ -25,6 +32,8 @@ func save(path: String, data: Dictionary) -> bool:
 ## 加载数据
 func load_save(path: String) -> Dictionary:
 	var task_id: String = _io_manager.read_file_async(path, _encryption_key)
+	if task_id.is_empty():
+		return {}
 	var result: Array = await _wait_for_task(task_id)
 	if result[1]:
 		return _process_data_for_load(result[2])
@@ -90,7 +99,7 @@ func _process_variant_for_save(value: Variant) -> Variant:
 		TYPE_RECT2, TYPE_RECT2I:
 			return {
 				"x": value.position.x, "w": value.size.x,
-				"y": value.position.y, "h": value.size.x,
+				"y": value.position.y, "h": value.size.y,
 			}.merged(value_dict)
 		TYPE_AABB:
 			return {

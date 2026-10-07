@@ -1,8 +1,8 @@
 extends "./async_io_strategy.gd"
 
 func _init() -> void:
-	_io_manager = CoreSystem.AsyncIOManager.new(
-		CoreSystem.AsyncIOManager.JSONSerializationStrategy.new())
+	super()
+	_io_manager.set_serialization_strategy(CoreSystem.AsyncIOManager.JSONSerializationStrategy.new())
 
 ## 是否为有效的存档文件
 func is_valid_save_file(file_name: String) -> bool:

@@ -12,6 +12,7 @@ const CoreSceneManager = preload("./scene_system/scene_manager.gd")
 const TimeManager = preload("./time_system/time_manager.gd")
 const SaveManager = preload("./save_system/save_manager.gd")
 const ConfigManager = preload("./config_system/config_manager.gd")
+const LocalizationManager = preload("./localization_system/localization_manager.gd")
 const StateMachineManager = preload("./state_machine/state_machine_manager.gd")
 const EntityManager = preload("./entity_system/entity_manager.gd")
 const TriggerManager = preload("./trigger_system/trigger_manager.gd")
@@ -91,6 +92,15 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 			tag_manager = _get_module("tag_manager")
 		return tag_manager
 
+## 可选语言偏好模块；默认关闭，禁用时不查找其它服务。
+@onready var localization_manager: LocalizationManager = _get_module("localization_manager") if is_module_enabled(&"localization_manager") else null:
+	get:
+		if not is_module_enabled(&"localization_manager"):
+			return null
+		if not is_instance_valid(localization_manager):
+			localization_manager = _get_module("localization_manager")
+		return localization_manager
+
 ## 模块实例
 var _modules: Dictionary[StringName, Node] = {}
 var _module_scripts: Dictionary[StringName, Script] = {
@@ -103,33 +113,47 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"time_manager": TimeManager,
 	"save_manager": SaveManager,
 	"config_manager": ConfigManager,
+	"localization_manager": LocalizationManager,
 	"state_machine_manager": StateMachineManager,
 	"entity_manager": EntityManager,
 	"trigger_manager": TriggerManager,
 	"tag_manager": GameplayTagManager,
 }
 
+## Runtime IDs whose editor switches retain historical names.
+const MODULE_SETTING_IDS: Dictionary[StringName, StringName] = {
+	&"state_machine_manager": &"state_machine",
+	&"tag_manager": &"gameplay_tag_manager",
+}
+
 ## 检查模块是否启用
 func is_module_enabled(module_id: StringName) -> bool:
-	var setting_name = "godot_core_system/module_enable/" + module_id
-	# 如果设置不存在，默认为启用
+	var setting_id: StringName = MODULE_SETTING_IDS.get(module_id, module_id)
+	var setting_name: String = "godot_core_system/module_enable/" + setting_id
+	# Keep old hand-written runtime-ID keys as a fallback without renaming editor settings.
+	if not ProjectSettings.has_setting(setting_name) and setting_id != module_id:
+		setting_name = "godot_core_system/module_enable/" + module_id
+	# 旧模块保持默认开启；新多语言模块需要明确启用。
 	if not ProjectSettings.has_setting(setting_name):
-		return true
+		return module_id != &"localization_manager"
 	return ProjectSettings.get_setting(setting_name, true)
 
 ## 创建模块实例
 func _create_module(module_id: StringName) -> Node:
-	var script = _module_scripts[module_id]
+	var script: Script = _module_scripts[module_id]
 	if not script:
 		push_error("无法加载模块脚本：" + module_id)
 		return null
 
-	var module = script.new()
+	var module: Node = script.new() as Node
 	if not module:
 		push_error("无法创建模块实例：" + module_id)
 		return null
 	_modules[module_id] = module
 	module.name = module_id
+	if module_id == &"localization_manager" and is_module_enabled(&"config_manager"):
+		var localization: LocalizationManager = module as LocalizationManager
+		localization.configure_persistence(config_manager)
 	add_child(module)
 	return module
 

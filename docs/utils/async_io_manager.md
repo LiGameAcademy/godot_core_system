@@ -150,6 +150,40 @@ io_manager.set_encryption_strategy(CoreSystem.AsyncIOManager.XOREncryptionStrate
 -   Operation success/failure is indicated by the `success: bool` parameter in the `io_completed` signal.
 -   Detailed error messages (e.g., file not found, permission denied, decompression failed) are logged internally using `CoreSystem.logger`. Check the Godot output/logs for specifics when an operation fails.
 
+### Write strategy failures
+
+`serialize(data)`, `compress(bytes)`, and `encrypt(bytes, key)` return
+`PackedByteArray` on success or `null` on failure. Their base return type is
+`Variant` to express these two outcomes; the manager validates each result
+before passing typed bytes to the next stage. Empty bytes are valid content.
+A missing serializer, an unimplemented base strategy, or a non-byte result
+stops the write before creating directories or opening/truncating the target.
+The completion is `io_completed(task_id, false, null)`.
+
+Existing custom overrides returning `PackedByteArray` still work. A custom
+strategy that used empty bytes to mean failure must change its return type to
+`Variant` and return `null` for that failure. Logging alone does not report
+failure to the manager. Direct callers of strategies must likewise validate
+the nullable return before using it as bytes.
+
+For example, a serializer accepting only dictionaries can implement:
+
+```gdscript
+func serialize(data: Variant) -> Variant:
+    if not data is Dictionary:
+        return null
+    var dictionary: Dictionary = data
+    return JSON.stringify(dictionary).to_utf8_buffer()
+```
+
+The manager also propagates directory creation, file opening, and errors
+reported by `FileAccess.store_buffer()` / `get_error()`. Writes still use the
+target file directly: a failure after opening can leave partial contents.
+This does not provide atomic replacement or crash recovery. Late flush/close
+errors cannot reliably be observed through Godot's current `FileAccess` API.
+Setting compression or encryption to `null` continues to disable that stage.
+Read strategy contracts and file formats are unchanged.
+
 ## API Reference
 
 ### Signals
@@ -188,4 +222,4 @@ io_manager.set_encryption_strategy(CoreSystem.AsyncIOManager.XOREncryptionStrate
 -   Uses a single dedicated thread to avoid excessive context switching and manage disk access sequentially.
 -   Operations are queued and processed one after another by the thread.
 -   For very large files, consider if reading/writing the entire file at once is necessary or if streaming/chunking would be more appropriate (though this manager doesn't directly support streaming).
--   Compression and encryption add computational overhead. Choose strategies based on your needs for security and file size vs. performance. 
+-   Compression and encryption add computational overhead. Choose strategies based on your needs for security and file size vs. performance.
