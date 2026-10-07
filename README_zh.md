@@ -4,79 +4,76 @@
 
 简体中文 | [English](README.md)
 
-![Godot v4.4](https://img.shields.io/badge/Godot-v4.4-478cbf?logo=godot-engine&logoColor=white)
-[![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/issues)
-[![GitHub forks](https://img.shields.io/github/forks/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/network)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+![Godot 验证基线](https://img.shields.io/badge/Godot-tested%20on%204.7.2-478cbf?logo=godot-engine&logoColor=white)
+[![GitHub license](https://img.shields.io/github/license/LiGameAcademy/godot_core_system)](LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/LiGameAcademy/godot_core_system)](https://github.com/LiGameAcademy/godot_core_system/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/LiGameAcademy/godot_core_system)](https://github.com/LiGameAcademy/godot_core_system/issues)
+[![GitHub forks](https://img.shields.io/github/forks/LiGameAcademy/godot_core_system)](https://github.com/LiGameAcademy/godot_core_system/network)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/CONTRIBUTING.md)
 
-一个为 Godot 4.4+ 设计的高度模块化、易扩展的核心系统框架
+为 Godot 独立开发者提供可按需采用的基础系统，减少重复工程，让小型游戏更容易完成和维护。
 
 [快速开始](#-快速开始) •
 [文档](docs/) •
 [示例](examples/) •
+[项目定位与运营方案](docs/open_source_operations_plan.md) •
 [贡献](docs/CONTRIBUTING.md) •
 [支持与帮助](#-支持与帮助)
 
 </div>
 
-## ✨ 特性
+## 可以用它完成什么
 
-- 🔧 **插件架构** : 易于扩展和自定义
-- 📱 **项目设置集成** : 通过 Godot 的项目设置配置所有系统
-- 🛠️ **开发工具** : 内置调试和开发工具
-- ManagerOfManagers : MOM 结构，易扩展和自定义
-  - 🎮 **状态机系统** : 灵活强大的游戏逻辑状态管理
-  - 💾 **序列化系统** : 易用的存档/读档功能和配置管理
-  - 🎵 **音频系统** : 全面的音频管理，支持分类和过渡
-  - 🎯 **输入系统** : 统一的输入处理，支持动作映射和事件管理
-  - 📝 **日志系统** : 详细的日志系统，支持多种输出通道
-  - 🎨 **资源系统** : 高效的资源加载和管理
-  - 🎬 **场景系统** : 简化场景转换和管理
-  - 🏷️ **标签系统** : 灵活的对象标签和分类系统
-  - 🔄 **触发器系统** : 事件驱动的触发器系统，支持条件和动作
-- 更多实用工具类：
-  - ⚡ **分帧执行器** : 性能优化工具，将耗时任务分散到多帧执行
-  - 
+围绕一个具体问题选择模块，从对应示例开始接入。框架定位为轻量、简单但好用的基础系统框架，以小型 API、明确的拥有关系和失败行为减少重复工作。
+
+| 用户任务 | 能力与实际边界 | 从这里开始 |
+| --- | --- | --- |
+| 给菜单与关卡加入切换和淡入淡出 | CoreScenes 提供完成结果、重复请求保护及可选的持久转场节点；资源加载仍是同步的 | [接口](docs/systems/native_scenes.md) · [两场景示例](examples/native_scenes/README.md) |
+| 保存与读取经过校验的数据快照 | CoreSaveStore 提供版本化 JSON、显式校验与错误结果，区分文件缺失和损坏；Windows 文件替换依赖原生扩展 | [接口与计数示例](docs/systems/core_save_store.md) |
+| 让玩家修改键盘与鼠标绑定 | CoreInputs 管理显式动作组，检查冲突、恢复默认，并保留手柄事件 | [接口与捕获、持久化示例](docs/systems/core_inputs.md) |
+| 管理状态转换和倒计时 | 值状态机、行为状态机和显式推进的计时器，让生命周期规则可观察 | [状态机](docs/systems/state_machine_system.md) · [计时器](docs/systems/core_timer.md) |
+| 清理事件订阅，控制暂停与倍速 | 订阅令牌和时间作用域，由拥有者负责使用和释放 | [事件](docs/systems/core_event_bus.md) · [时间](docs/systems/core_time_scope.md) |
+| 做局部分类与规则条件判断 | 本地标签和触发器支持显式规则组合 | [标签示例](examples/tags/README.md) · [触发器示例](examples/triggers/README.md) |
+
+音频、配置、资源管理、旧版输入/存档/场景能力及线程、分帧工具也有对应文档。它们与上表独立服务的功能范围不同，按具体需求选择。
+
+### 轻量意味着什么
+
+- 按项目需要采用能力，游戏数值、胜负条件和 UI 由游戏自身管理。
+- 以 Godot 场景、Resource 和信号为基础；共同生命周期从真实项目需求中提炼。
+- CoreSystem 为旧管理器提供方便的应用级入口；CoreScenes、CoreInputs、CoreSaveStore 等独立服务不要求启用该 AutoLoad。
+- 同一状态明确一个拥有者和修改入口，避免旧管理器与独立服务同时处理同一操作。
+
+独立持有服务不等于所有模块已提供单独下载包。依赖清单与安装成本是[运营方案](docs/open_source_operations_plan.md)中的后续接入优化项。
 
 ## 🚀 快速开始
 
 ### 系统要求
 
-- 随附 Windows x64 持久化扩展需要 Godot Engine 4.7+（已验证 4.7.2）。
-- 基本的 GDScript 和 Godot 引擎知识
+- 当前独立服务的验证记录使用 Godot 4.7.2 / Windows x64 的编辑器与无界面宿主，具体范围见各模块说明。
+- 随附 Windows x64 持久化扩展需要 Godot Engine 4.7+；导出包与其他平台仍需单独验收。
+- 基本的 GDScript 和 Godot 引擎知识。
+
+项目早期面向 Godot 4.4；该历史目标不代表当前检出的兼容性保证。Windows 存档示例需加载[原生扩展](native/atomic_file/README.md)，导出时需包含 DLL。与 C# 的共同语义逐模块记录，两版覆盖范围不同。
 
 ### 安装步骤
 
-1. 从[发布页面](https://github.com/Liweimin0512/godot_core_system/releases)下载最新版本
-2. 将 `godot_core_system` 文件夹复制到你的 Godot 项目的 `addons` 目录下
-3. 在 Godot 编辑器中启用插件：
-   - 打开项目设置（Project -> Project Settings）
-   - 切换到插件标签页（Plugins）
-   - 找到 "Godot Core System" 并启用
+1. 获取选定提交或标签的仓库内容，记录版本以便复现接入；使用[发布包](https://github.com/LiGameAcademy/godot_core_system/releases)时先核对该包的兼容说明。
+2. 将仓库内容放到 `addons/godot_core_system/`，确保 `plugin.cfg` 直接位于该目录。此仓库是插件，需使用已有或新建的 Godot 宿主工程。
+3. 使用旧管理器时，在项目设置 → 插件中启用 `godot_core_system`；插件会注册 CoreSystem AutoLoad。
+4. 使用独立服务时，按模块说明配置依赖与拥有者，启用 CoreSystem 为可选步骤；场景转场仍需要持久拥有者，Windows 存档示例仍需原生扩展。
 
-### 基础使用
+### 第一次成功接入
 
-```gdscript
-extends Node
+先运行[两场景示例](examples/native_scenes/README.md)：注册其中的 SceneExampleHost AutoLoad，运行 `scene_a.tscn`，点击按钮观察完整切换与淡入淡出。随后按接口说明，将服务拥有关系接入自己的持久应用节点。
 
-func _ready():
- # 通过 CoreSystem 单例访问各个管理器
- CoreSystem.state_machine_manager  # 状态机管理器
- CoreSystem.save_manager          # 存档管理器
- CoreSystem.audio_manager         # 音频管理器
- CoreSystem.input_manager         # 输入管理器
- CoreSystem.logger               # 日志管理器
- CoreSystem.resource_manager     # 资源管理器
- CoreSystem.scene_manager        # 场景管理器
- CoreSystem.tag_manager         # 标签管理器
- CoreSystem.trigger_manager     # 触发器管理器
-```
+存档从[计数示例](examples/save_contract/save_contract_example.tscn)开始，配置步骤见[存档说明](docs/systems/core_save_store.md)。改键从 [input_bindings](examples/input_bindings/) 开始，初始化与持久化步骤见[输入说明](docs/systems/core_inputs.md)。
+
+旧接口仍在下方文档中保留。新独立 API 的存档格式、事件路由等属于单独契约，替换旧调用前需要核对对应迁移说明。
 
 ## 📚 文档
 
-每个系统的详细文档：
+旧管理器与完整系统范围的详细文档：
 
 | 系统名称           | 功能描述                           | 文档链接                                |
 |-------------------|----------------------------------|----------------------------------------|
@@ -104,7 +101,9 @@ func _ready():
 
 访问我们的[示例项目](examples/)，了解框架的实际应用场景和使用方式。
 
-### 完整游戏示例
+### 历史游戏示例
+
+以下链接展示此前的项目使用情况。作为新版案例宣传前，需要重新核对其当前插件版本和兼容范围。
 
 - [GodotPlatform2D](https://github.com/LiGameAcademy/GodotPlatform2D) - 一个使用 godot_core_system 框架开发的 2D 平台游戏示例，展示了框架在实际游戏开发中的应用。
 - [Exocave : 2d平台跳跃解密游戏。以重力翻转为核心机制](https://github.com/youer0219/Exocave) - 使用 godot_core_system 框架的 scene_system。
@@ -122,8 +121,10 @@ func _ready():
 如果你遇到问题或有任何建议：
 
 1. 查看[详细文档](docs/)
-2. 搜索[已存在的 issues](https://github.com/Liweimin0512/godot_core_system/issues)
-3. 创建新的[issue](https://github.com/Liweimin0512/godot_core_system/issues/new)
+2. 搜索[已存在的 issues](https://github.com/LiGameAcademy/godot_core_system/issues)
+3. 创建新的 [issue](https://github.com/LiGameAcademy/godot_core_system/issues/new)，提供插件提交/版本、Godot 版本、操作系统、最小复现步骤、预期行为与实际结果。
+
+欢迎提供真实接入反馈：使用了哪个模块、在哪一步遇到困难、是否继续在项目中使用。[运营方案](docs/open_source_operations_plan.md)记录采用试点和发布准备，文中里程碑均为待执行计划。
 
 ### 社区交流
 
