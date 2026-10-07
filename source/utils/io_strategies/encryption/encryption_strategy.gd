@@ -5,12 +5,12 @@ extends RefCounted
 ## [param key] The encryption key.
 ## Return PackedByteArray (empty is valid) on success, or null on failure.
 func encrypt(bytes: PackedByteArray, key: PackedByteArray) -> Variant:
-	CoreSystem.logger.error("EncryptionStrategy.encrypt() must be implemented by subclasses.")
+	push_error("EncryptionStrategy.encrypt() must be implemented by subclasses.")
 	return null
 
 ## Abstract method to decrypt byte data.
 ## [param bytes] The data to decrypt.
 ## [param key] The encryption key.
 func decrypt(bytes: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
-	CoreSystem.logger.error("EncryptionStrategy.decrypt() must be implemented by subclasses.")
+	push_error("EncryptionStrategy.decrypt() must be implemented by subclasses.")
 	return PackedByteArray() 

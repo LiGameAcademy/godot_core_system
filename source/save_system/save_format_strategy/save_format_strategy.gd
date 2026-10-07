@@ -48,7 +48,7 @@ func load_metadata(path: String) -> Dictionary:
 ## [param path] 存档路径
 ## [return] 是否删除成功
 func delete_file(path: String) -> bool:
-	var dir = DirAccess.open(path.get_base_dir())
+	var dir: DirAccess = DirAccess.open(path.get_base_dir())
 	if not dir:
 		return false
 	return dir.remove(path.get_file()) == OK
@@ -57,13 +57,13 @@ func delete_file(path: String) -> bool:
 ## [param directory] 存档目录
 ## [return] 文件列表
 func list_files(directory: String) -> Array:
-	var files := []
-	var dir := DirAccess.open(directory)
+	var files: Array[String] = []
+	var dir: DirAccess = DirAccess.open(directory)
 	if not dir:
 		return files
 		
 	dir.list_dir_begin()
-	var file_name := dir.get_next()
+	var file_name: String = dir.get_next()
 	while not file_name.is_empty():
 		if file_name != "." and file_name != ".." and not dir.current_is_dir():
 			if is_valid_save_file(file_name):
