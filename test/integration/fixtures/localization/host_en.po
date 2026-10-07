@@ -1,0 +1,13 @@
+msgid ""
+msgstr ""
+"Language: en\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "INTEGRATION_COINS"
+msgstr "Coins: {count}"
+
+msgid "生命值"
+msgstr "Health"
+
+msgid "魔法值"
+msgstr "Mana"

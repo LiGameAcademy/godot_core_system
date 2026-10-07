@@ -1,0 +1,13 @@
+msgid ""
+msgstr ""
+"Language: zh_TW\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+
+msgid "INTEGRATION_COINS"
+msgstr "金幣：{count}"
+
+msgid "生命值"
+msgstr "生命值"
+
+msgid "魔法值"
+msgstr "魔法值"
