@@ -35,6 +35,13 @@ var _logger: CoreSystem.CoreLogger:
 func _process(delta: float) -> void:
 	_lazy_load(delta)
 
+func _exit_tree() -> void:
+	clear_instance_pool()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		clear_instance_pool()
+
 ## 加载资源
 ## [param path] 资源路径
 ## [param mode] 加载模式
@@ -85,18 +92,37 @@ func clear_resource_cache(path: String = "") -> void:
 ## [return] 池中的实例
 func get_instance(id: StringName) -> Node:
 	if _instance_pools.has(id):
-		return _instance_pools[id].pop_back()
+		var pool: Array[Node] = _instance_pools[id]
+		while not pool.is_empty():
+			var candidate: Variant = pool.pop_back()
+			if is_instance_valid(candidate) and not candidate.is_queued_for_deletion():
+				return candidate
 	return null
 
 ## 回收实例到对象池
 ## [param id] 实例ID
 ## [param instance] 要回收的实例
 func recycle_instance(id: StringName, instance: Node) -> void:
+	if not is_instance_valid(instance) or instance.is_queued_for_deletion():
+		return
+	if instance == self or instance.is_ancestor_of(self) or _is_instance_pooled(instance):
+		return
 	if not _instance_pools.has(id):
-		_instance_pools[id] = []
+		var pool: Array[Node] = []
+		_instance_pools[id] = pool
+	var destination: Array[Node] = _instance_pools[id]
+	# Claim ownership before remove_child can invoke reentrant exit callbacks.
+	destination.append(instance)
 	if instance.get_parent():
 		instance.get_parent().remove_child(instance)
-	_instance_pools[id].append(instance)
+	if not is_instance_valid(instance) or instance.is_queued_for_deletion():
+		destination.erase(instance)
+
+func _is_instance_pooled(instance: Node) -> bool:
+	for pool: Array[Node] in _instance_pools.values():
+		if pool.has(instance):
+			return true
+	return false
 
 ## 获取对象池中实例的数量，如果为空，计算所有对象池中的实例数量
 ## [param id] 实例ID
@@ -114,13 +140,20 @@ func get_instance_count(id: StringName = "") -> int:
 ## 清空对象池，如果为空，清空所有对象池
 ## [param id] 实例ID
 func clear_instance_pool(id: StringName = "") -> void:
+	var pool_ids: Array[StringName] = []
 	if id.is_empty():
-		_instance_pools.clear()
-	elif _instance_pools.has(id):
-		_instance_pools[id].clear()
-		_instance_pools[id].resize(0)
+		pool_ids.assign(_instance_pools.keys())
 	else:
-		push_error("Instance pool for id " + id + " does not exist.")
+		pool_ids.append(id)
+	for pool_id: StringName in pool_ids:
+		if not _instance_pools.has(pool_id):
+			push_error("Instance pool for id " + pool_id + " does not exist.")
+			continue
+		var pool: Array[Node] = _instance_pools[pool_id]
+		_instance_pools.erase(pool_id)
+		for instance: Node in pool:
+			if is_instance_valid(instance) and not instance.is_queued_for_deletion():
+				instance.queue_free()
 
 ## 设置懒加载时间间隔
 ## [param interval] 时间间隔
