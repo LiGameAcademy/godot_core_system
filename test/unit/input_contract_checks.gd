@@ -27,7 +27,7 @@ func _run() -> void:
 	_check(CoreInputBinding.new(CoreInputBinding.Kind.KEY, 0).to_event() == null, "Invalid bindings cannot construct engine events")
 	_check(inputs.register_actions([first, second]) == OK, "Register explicit action group")
 	original.keycode = KEY_X
-	_check(inputs.restore_defaults() == OK and InputMap.action_get_events(first)[0].keycode == KEY_A, "Default snapshot is independent of source resources")
+	_check(inputs.restore_defaults() == OK and inputs.to_data().Actions[String(first)][0].Code == KEY_A, "Default snapshot is independent of source resources")
 	var before: Dictionary = inputs.to_data()
 	var collision: CoreInputBinding = CoreInputBinding.new(CoreInputBinding.Kind.KEY, KEY_B)
 	_check(inputs.find_conflicts(first, collision) == [second], "Report a conflicting managed action")
@@ -96,6 +96,7 @@ func _run() -> void:
 	DirAccess.remove_absolute(_directory)
 	for action: StringName in [first, unrelated]:
 		InputMap.erase_action(action)
+	inputs.close()
 	if not _failed:
 		print("PASS: %d input contract checks" % _checks)
 	quit(1 if _failed else 0)
