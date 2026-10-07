@@ -2,6 +2,10 @@ extends RefCounted
 
 ## 存档格式策略接口
 
+## 所有者结束使用时调用；同步策略没有后台资源。
+func close() -> void:
+	pass
+
 ## 是否为有效的存档文件
 ## [param file_name] 文件名称
 ## [return] 是否存在有效的存档文件
