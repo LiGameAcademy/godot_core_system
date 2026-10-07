@@ -16,19 +16,18 @@ func get_save_path(directory: String, save_id: String) -> String:
 
 ## 保存存档
 func save(path: String, data: Dictionary) -> bool:
+	var metadata: Variant = data.get("metadata")
+	if not metadata is Dictionary:
+		return false
 	var nodes: Variant = data.get("nodes")
 	if not nodes is Array:
 		return false
 	for node_data: Variant in nodes:
 		if not node_data is Dictionary:
 			return false
-	var save_data: GameStateData = GameStateData.new(
-		data.metadata.save_id,
-		data.metadata.timestamp,
-		data.metadata.save_date,
-		data.metadata.game_version,
-		data.metadata.playtime
-	)
+	var save_data: GameStateData = GameStateData.new()
+	# Keep framework/schema versions and custom metadata, not only old fields.
+	save_data.metadata = metadata.duplicate(true)
 	# 设置节点状态
 	save_data.nodes_state.assign(nodes)
 	
@@ -41,7 +40,7 @@ func load_save(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}
 		
-	var resource: GameStateData = ResourceLoader.load(path) as GameStateData
+	var resource: GameStateData = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE_DEEP) as GameStateData
 	if not resource:
 		return {}
 		
@@ -57,5 +56,5 @@ func load_metadata(path: String) -> Dictionary:
 	if not FileAccess.file_exists(path):
 		return {}
 		
-	var resource: GameStateData = ResourceLoader.load(path) as GameStateData
+	var resource: GameStateData = ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE_DEEP) as GameStateData
 	return resource.metadata if resource else {}
