@@ -1,6 +1,6 @@
 # 存档对象身份与版本迁移提案（#76）
 
-状态：2026-10-07 用户已采纳以下兼容政策；显式对象登记与版本预检查已实现并独立验证，旧档转换、迁移链和 SaveManager 集成尚未完成。
+状态：2026-10-07 用户已采纳以下兼容政策；显式对象登记、版本预检查、旧记录转换与内存迁移链已实现并独立验证；文件另存和 SaveManager 集成尚未完成。
 关联 [issue #76](https://github.com/LiGameAcademy/godot_core_system/issues/76)，核对 main `8d484f5`。
 待恢复状态跨存档污染由 #67 独立处理，本提案不替代其修复。
 
@@ -132,6 +132,18 @@ save_id、版本、阶段、失败原因、已应用/待恢复数量、未匹配
 
 在 Windows、Godot 4.7.2 stable mono 的独立宿主中，只复制上述两个脚本和 `tests/standalone_save` 两个检查脚本，创建 config_version=5 的 project.godot，没有 CoreSystem 或其他模块。分别执行 `--headless --verbose --path <宿主> --script tests/standalone_save/save_version_checks.gd`（42 项）和 `save_identity_checks.gd`（24 项）。两次退出码 0，无脚本错误、对象或资源保留。沙箱拒绝 user:// 日志写入、系统证书读取，空宿主缺少 .NET assembly，属于环境诊断，不作为功能通过证据。
 
-版本案例包含真实 JSON 解码、无版本旧元数据、独立 schema、未来版本、损坏字段、检查与标记不修改原元数据。身份案例包含真实节点的场景改名、创建顺序互换、重复 ID、主线程限制、失效弱引用及清理不销毁对象。尚未验证真实旧档文件恢复、同 ID 的存档记录冲突、延迟恢复缓存、完整迁移链或三种格式的资源隔离。
+版本案例包含真实 JSON 解码、无版本旧元数据、独立 schema、未来版本、损坏字段、检查与标记不修改原元数据。身份案例包含真实节点的场景改名、创建顺序互换、重复 ID、主线程限制、失效弱引用及清理不销毁对象。此阶段未验证真实旧档文件恢复、延迟恢复缓存或三种格式的资源隔离。后续内存迁移验证如下。
 
 PR 保持 draft，issue 保持开放。后续实施必须接入 #99 独立存档组合，并与现有失败/隔离回归共同验证。
+
+### 旧记录转换、资源拥有权与内存迁移
+
+`save_record_contract.gd` 的 read(snapshot, current_schema_version, legacy_schema_version, legacy_path_ids) 将旧的扁平 node_path 记录转换为当前身份信封，保留 payload 中的 node_path 以兼容游戏的 load_data。旧路径可显式映射到稳定 ID；未映射对象保留路径，不猜测新对象。当前信封也经过类型、绝对路径和身份唯一性检查。重复身份（包括映射导致的碰撞）返回 ERR_ALREADY_IN_USE，并给出记录索引；失败不暴露部分输出。这里仅复制容器，Resource 值仍为只读借用引用。
+
+`save_snapshot_copy.gd` 的 copy(value, readonly_resources) 创建可变快照。字典、带类型数组、PackedArray、可变 Resource 的持久化属性及外部嵌套资源按实例复制；同一快照内的资源别名保留，不同调用各自拥有资源。Texture、AudioStream、Script、Shader、PackedScene 按只读资产契约共享；自定义静态配置可通过 readonly_resources 显式共享。这些共享对象不得在迁移或恢复时修改。运行 Node、Callable、Signal、可变 Resource 引用环及超过64层的容器结构明确拒绝，不自动转成字符串。带必需构造参数等无法 duplicate 的自定义资源也不能保证复制成功。当前测试不等于所有 Resource 类的类型支持矩阵。
+
+`save_migration.gd` 的 prepare(snapshot, current_schema, migrations, legacy_schema, legacy_path_ids, readonly_resources) 是内存入口：先读版本/转换身份，检查整个 vN→vN+1 回调链齐全，再创建拥有资源的副本。migrations 是 Dictionary[int, Callable]，键为源游戏schema；回调签名为 Dictionary→Dictionary（或返回 null 失败），返回完整快照。回调可保留源 schema 或声明下一版本，框架验证成功后标记下一版本。每步重新验证身份与版本、复制新引入的资源，然后进入下一步；禁止版本倒退、跳跃和返回旧信封。未来版本、缺步骤、失败回调和冲突输出都不产生可提交的部分数据。
+
+回调只修改传入快照，不访问文件或运行对象、不修改共享只读资源。框架无法撤销调用方自行制造的外部副作用，也无法将 GDScript 运行错误当作正常错误返回；回调须符合签名并独立测试。此入口不操作磁盘、不调用 load_data、不改变 pending/current_save_id。另存政策仍需在 #99 的槽位操作接入，尚未交付。
+
+同一独立宿主新增 record 检查19项、copy最终检查15项、migration最终检查12项，共新增46项，连同此前66项为112项。复制用真实自定义 Resource、嵌套数组、StandardMaterial3D、BoxShape3D及ImageTexture 验证A/B/模板隔离与只读共享。迁移验证两步顺序、全链预检查、中途失败保留输入资源、重复身份与未来输出拒绝、同schema仍拥有资源；均退出0，无脚本错误或退出对象/资源保留。初次复制检查发现空对象值判断和fixture数组类型错误，已修正；初次失败日志不作验收，copy/migration仅采用最终日志。
