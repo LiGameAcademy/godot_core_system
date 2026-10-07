@@ -18,17 +18,24 @@ func set_encryption_key(key: String) -> void:
 func save(path: String, data: Dictionary) -> bool:
 	var processed_data: Dictionary = _process_data_for_save(data)
 	var task_id: String = _io_manager.write_file_async(path, processed_data, _encryption_key)
-	var result: Array = await _io_manager.io_completed
-	return result[1] if result[0] == task_id else false
+	var result: Array = await _wait_for_task(task_id)
+	return result[1]
 
 
 ## 加载数据
 func load_save(path: String) -> Dictionary:
 	var task_id: String = _io_manager.read_file_async(path, _encryption_key)
-	var result: Array = await _io_manager.io_completed
-	if result[0] == task_id and result[1]:
+	var result: Array = await _wait_for_task(task_id)
+	if result[1]:
 		return _process_data_for_load(result[2])
 	return {}
+
+## Other requests may complete first; only consume this request's result.
+func _wait_for_task(task_id: String) -> Array:
+	var result: Array = await _io_manager.io_completed
+	while result[0] != task_id:
+		result = await _io_manager.io_completed
+	return result
 
 
 ## 加载元数据
