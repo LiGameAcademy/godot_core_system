@@ -109,9 +109,19 @@ var _module_scripts: Dictionary[StringName, Script] = {
 	"tag_manager": GameplayTagManager,
 }
 
+## Runtime IDs whose editor switches retain historical names.
+const MODULE_SETTING_IDS: Dictionary[StringName, StringName] = {
+	&"state_machine_manager": &"state_machine",
+	&"tag_manager": &"gameplay_tag_manager",
+}
+
 ## 检查模块是否启用
 func is_module_enabled(module_id: StringName) -> bool:
-	var setting_name = "godot_core_system/module_enable/" + module_id
+	var setting_id: StringName = MODULE_SETTING_IDS.get(module_id, module_id)
+	var setting_name: String = "godot_core_system/module_enable/" + setting_id
+	# Keep old hand-written runtime-ID keys as a fallback without renaming editor settings.
+	if not ProjectSettings.has_setting(setting_name) and setting_id != module_id:
+		setting_name = "godot_core_system/module_enable/" + module_id
 	# 如果设置不存在，默认为启用
 	if not ProjectSettings.has_setting(setting_name):
 		return true
