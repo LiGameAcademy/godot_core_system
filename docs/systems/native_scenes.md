@@ -70,3 +70,9 @@ godot --headless --max-fps 120 --path <host> --script res://addons/godot_core_sy
 ```
 
 Require a zero exit code and PASS: 24 GDScript scene parity checks. The runner swaps scenes and exits; run it in a dedicated session. It covers completion, retained scenes on failure, duplicate calls, paused real-time fades, queued disposal, presentation-node destruction, repeated zero-duration switches and actual example buttons. The host needs only this plugin and the example AutoLoad, not the legacy full framework AutoLoad.
+# Selective installation
+
+Use the [scene-only installation guide](standalone_scene_installation.md) for
+the declared dependency manifest and a reproducible host without CoreSystem.
+This verifies the native scene boundary only; legacy stacks and custom effects
+remain separate APIs.
