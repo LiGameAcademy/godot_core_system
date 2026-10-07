@@ -11,7 +11,7 @@ const EncryptionStrategy = preload("./io_strategies/encryption/encryption_strate
 const NoEncryptionStrategy = preload("./io_strategies/encryption/no_encryption_strategy.gd")
 const XOREncryptionStrategy = preload("./io_strategies/encryption/xor_encryption_strategy.gd")
 
-const SingleThread = CoreSystem.SingleThread
+const SingleThread = preload("./threading/single_thread.gd")
 
 ## IO操作完成信号
 signal io_completed(task_id: String, success: bool, result: Variant)
@@ -20,7 +20,7 @@ signal io_completed(task_id: String, success: bool, result: Variant)
 
 # Task Management
 var _task_counter: int = 0
-var _task_id_map: Dictionary = {} # 映射: { int_id_from_thread: string_id_for_public }
+var _task_id_map: Dictionary[int, String] = {}
 
 # Thread Management
 var _io_thread: SingleThread # 假设 SingleThread 已被正确 Preload
@@ -30,15 +30,19 @@ var _serializer: SerializationStrategy				## 序列化策略
 var _compressor: CompressionStrategy				## 压缩策略
 var _encryptor: EncryptionStrategy					## 加密策略
 
-var _logger : CoreSystem.CoreLogger = CoreSystem.logger
+var _diagnostic: Callable
+var _closed: bool = false
 
-func _init(p_serializer = null, p_compressor = null, p_encryptor = null) -> void:
+func _init(
+		p_serializer: SerializationStrategy = null,
+		p_compressor: CompressionStrategy = null,
+		p_encryptor: EncryptionStrategy = null,
+		p_diagnostic: Callable = Callable()) -> void:
 	set_serialization_strategy(p_serializer if p_serializer else JSONSerializationStrategy.new())
 	set_compression_strategy(p_compressor if p_compressor else NoCompressionStrategy.new())
 	set_encryption_strategy(p_encryptor if p_encryptor else NoEncryptionStrategy.new())
 
-	_initialize_thread()
-	_connect_signals()
+	_diagnostic = p_diagnostic
 
 ## Clean up resources when the object is about to be deleted.
 func _notification(what: int) -> void:
@@ -64,11 +68,23 @@ func _initialize_thread() -> void:
 		_io_thread.stop()
 	_io_thread = SingleThread.new()
 
+## Construction is synchronous; only an accepted submission creates a worker.
+func _ensure_thread() -> bool:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("AsyncIO submissions must run on the main thread.")
+		return false
+	if _closed:
+		return false
+	if _io_thread == null:
+		_initialize_thread()
+		_connect_signals()
+	return true
+
 ## Connect signals from the IO thread.
 func _connect_signals() -> void:
 	# Check if thread exists before connecting
 	if not _io_thread or not is_instance_valid(_io_thread):
-		_logger.error("AsyncIO: Cannot connect signals, IO thread is not initialized.")
+		_diagnose(&"error", "AsyncIO: Cannot connect signals, IO thread is not initialized.")
 		return
 	# Connect directly to the internal handler
 	# Ensure not already connected if _connect_signals could be called multiple times
@@ -89,6 +105,7 @@ func _shutdown() -> void:
 	if OS.get_thread_caller_id() != OS.get_main_thread_id():
 		push_error("AsyncIOManager.close must be called on the main thread.")
 		return
+	_closed = true
 	# Disconnect signals first to prevent issues during shutdown
 	if _io_thread and is_instance_valid(_io_thread):
 		if _io_thread.task_completed.is_connected(_on_task_completed):
@@ -109,18 +126,18 @@ func _shutdown() -> void:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func read_file_async(path: String, encryption_key: String = "") -> String:
-	if _io_thread == null:
+	if not _ensure_thread():
 		return ""
-	var public_task_id := _generate_task_id() # 生成 String ID
-	var key_bytes := encryption_key.to_utf8_buffer()
+	var public_task_id: String = _generate_task_id() # 生成 String ID
+	var key_bytes: PackedByteArray = encryption_key.to_utf8_buffer()
 
 	# Create the read task callable
 	var read_task : Callable = func() -> Dictionary:
-		var result_data = _execute_read_operation(path, key_bytes)
+		var result_data: Variant = _execute_read_operation(path, key_bytes)
 		return { "success": result_data != null, "result": result_data }
 
 	# Submit the task to the IO thread
-	var internal_task_id = _io_thread.add_task(read_task)
+	var internal_task_id: int = _io_thread.add_task(read_task)
 	# 存储映射
 	_task_id_map[internal_task_id] = public_task_id
 
@@ -132,7 +149,7 @@ func read_file_async(path: String, encryption_key: String = "") -> String:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func write_file_async(path: String, data: Variant, encryption_key: String = "") -> String:
-	if _io_thread == null:
+	if not _ensure_thread():
 		return ""
 	var public_task_id: String = _generate_task_id()
 	var key_bytes: PackedByteArray = encryption_key.to_utf8_buffer()
@@ -152,17 +169,17 @@ func write_file_async(path: String, data: Variant, encryption_key: String = "") 
 ## [param path] The path to the file to delete.
 ## [return] A unique task ID string.
 func delete_file_async(path: String) -> String:
-	if _io_thread == null:
+	if not _ensure_thread():
 		return ""
-	var public_task_id := _generate_task_id()
+	var public_task_id: String = _generate_task_id()
 
 	# Create the delete task callable
-	var delete_task := func() -> Dictionary:
-		var success = _execute_delete_operation(path)
+	var delete_task: Callable = func() -> Dictionary:
+		var success: bool = _execute_delete_operation(path)
 		return { "success": success, "result": null } # Delete result is just success/fail
 
 	# Submit the task to the IO thread
-	var internal_task_id = _io_thread.add_task(delete_task)
+	var internal_task_id: int = _io_thread.add_task(delete_task)
 	# 存储映射
 	_task_id_map[internal_task_id] = public_task_id
 	return public_task_id
@@ -171,19 +188,19 @@ func delete_file_async(path: String) -> String:
 ## [param path] The directory path.
 ## [return] A unique task ID string.
 func list_files_async(path: String) -> String:
-	if _io_thread == null:
+	if not _ensure_thread():
 		return ""
-	var public_task_id := _generate_task_id()
+	var public_task_id: String = _generate_task_id()
 
 	# Create the list task callable
-	var list_task := func() -> Dictionary:
-		var files = _get_file_list(path)
+	var list_task: Callable = func() -> Dictionary:
+		var files: Variant = _get_file_list(path)
 		# Check if _get_file_list indicates error (e.g., returns null)
-		var success = files != null
+		var success: bool = files != null
 		return { "success": success, "result": files if success else [] }
 
 	# Submit the task to the IO thread
-	var internal_task_id = _io_thread.add_task(list_task)
+	var internal_task_id: int = _io_thread.add_task(list_task)
 	# 存储映射
 	_task_id_map[internal_task_id] = public_task_id
 	return public_task_id
@@ -195,12 +212,12 @@ func list_files_async(path: String) -> String:
 ## [param key_bytes] 密钥
 ## [return] 读取的数据
 func _execute_read_operation(path: String, key_bytes: PackedByteArray) -> Variant:
-	var file = FileAccess.open(path, FileAccess.READ)
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
 	if not file:
-		_logger.error("AsyncIO: Failed to open file for reading: %s, Error: %s" % [path, FileAccess.get_open_error()])
+		_diagnose(&"error", "AsyncIO: Failed to open file for reading: %s, Error: %s" % [path, FileAccess.get_open_error()])
 		return null
 
-	var content_bytes := file.get_buffer(file.get_length())
+	var content_bytes: PackedByteArray = file.get_buffer(file.get_length())
 	file.close()
 
 	# Process data using strategies
@@ -223,18 +240,18 @@ func _execute_write_operation(path: String, data: Variant, key_bytes: PackedByte
 	if not dir_path.is_empty() and not DirAccess.dir_exists_absolute(dir_path):
 		var err: Error = DirAccess.make_dir_recursive_absolute(dir_path)
 		if err != OK:
-			_logger.error("AsyncIO: Failed to create directory: %s, Error code: %d" % [dir_path, err])
+			_diagnose(&"error", "AsyncIO: Failed to create directory: %s, Error code: %d" % [dir_path, err])
 			return false
 	
 	# Open and write file
 	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
-		_logger.error("AsyncIO: Failed to open file for writing: %s, Error: %s" % [path, FileAccess.get_open_error()])
+		_diagnose(&"error", "AsyncIO: Failed to open file for writing: %s, Error: %s" % [path, FileAccess.get_open_error()])
 		return false
 
 	var ok: bool = _write_buffer(file, processed_bytes)
 	if not ok:
-		_logger.error("AsyncIO: Failed to write file: %s" % path)
+		_diagnose(&"error", "AsyncIO: Failed to write file: %s" % path)
 	file.close()
 	return ok
 
@@ -248,32 +265,32 @@ func _write_buffer(file: FileAccess, bytes: PackedByteArray) -> bool:
 ## [return] 是否删除成功
 func _execute_delete_operation(path: String) -> bool:
 	if not FileAccess.file_exists(path):
-		_logger.warning("AsyncIO: File to delete does not exist: %s" % path)
+		_diagnose(&"warning", "AsyncIO: File to delete does not exist: %s" % path)
 		return true
 	
-	var dir = DirAccess.open(path.get_base_dir())
+	var dir: DirAccess = DirAccess.open(path.get_base_dir())
 	if not dir:
-		_logger.error("AsyncIO: Could not access directory for deletion: %s" % path.get_base_dir())
+		_diagnose(&"error", "AsyncIO: Could not access directory for deletion: %s" % path.get_base_dir())
 		return false
 
-	var err := dir.remove(path.get_file())
+	var err: Error = dir.remove(path.get_file())
 	if err != OK:
-		_logger.error("AsyncIO: Failed to delete file: %s, Error code: %d" % [path, err])
+		_diagnose(&"error", "AsyncIO: Failed to delete file: %s, Error code: %d" % [path, err])
 		return false
 	
 	return true
 
 ## Gets the file list in the background thread.
-func _get_file_list(directory_path: String) -> Array:
-	var files := []
-	var dir := DirAccess.open(directory_path)
+func _get_file_list(directory_path: String) -> Variant:
+	var files: Array[String] = []
+	var dir: DirAccess = DirAccess.open(directory_path)
 
 	if not dir:
-		_logger.error("AsyncIO: Cannot access directory: %s" % directory_path)
-		return []
+		_diagnose(&"error", "AsyncIO: Cannot access directory: %s" % directory_path)
+		return null
 
 	dir.list_dir_begin()
-	var file_name := dir.get_next()
+	var file_name: String = dir.get_next()
 	while not file_name.is_empty():
 		if file_name != "." and file_name != "..": # Skip . and ..
 			# Consider adding option to include directories or get full paths
@@ -292,26 +309,26 @@ func _get_file_list(directory_path: String) -> Array:
 func _process_data_for_write(data: Variant, key_bytes: PackedByteArray) -> Variant:
 	
 	if not _serializer:
-		_logger.error("AsyncIO: No serialization strategy set.")
+		_diagnose(&"error", "AsyncIO: No serialization strategy set.")
 		return null
 		
 	var serialized: Variant = _serializer.serialize(data)
 	if not serialized is PackedByteArray:
-		_logger.error("AsyncIO: Serialization failed or returned invalid bytes.")
+		_diagnose(&"error", "AsyncIO: Serialization failed or returned invalid bytes.")
 		return null
 	var current_bytes: PackedByteArray = serialized
 	
 	if _compressor:
 		var compressed: Variant = _compressor.compress(current_bytes)
 		if not compressed is PackedByteArray:
-			_logger.error("AsyncIO: Compression failed or returned invalid bytes.")
+			_diagnose(&"error", "AsyncIO: Compression failed or returned invalid bytes.")
 			return null
 		current_bytes = compressed
 	
 	if _encryptor:
 		var encrypted: Variant = _encryptor.encrypt(current_bytes, key_bytes)
 		if not encrypted is PackedByteArray:
-			_logger.error("AsyncIO: Encryption failed or returned invalid bytes.")
+			_diagnose(&"error", "AsyncIO: Encryption failed or returned invalid bytes.")
 			return null
 		current_bytes = encrypted
 		
@@ -322,7 +339,7 @@ func _process_data_for_write(data: Variant, key_bytes: PackedByteArray) -> Varia
 ## [param key_bytes] 密钥
 ## [return] 处理后的数据
 func _process_data_for_read(bytes: PackedByteArray, key_bytes: PackedByteArray) -> Variant:
-	var current_bytes := bytes
+	var current_bytes: PackedByteArray = bytes
 	var result_data: Variant = null
 	
 	if _encryptor:
@@ -332,7 +349,7 @@ func _process_data_for_read(bytes: PackedByteArray, key_bytes: PackedByteArray) 
 		current_bytes = _compressor.decompress(current_bytes)
 
 	if not _serializer:
-		_logger.error("AsyncIO: No serialization strategy set.")
+		_diagnose(&"error", "AsyncIO: No serialization strategy set.")
 		return null # Or raise exception
 
 	result_data = _serializer.deserialize(current_bytes)
@@ -347,13 +364,26 @@ func _generate_task_id() -> String:
 #endregion
 
 #region Signal handling
+## Optional diagnostics are delivered on the main thread, never inside worker code.
+func _diagnose(level: StringName, message: String) -> void:
+	if _diagnostic.is_valid():
+		_deliver_diagnostic.call_deferred(level, message)
+	elif level == &"error":
+		push_error(message)
+	elif level == &"warning":
+		push_warning(message)
+
+func _deliver_diagnostic(level: StringName, message: String) -> void:
+	if _diagnostic.is_valid():
+		_diagnostic.call(level, message)
+
 ## 处理来自 SingleThread 的 task_completed 信号
 func _on_task_completed(result_dict: Dictionary, internal_task_id: int) -> void: # 注意：这里接收 int ID
 	# 查找对应的 Public String ID
-	var public_task_id = _task_id_map.get(internal_task_id, "") # 获取 String ID
+	var public_task_id: String = _task_id_map.get(internal_task_id, "") # 获取 String ID
 
 	if public_task_id.is_empty():
-		_logger.error("AsyncIO: Received completed signal for unknown internal task ID: %d" % internal_task_id)
+		_diagnose(&"error", "AsyncIO: Received completed signal for unknown internal task ID: %d" % internal_task_id)
 		return # 无法处理，直接返回
 
 	# 任务完成，从映射中移除
@@ -361,14 +391,14 @@ func _on_task_completed(result_dict: Dictionary, internal_task_id: int) -> void:
 
 	# 检查任务函数返回的结果字典格式
 	if not result_dict is Dictionary or not result_dict.has("success"):
-		_logger.error("AsyncIO: Internal task result format error for task %s (Internal ID: %d): %s" % [public_task_id, internal_task_id, str(result_dict)])
+		_diagnose(&"error", "AsyncIO: Internal task result format error for task %s (Internal ID: %d): %s" % [public_task_id, internal_task_id, str(result_dict)])
 		io_completed.emit(public_task_id, false, {"error": "Internal task result format error"})
 		return
 
 	var success: bool = result_dict["success"]
 	var result_data: Variant = result_dict.get("result")
 
-	_logger.info("AsyncIO: Task %s completed (Internal ID: %d). Success: %s" % [public_task_id, internal_task_id, str(success)])
+	_diagnose(&"info", "AsyncIO: Task %s completed (Internal ID: %d). Success: %s" % [public_task_id, internal_task_id, str(success)])
 	# 发出公共信号，使用 String ID
 	io_completed.emit(public_task_id, success, result_data)
 
