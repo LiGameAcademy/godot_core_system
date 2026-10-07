@@ -20,11 +20,13 @@ func _run() -> void:
 	ProjectSettings.set_setting(legacy_key, false)
 	var legacy_disabled: bool = not entry.is_module_enabled(&"tag_manager")
 	ProjectSettings.set_setting(direct_key, true)
-	var direct_override: bool = entry.is_module_enabled(&"tag_manager")
+	var canonical_priority: bool = not entry.is_module_enabled(&"tag_manager")
+	ProjectSettings.set_setting(legacy_key, null)
+	var direct_fallback: bool = entry.is_module_enabled(&"tag_manager")
 	ProjectSettings.set_setting(legacy_key, previous_legacy)
 	ProjectSettings.set_setting(direct_key, previous_direct)
-	if not legacy_disabled or not direct_override:
-		_fail("Tag adapter must honor legacy flags and explicit direct overrides")
+	if not legacy_disabled or not canonical_priority or not direct_fallback:
+		_fail("Tag adapter must prefer registered settings and use runtime keys only as fallback")
 		return
 	var expected: Script = load("res://addons/godot_core_system/source/event_system/event_bus.gd")
 	var actual: Node = entry.get("event_bus") as Node

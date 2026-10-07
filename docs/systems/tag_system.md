@@ -37,7 +37,7 @@ Create standalone records with `CoreGameplayTag.create("unit.scout")`. The `name
 
 ## Optional legacy object registry
 
-`CoreSystem.tag_manager` is created lazily when accessed. It honors `godot_core_system/module_enable/gameplay_tag_manager`, with an explicit `module_enable/tag_manager` setting taking precedence.
+`CoreSystem.tag_manager` is created lazily when accessed. The registered `godot_core_system/module_enable/gameplay_tag_manager` setting takes precedence. The runtime `module_enable/tag_manager` key is used only when the registered key is absent; see [module setting names](../module_setting_names.md).
 
 Pass an owner to `create_tag_container(owner)` and keep the returned container alive. Both owner and container are held weakly. Repeated requests return the same live container. Queries read its current local membership; released containers, released owners and Nodes queued for deletion are excluded. Empty All returns all live registered owners; empty Any returns none. `create_tag_container_from_strings` validates the complete list before registering or adding anything. Manager exit clears registration metadata. Registry query cost scales with live owners and queried paths; no performance index is claimed.
 

@@ -20,6 +20,6 @@ tags.add("unit.scout")
 var classified: bool = tags.has("unit", false)
 ```
 
-CoreSystem.tag_manager 仅在访问时创建。旧 `module_enable/gameplay_tag_manager` 配置继续有效；显式设置 `module_enable/tag_manager` 时优先使用后者。需要旧对象查询时传入拥有者，并自行保存容器，注册表不负责延长其生命。路径定义注册与对象显式成员资格互不等价。
+CoreSystem.tag_manager 仅在访问时创建。编辑器注册的 `module_enable/gameplay_tag_manager` 配置优先；仅在该键不存在时回退至 `module_enable/tag_manager`，参见[模块设置键说明](../module_setting_names.md)。需要旧对象查询时传入拥有者，并自行保存容器，注册表不负责延长其生命。路径定义注册与对象显式成员资格互不等价。
 
 [旧演示](../../examples/tag_demo/README.md) 已迁移为本地 CoreTags，角色拥有独立规则模型，场景根协调按钮和信号。无需 AutoLoad 或游戏素材。Godot 4.7.2 下兼容层 46 项、演示 17 项检查通过且独立退出无保留对象警告；旧 CoreSystem 其他模块的退出保留问题仍单独记录。未新增来源计数、叠层、序列化或全局索引优化。

@@ -83,7 +83,7 @@ func _process_variant_for_save(value: Variant) -> Variant:
 		TYPE_RECT2, TYPE_RECT2I:
 			return {
 				"x": value.position.x, "w": value.size.x,
-				"y": value.position.y, "h": value.size.x,
+				"y": value.position.y, "h": value.size.y,
 			}.merged(value_dict)
 		TYPE_AABB:
 			return {
