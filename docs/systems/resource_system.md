@@ -66,7 +66,7 @@ func request_template(path: String) -> void:
 | `clear_resource_cache(path = "")` | 清对应或全部缓存，同时放弃对应待完成请求，防止晚到结果重新填缓存；发 resource_unloaded |
 | `set_lazy_load_interval(interval)` | 弃用，输出英文警告；加载改为每帧收集，该参数不再延迟通知 |
 
-`resource_unloaded` 表示释放本地缓存与兴趣，不表示强制销毁资源。旧 get_instance、recycle_instance、get_instance_count、clear_instance_pool 原池职责仍在该文件，空池、重复回收及清理语义将在 P2 下一步处理，不能视为已经迁移或对齐。本服务尚未接管旧 SceneManager 的预载，也不改变 EntityManager 的初始化与创建逻辑。
+`resource_unloaded` 表示释放本地缓存与兴趣，不表示强制销毁资源。旧 get_instance、recycle_instance、get_instance_count、clear_instance_pool 现已委托 [CoreInstancePool](instance_pool.md)，空池安全、容量有界、回收校验和清理释放在两版对齐。本服务尚未接管旧 SceneManager 的预载，也不改变 EntityManager 的初始化与创建逻辑。
 
 旧说明中曾出现源码不存在的 load/load_async/load_multiple_async、引用计数、预载列表和自动清理 API，现已删除；没有这些接口。
 

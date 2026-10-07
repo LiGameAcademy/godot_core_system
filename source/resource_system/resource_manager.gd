@@ -1,7 +1,7 @@
 extends Node
 
 ## Legacy loading adapter. New consumers should own a CoreResources instance.
-## The legacy instance pool remains separate and is scheduled for the next migration step.
+## Pool callers retain responsibility for stopping and resetting their actors.
 enum LOAD_MODE { IMMEDIATE, LAZY }
 
 signal resource_loaded(path: String, resource: Resource)
@@ -9,7 +9,12 @@ signal resource_unloaded(path: String)
 
 var _loader: CoreResources
 var _observed_requests: Dictionary[String, CoreResourceRequest] = {}
-var _instance_pools: Dictionary[StringName, Array] = {}
+var _instance_pools: Dictionary[StringName, CoreInstancePool] = {}
+
+func _exit_tree() -> void:
+	for pool: CoreInstancePool in _instance_pools.values():
+		pool.close()
+	_instance_pools.clear()
 
 func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resource:
 	var loader: CoreResources = _get_loader()
@@ -62,28 +67,33 @@ func set_lazy_load_interval(_interval: float) -> void:
 
 func get_instance(id: StringName) -> Node:
 	if _instance_pools.has(id):
-		return _instance_pools[id].pop_back()
+		return _instance_pools[id].take()
 	return null
 
 func recycle_instance(id: StringName, instance: Node) -> void:
+	if not is_instance_valid(instance) or instance.is_queued_for_deletion():
+		push_error("Cannot recycle an invalid instance.")
+		return
 	if not _instance_pools.has(id):
-		var pool: Array[Node] = []
-		_instance_pools[id] = pool
+		_instance_pools[id] = CoreInstancePool.new()
 	if instance.get_parent():
 		instance.get_parent().remove_child(instance)
-	_instance_pools[id].append(instance)
+	var error: Error = _instance_pools[id].recycle(instance)
+	if error != OK:
+		push_error("Instance recycle failed: %s" % error_string(error))
 
 func get_instance_count(id: StringName = "") -> int:
 	if id.is_empty():
 		var count: int = 0
-		for pool: Array in _instance_pools.values():
-			count += pool.size()
+		for pool: CoreInstancePool in _instance_pools.values():
+			count += pool.cached_count
 		return count
-	return _instance_pools[id].size() if _instance_pools.has(id) else 0
+	return _instance_pools[id].cached_count if _instance_pools.has(id) else 0
 
 func clear_instance_pool(id: StringName = "") -> void:
 	if id.is_empty():
-		_instance_pools.clear()
+		for pool: CoreInstancePool in _instance_pools.values():
+			pool.clear()
 	elif _instance_pools.has(id):
 		_instance_pools[id].clear()
 	else:
