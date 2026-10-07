@@ -1,0 +1,43 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/instance_pool/instance_pool.gd" id="1"]
+[ext_resource type="PackedScene" path="res://addons/godot_core_system/examples/instance_pool/pool_actor.tscn" id="2"]
+
+[node name="InstancePool" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+actor_scene = ExtResource("2")
+
+[node name="Panel" type="VBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 610.0
+offset_bottom = 220.0
+
+[node name="Instructions" type="Label" parent="Panel"]
+layout_mode = 2
+text = "Spawn A/B, tint A, recycle, spawn again: identity reused, color reset."
+
+[node name="Spawn" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Spawn pair"
+
+[node name="Tint" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Tint A (B and template stay unchanged)"
+
+[node name="Recycle" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Recycle both"
+
+[node name="Clear" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Clear cached instances"
+
+[node name="Status" type="Label" parent="Panel"]
+layout_mode = 2
+
+[node name="Actors" type="Node2D" parent="."]
