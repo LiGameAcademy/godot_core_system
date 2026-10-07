@@ -1,135 +1,35 @@
 # Logger System
 
-The Logger System provides a flexible and powerful way to track and debug your game's behavior through structured logging.
-
-## Features
-
-- 📝 **Log Levels**: Different severity levels for messages
-- 📊 **Multiple Channels**: Output to console, file, and custom channels
-- 🔍 **Filtering**: Filter logs by level and category
-- 📱 **Project Settings**: Configure through Godot's project settings
-- 🔄 **Log Rotation**: Automatic log file management
-- 🎯 **Context Tracking**: Add context to log messages
-
-## Core Components
-
-### Logger
-
-Central logging facility:
-- Log level management
-- Channel configuration
-- Message formatting
+Preload `source/logger/core_logger.gd` directly; neither CoreSystem nor setting.gd is required.
+CoreSystem.logger remains an optional legacy entry. See [configuration and diagnostics](configuration.md)
+for the independent installation contract and GD/C# boundaries.
 
 ```gdscript
-# Configure through project settings
-core_system/logger/log_level = "info"
-core_system/logger/file_logging = true
-core_system/logger/log_directory = "user://logs"
-core_system/logger/max_log_files = 5
-
-# Usage example
-func _ready() -> void:
-    var logger = CoreSystem.logger
-    
-    # Log messages
-    logger.debug("Initializing game...")
-    logger.info("Game started")
-    logger.warning("Low memory warning")
-    logger.error("Failed to load resource")
+const LogScript: Script = preload("res://addons/godot_core_system/source/logger/core_logger.gd")
+var log_node: Node = LogScript.new()
+add_child(log_node)
+log_node.set_level(LogScript.LogLevel.INFO)
+log_node.set_file_path("user://logs/example.log")
+log_node.enable_file_logging(true)
+if log_node.last_file_error != OK:
+    push_error("File logging unavailable: " + error_string(log_node.last_file_error))
+log_node.info("Settings loaded")
 ```
 
-## Usage Examples
+Levels are DEBUG, INFO, WARNING, ERROR and FATAL. debug/info/warning/error/fatal accept a String
+message and optional Dictionary context. set_level filters the formatted console/file output;
+warning/error/fatal also retain their legacy engine diagnostics, independent of that threshold.
+error/fatal print a stack. set_color, set_colors, reset_colors and get_colors configure local colors;
+optional `godot_core_system/logger/color_*` project values seed defaults.
 
-### Basic Logging
+File output is disabled initially. Set the path before enabling. Parent directories are created;
+set_file_path returns the current open result and last_file_error exposes errors. Opening uses
+WRITE, retaining legacy truncation behavior. Changing path, disabling output or tree exit closes
+the previous handle; close_file is also explicit. One writer owns a shared path. There is no
+log rotation, configure_file_logging or generic log(level) public method in this implementation.
+Older examples using those nonexistent APIs are superseded by this page.
 
-```gdscript
-# Different log levels
-func example_logging() -> void:
-    var logger = CoreSystem.logger
-    
-    logger.debug("Debug message")     # Detailed information for debugging
-    logger.info("Info message")       # General information
-    logger.warning("Warning message") # Warnings that don't stop execution
-    logger.error("Error message")     # Errors that affect functionality
-    logger.fatal("Fatal message")     # Critical errors that stop execution
-```
-
-### Contextual Logging
-
-```gdscript
-# Add context to logs
-func player_action() -> void:
-    var logger = CoreSystem.logger
-    
-    logger.with_context({
-        "player_id": "player_1",
-        "position": Vector2(100, 100),
-        "health": 100
-    }).info("Player performed action")
-    
-    # Log with category
-    logger.category("combat").info("Player attacked enemy")
-```
-
-### Log Configuration
-
-```gdscript
-# Configure logger
-func setup_logger() -> void:
-    var logger = CoreSystem.logger
-    
-    # Set log level
-    logger.set_level(Logger.LEVEL.DEBUG)
-    
-    # Add custom channel
-    logger.add_channel("analytics", func(message):
-        send_to_analytics_service(message)
-    )
-    
-    # Configure file logging
-    logger.configure_file_logging("user://logs", 5)
-```
-
-## Best Practices
-
-1. **Log Organization**
-   - Use appropriate log levels
-   - Add relevant context
-   - Use categories for filtering
-
-2. **Performance**
-   - Avoid excessive debug logging in production
-   - Use lazy evaluation for complex log messages
-   - Configure appropriate log rotation
-
-3. **Debug Information**
-   - Include stack traces for errors
-   - Log state changes
-   - Add timestamps to messages
-
-## API Reference
-
-### Logger
-- `debug(message: String) -> void`: Log debug message
-- `info(message: String) -> void`: Log info message
-- `warning(message: String) -> void`: Log warning message
-- `error(message: String) -> void`: Log error message
-- `fatal(message: String) -> void`: Log fatal message
-- `with_context(context: Dictionary) -> Logger`: Add context to next log
-- `category(name: String) -> Logger`: Set category for next log
-- `set_level(level: int) -> void`: Set minimum log level
-- `add_channel(name: String, callback: Callable) -> void`: Add custom log channel
-- `remove_channel(name: String) -> void`: Remove log channel
-- `configure_file_logging(directory: String, max_files: int) -> void`: Configure file logging
-- `flush() -> void`: Flush log buffers
-
-### Log Levels
-```gdscript
-enum LEVEL {
-    DEBUG = 0,
-    INFO = 1,
-    WARNING = 2,
-    ERROR = 3,
-    FATAL = 4
-}
-```
+C# CoreLogger is a pure filtering class with an explicit sink; engine formatting, contexts,
+stack printing and file writing are GD extensions, not a claim of identical logger APIs. File
+output is not atomic game persistence. The [independent checks](../../test/unit/independent_config_checks.gd)
+cover installing without the settings script, explicit nested log paths, filtering and close/flush.

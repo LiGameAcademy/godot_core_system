@@ -30,6 +30,7 @@ Choose a system for a concrete task and start with its example. The project favo
 | --- | --- | --- |
 | Switch menus and levels with a fade | CoreScenes reports completion, rejects overlapping requests and uses an optional persistent transition. Resource loading is synchronous. | [API](docs/systems/native_scenes.md) · [Two-scene example](examples/native_scenes/README.md) |
 | Save and load a validated snapshot | CoreSaveStore provides versioned JSON, validation and error results. It distinguishes missing files from invalid data; Windows replacement uses a native extension. | [API and counter example](docs/systems/core_save_store.md) |
+| Read and persist local settings | ConfigFile state with explicit paths, optional diagnostics and no AutoLoad dependency. | [API](docs/systems/configuration.md) · [Configuration example](examples/configuration/README.md) |
 | Change keyboard and mouse bindings | CoreInputs manages an explicit action group, checks conflicts and restores defaults while preserving joypad inputs. | [API and capture/persistence example](docs/systems/core_inputs.md) |
 | Manage state transitions and countdowns | Value/behavior state machines and an explicitly stepped timer make lifecycle rules visible. | [State machines](docs/systems/state_machine_system.md) · [Timer](docs/systems/core_timer.md) |
 | Scope events and engine pause/speed changes | Subscription tokens and time scopes give their owners explicit cleanup responsibilities. | [Events](docs/systems/core_event_bus.md) · [Time](docs/systems/core_time_scope.md) |
