@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/instance_pool/pool_actor.gd" id="1"]
+
+[sub_resource type="Gradient" id="Palette"]
+colors = PackedColorArray(0.2, 0.8, 0.9, 1, 1, 1, 1, 1)
+
+[node name="PoolActor" type="Node2D"]
+script = ExtResource("1")
+palette = SubResource("Palette")

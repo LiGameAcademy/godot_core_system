@@ -1,157 +1,55 @@
-# Tag System
+# Deprecated GDScript tag adapters
 
-The Tag System is a lightweight, flexible tag management system for adding and managing tags on game objects. It supports hierarchical tag structures and can be used to implement various game features such as state marking, classification systems, and more.
+Use [CoreTags](core_tags.md) for new code and the shared GDScript/C# contract. The old names remain migration adapters; membership operations now delegate to CoreTags. The optional object registry remains a GDScript extension.
 
-## Features
+## Local ownership
 
-- 🏷️ **Hierarchical Tags**: Support for multi-level tags separated by dots (e.g., "character.player.state.idle")
-- 🔍 **Flexible Queries**: Support for exact and fuzzy tag matching
-- 📦 **Tag Containers**: Independent tag management for game objects
-- 🎯 **Event Notifications**: Signals emitted on tag changes
-- 💾 **Persistence**: Support for tag serialization and deserialization
-
-## Quick Start
-
-### 1. Access Tag Manager
+GameplayTagContainer is a Resource, not a scene child. It can be created without CoreSystem. It owns explicit full paths and emits legacy CoreGameplayTag payloads after membership changes are committed.
 
 ```gdscript
-var tag_manager = CoreSystem.tag_manager
+var container: GameplayTagContainer = GameplayTagContainer.new()
+container.add_tag("unit.scout")
+var owns_unit: bool = container.has_tag("unit", false)
+var owns_tank: bool = container.has_tag("unit.tank", false)
+container.remove_tag("unit.scout")
 ```
 
-### 2. Create Tag Container
+New code can replace the container with CoreTags and use its string notifications. Local membership needs no global registration or tree objects.
 
-```gdscript
-# Add tag container node in scene
-var tag_container = GameplayTagContainer.new()
-add_child(tag_container)
+## Intentional migration changes
 
-# Or reference existing tag container through scene tree
-@onready var tag_container = $TagContainer
+| Old behavior | Current behavior |
+| --- | --- |
+| Non-exact queries match both directions | An owned descendant matches its queried ancestor; owning `unit` does not grant `unit.scout` |
+| `get_tags()` returns leaf names | Returns sorted explicit full paths |
+| `get_all_tags()` expands registered descendants | Returns sorted explicit record objects only |
+| Tag identity changes when reparented or renamed | Validated full path is fixed at creation |
+| Repeated owner registration replaces its container | Returns the same live container for that owner |
+| Manager keeps a duplicate membership index and cleanup timer | Queries live containers and prunes weak references on access |
+
+Paths follow the CoreTags ASCII path contract. Invalid inputs log English errors and leave membership unchanged. All query paths are validated before evaluation. Empty All is true; empty Any is false. Duplicate additions and absent removals return false without notifications. Equivalent record objects match by full path value.
+
+## Definition metadata
+
+Create standalone records with `CoreGameplayTag.create("unit.scout")`. The `name`, `parent` and `children` properties are read-only through the supported API; children is an isolated snapshot. `add_child` accepts only a record with the corresponding direct-parent full path. A leaf-only record is not renamed by attachment. Parent and child links are weak; callers must retain records they need. Released links are pruned, and full path identity survives parent release.
+
+`CoreSystem.tag_manager.get_tag(path)` registers definition records and ancestors. `get_matching_tags(path)` returns registered exact/descendant records sorted by full path and does not register a missing query. Definition descendants are metadata, not evidence that an owner explicitly possesses them.
+
+## Optional legacy object registry
+
+`CoreSystem.tag_manager` is created lazily when accessed. The registered `godot_core_system/module_enable/gameplay_tag_manager` setting takes precedence. The runtime `module_enable/tag_manager` key is used only when the registered key is absent; see [module setting names](../module_setting_names.md).
+
+Pass an owner to `create_tag_container(owner)` and keep the returned container alive. Both owner and container are held weakly. Repeated requests return the same live container. Queries read its current local membership; released containers, released owners and Nodes queued for deletion are excluded. Empty All returns all live registered owners; empty Any returns none. `create_tag_container_from_strings` validates the complete list before registering or adding anything. Manager exit clears registration metadata. Registry query cost scales with live owners and queried paths; no performance index is claimed.
+
+This registry has no C# counterpart and is not needed by CoreTags. Serialization, source counting and tag stacking are not provided here.
+
+## Examples and verification
+
+The migrated [tag_demo](../../examples/tag_demo/README.md) uses local CoreTags and CoreTimer, with no AutoLoad. The smaller [tags example](../../examples/tags/README.md) demonstrates the shared contract.
+
+```powershell
+godot --headless --path . --script res://addons/godot_core_system/test/unit/tag_compatibility_checks.gd
+godot --headless --path . --script res://addons/godot_core_system/test/unit/tag_demo_migration_checks.gd
 ```
 
-### 3. Basic Usage
-
-```gdscript
-# Add tags
-tag_container.add_tag("character.player")
-tag_container.add_tag("state.idle")
-
-# Check tags
-if tag_container.has_tag("character.player"):
-    print("This is a player!")
-
-# Remove tags
-tag_container.remove_tag("state.idle")
-
-# Get all tags
-var all_tags = tag_container.get_tags()
-print("Current tags:", all_tags)
-```
-
-### 4. Advanced Features
-
-```gdscript
-# Check multiple tags
-var required_tags = ["character.player", "state.idle"]
-if tag_container.has_all_tags(required_tags):
-    print("Player is idle!")
-
-# Fuzzy matching
-if tag_container.has_tag("character", false):
-    print("This is any character!")
-
-# Listen for tag changes
-tag_container.tag_added.connect(_on_tag_added)
-tag_container.tag_removed.connect(_on_tag_removed)
-```
-
-## Examples
-
-Check the [tag_demo](../examples/tag_demo/) directory for a complete example project.
-
-### Player State Example
-
-```gdscript
-# Add initial tags to player
-player_tags.add_tag("character.player")
-player_tags.add_tag("state.idle")
-
-# Switch player state
-func _on_player_move():
-    player_tags.remove_tag("state.idle")
-    player_tags.add_tag("state.moving")
-
-# Add buff
-func _on_buff_acquired(buff_name: String):
-    player_tags.add_tag("buff." + buff_name)
-```
-
-## API Reference
-
-### GameplayTagManager
-
-Global tag manager responsible for tag registration and management.
-
-- `register_tag(tag_name: String) -> void`: Register new tag
-- `get_tag(tag_name: String) -> CoreGameplayTag`: Get tag object
-- `has_tag(tag_name: String) -> bool`: Check if tag is registered
-
-### GameplayTagContainer
-
-Tag container node for managing a single object's tag collection.
-
-- `add_tag(tag) -> void`: Add tag
-- `remove_tag(tag) -> void`: Remove tag
-- `has_tag(tag, exact: bool = true) -> bool`: Check if has specified tag
-- `has_all_tags(required_tags: Array, exact: bool = true) -> bool`: Check if has all specified tags
-- `has_any_tags(required_tags: Array, exact: bool = true) -> bool`: Check if has any specified tags
-- `get_tags() -> Array`: Get all tag names
-- `get_all_tags() -> Array[CoreGameplayTag]`: Get all tag objects (including child tags)
-
-### CoreGameplayTag
-
-Tag object representing a single tag (runtime object for core system).
-
-- `name: StringName`: Tag name
-- `parent: CoreGameplayTag`: Parent tag
-- `children: Array[CoreGameplayTag]`: Child tags list
-- `matches(other: CoreGameplayTag, exact: bool) -> bool`: Check if matches another tag
-
-## Best Practices
-
-1. **Use Hierarchical Structure**
-   - Use dots to separate different levels
-   - Example: `character.player.state.idle`
-
-2. **Tag Naming Conventions**
-   - Use lowercase letters
-   - Use dots for hierarchy
-   - Avoid special characters
-   - Use descriptive names
-
-3. **Performance Considerations**
-   - Avoid overusing tags
-   - Remove unnecessary tags
-   - Use exact matching instead of fuzzy matching
-
-4. **Organize Tags**
-   - Categorize by functionality (e.g., state, buff, character)
-   - Keep hierarchy structure clear
-   - Document tag purposes and meanings
-
-## Common Issues
-
-1. **Tag Does Not Exist**
-   - Ensure tags are registered before use
-   - Check tag name spelling
-   - Check error messages in logs
-
-2. **Tag Matching Fails**
-   - Check if using correct matching mode (exact/fuzzy)
-   - Confirm tag hierarchy structure
-   - Check tag name case sensitivity
-
-3. **Performance Issues**
-   - Reduce unnecessary tags
-   - Use exact matching instead of fuzzy matching
-   - Avoid frequent tag addition/removal
+Require PASS and zero exit status. Negative-input checks intentionally log errors. Godot 4.7.2: 46 adapter checks and 17 migrated scene checks pass without retained-object shutdown warnings. Full legacy CoreSystem shutdown has separate historical retention issues; these adapters do not claim to repair unrelated modules.

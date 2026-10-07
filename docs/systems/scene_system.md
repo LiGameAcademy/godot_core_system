@@ -171,3 +171,7 @@ Check the `examples/scene_demo` directory for complete examples of:
 - Custom transition effects
 - Scene state management
 - Scene preloading
+
+## Minimal native API
+
+For new projects that need native main-scene switching and an optional persistent fade, see [CoreScenes](native_scenes.md). This separate API matches the minimal C# implementation; the legacy scene stack and custom transitions described above are not part of that shared contract.

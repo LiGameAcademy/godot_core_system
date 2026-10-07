@@ -1,0 +1,4 @@
+LIBRARY core_atomic_file.windows.x86_64.dll
+
+EXPORTS
+core_atomic_file_init

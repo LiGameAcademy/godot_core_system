@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/source/scene_system/core_scene_transition.gd" id="1"]
+[node name="CoreSceneTransition" type="CanvasLayer"]
+process_mode = 3
+layer = 100
+script = ExtResource("1")
+[node name="Cover" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0)

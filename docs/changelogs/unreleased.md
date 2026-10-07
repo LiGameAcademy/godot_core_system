@@ -2,6 +2,12 @@
 
 ## ✨ 新增 (Added)
 
+- CoreInstancePool: bounded detached-node cache with lease ownership, duplicate/foreign/invalid rejection, explicit clear/close and release reentrancy protection. ResourceManager pool APIs delegate to it. Adds A/B resource/reset examples; 27 common plus 3 GD adapter checks and 9 scene checks pass. EntityManager migration remains pending.
+
+- CoreResources: caller-owned immediate/threaded resource loading, canonical pending-request deduplication, completed cache, progress, logical cancellation and exit cleanup. Adds standalone Gradient examples, 36 common core checks plus 4 GDScript legacy-adapter checks, and 11 scene/button checks per language. ResourceManager loading delegates to the service; cache queries no longer hide blocking loads, legacy clear abandons pending results, and lazy polling intervals are deprecated. Instance-pool migration is documented below; entity migration remains pending.
+
+- CoreGameSession: caller-owned identity and Preparing/Running/Paused/Ended/Closed lifecycle, optional synchronous pause/resume adapters, snapshot queries and post-commit notifications. Adds count/timer examples, 63 rule checks and 13 actual scene checks matching the C# contract; no AutoLoad or game data is introduced. Export acceptance remains deferred.
+
 ## 🔄 变更 (Changed)
 
 - **状态机**：`StateMachineManager` 增加注册项驱动开关（`run_update` / `run_physics` / `run_input`，默认全开，旧调用兼容）；新增 `set_registration_drive_flags`。`BaseStateMachine` 的 `update` / `physics_update` / `handle_input` 在委托子状态后直接调用本机 `_update` 等，减少一层转发。切换语义：`BaseState.transition_to` 委托所属状态机的 `transition_local`；本机子状态切换的显式 API 为 `transition_local`，`BaseStateMachine.transition_to` 与其等价。`switch` / `switch_to` 为弃用别名。

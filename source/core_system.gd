@@ -4,7 +4,8 @@ extends Node
 
 # 系统类
 const AudioManager = preload("./audio_system/audio_manager.gd")
-const CoreEventBus = preload("./event_system/event_bus.gd")
+const LegacyEventBus = preload("./event_system/event_bus.gd")
+const CoreEventBus = LegacyEventBus
 const InputManager = preload("./input_system/input_manager.gd")
 const CoreLogger = preload("./logger/core_logger.gd")
 const ResourceManager = preload("./resource_system/resource_manager.gd")
@@ -40,7 +41,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not audio_manager:
 			audio_manager = _get_module("audio_manager")
 		return audio_manager
-@onready var event_bus : CoreEventBus = _get_module("event_bus"):						## 事件总线
+@onready var event_bus : LegacyEventBus = _get_module("event_bus"):						## Legacy event node
 	get:
 		if not event_bus:
 			event_bus = _get_module("event_bus")
@@ -85,7 +86,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not trigger_manager:
 			trigger_manager = _get_module("trigger_manager")
 		return trigger_manager
-@onready var tag_manager : GameplayTagManager = _get_module("tag_manager"):							## 标签管理器
+var tag_manager : GameplayTagManager:							## Deprecated lazy tag compatibility adapter
 	get:
 		if not tag_manager:
 			tag_manager = _get_module("tag_manager")
@@ -118,10 +119,10 @@ const MODULE_SETTING_IDS: Dictionary[StringName, StringName] = {
 ## 检查模块是否启用
 func is_module_enabled(module_id: StringName) -> bool:
 	var setting_id: StringName = MODULE_SETTING_IDS.get(module_id, module_id)
-	var setting_name: String = "godot_core_system/module_enable/" + setting_id
+	var setting_name: String = "godot_core_system/module_enable/" + String(setting_id)
 	# Keep old hand-written runtime-ID keys as a fallback without renaming editor settings.
 	if not ProjectSettings.has_setting(setting_name) and setting_id != module_id:
-		setting_name = "godot_core_system/module_enable/" + module_id
+		setting_name = "godot_core_system/module_enable/" + String(module_id)
 	# 如果设置不存在，默认为启用
 	if not ProjectSettings.has_setting(setting_name):
 		return true
