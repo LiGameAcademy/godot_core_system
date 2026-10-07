@@ -2,6 +2,8 @@
 
 ## ✨ 新增 (Added)
 
+- CoreResources: caller-owned immediate/threaded resource loading, canonical pending-request deduplication, completed cache, progress, logical cancellation and exit cleanup. Adds standalone Gradient examples, 36 common core checks plus 4 GDScript legacy-adapter checks, and 11 scene/button checks per language. ResourceManager loading delegates to the service; cache queries no longer hide blocking loads, legacy clear abandons pending results, and lazy polling intervals are deprecated. Instance-pool migration remains pending.
+
 - CoreGameSession: caller-owned identity and Preparing/Running/Paused/Ended/Closed lifecycle, optional synchronous pause/resume adapters, snapshot queries and post-commit notifications. Adds count/timer examples, 63 rule checks and 13 actual scene checks matching the C# contract; no AutoLoad or game data is introduced. Export acceptance remains deferred.
 
 ## 🔄 变更 (Changed)
