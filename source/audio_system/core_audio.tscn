@@ -1,0 +1,5 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/source/audio_system/core_audio.gd" id="1"]
+[node name="CoreAudio" type="Node"]
+process_mode = 1
+script = ExtResource("1")
