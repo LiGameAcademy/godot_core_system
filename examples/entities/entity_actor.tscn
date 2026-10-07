@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/entities/entity_actor.gd" id="1"]
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/entities/entity_definition.gd" id="2"]
+[sub_resource type="Resource" id="Definition"]
+script = ExtResource("2")
+max_health = 100
+[sub_resource type="Gradient" id="Palette"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1)
+[node name="EntityActor" type="Node2D"]
+script = ExtResource("1")
+definition = SubResource("Definition")
+palette = SubResource("Palette")
+

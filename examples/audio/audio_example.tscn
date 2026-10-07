@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/audio/audio_example.gd" id="1"]
+[ext_resource type="PackedScene" path="res://addons/godot_core_system/source/audio_system/core_music.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://addons/godot_core_system/source/audio_system/core_audio.tscn" id="3"]
+[node name="AudioExample" type="Node"]
+script = ExtResource("1")
+[node name="CoreMusic" parent="." instance=ExtResource("2")]
+[node name="CoreAudio" parent="." instance=ExtResource("3")]
+[node name="Panel" type="PanelContainer" parent="."]
+offset_left = 30.0
+offset_top = 30.0
+offset_right = 600.0
+offset_bottom = 430.0
+[node name="Rows" type="VBoxContainer" parent="Panel"]
+[node name="Status" type="Label" parent="Panel/Rows"]
+text = "Independent audio (Master bus is owned until exit)"
+[node name="Play" type="Button" parent="Panel/Rows"]
+text = "Play looping tone / replace during fade"
+[node name="Stop" type="Button" parent="Panel/Rows"]
+text = "Fade out"
+[node name="Sound" type="Button" parent="Panel/Rows"]
+text = "Play one-shot"
+[node name="Volume" type="HSlider" parent="Panel/Rows"]
+max_value = 1.0
+step = 0.01
+value = 1.0
+[node name="Save" type="Button" parent="Panel/Rows"]
+text = "Save volume preferences"
+[node name="Restore" type="Button" parent="Panel/Rows"]
+text = "Restore saved volume"

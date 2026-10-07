@@ -121,3 +121,7 @@ func _on_load_completed(result: CoreResourceResult, path: String, handle: CoreRe
 		resource_loaded.emit(path, result.resource)
 	else:
 		push_error("Resource load failed (%s): %s" % [error_string(result.error), path])
+
+## Exposes the owned loader for explicit compatibility composition.
+func get_resource_service() -> CoreResources:
+	return _get_loader()
