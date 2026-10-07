@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="save_composition_checks.gd" id="1"]
+
+[node name="SaveCompositionChecks" type="Node"]
+script = ExtResource("1")

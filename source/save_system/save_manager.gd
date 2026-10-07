@@ -1,344 +1,348 @@
 extends Node
 
-## 存档管理器，负责存档的创建、加载、删除等操作
+const GameStateData: GDScript = preload("./game_state_data.gd")
+const SaveFormatStrategy: GDScript = preload("./save_format_strategy/save_format_strategy.gd")
+const Settings: GDScript = preload("./save_settings.gd")
+const Slots: GDScript = preload("./save_slots.gd")
+const Result: GDScript = preload("./save_slot_result.gd")
+const Restore: GDScript = preload("./save_restore_state.gd")
+const Versions: GDScript = preload("./save_version_contract.gd")
 
-# 引用类型
-const GameStateData = preload("./game_state_data.gd")
-const ResourceSaveStrategy = preload("./save_format_strategy/resource_save_strategy.gd")
-const BinarySaveStrategy = preload("./save_format_strategy/binary_save_strategy.gd")
-const JSONSaveStrategy = preload("./save_format_strategy/json_save_strategy.gd")
-const SaveFormatStrategy = preload("./save_format_strategy/save_format_strategy.gd")
-const Setting = preload("../../setting.gd")
+signal save_created(save_id: String, metadata: Dictionary)
+signal save_loaded(save_id: String, metadata: Dictionary)
+signal save_deleted(save_id: String)
+signal auto_save_started()
+signal auto_save_succeeded(save_id: String)
+signal auto_save_failed()
+signal operation_finished(result: Result)
 
-const SETTING_SAVE_SYSTEM := Setting.SETTING_SAVE_SYSTEM
-const SETTING_SAVE_SYSTEM_DEFAULTS := Setting.SETTING_SAVE_SYSTEM_DEFAULTS
-const SETTING_SAVE_SYSTEM_AUTO_SAVE := Setting.SETTING_SAVE_SYSTEM_AUTO_SAVE
+@export var storage_settings: Settings = Settings.new()
+## Optional group compatibility scope, explicitly supplied by the scene owner.
+@export var scene_scope: Node
+var migrations: Dictionary[int, Callable] = {}
+var legacy_path_ids: Dictionary[String, StringName] = {}
+var readonly_resources: Array[Resource] = []
+## Optional owner-supplied legacy key source, consulted only for Binary.
+var encryption_key_provider: Callable = Callable()
+var _slots: Slots
+var _restore: Restore = Restore.new()
+var _custom_strategies: Dictionary[StringName, SaveFormatStrategy] = {}
+var _selected_strategy: SaveFormatStrategy
+var _settings: Settings
+var _busy: bool = false
+var _closed: bool = false
+var _auto_save_timer: float = 0.0
+var _generated_sequence: int = 0
 
-# 信号
-signal save_created(save_id: String, metadata: Dictionary)		# 存档创建
-signal save_loaded(save_id: String, metadata: Dictionary)		# 存档加载
-signal save_deleted(save_id: String)							# 存档删除
-signal auto_save_started()									# 自动存档开始
-signal auto_save_succeeded(save_id: String)					# 自动存档成功
-signal auto_save_failed()									# 自动存档失败
-
-# 配置属性
-@export var save_directory: String:
+## Historical read-only accessors; configure storage_settings before first use.
+var save_directory: String:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM + "save_directory", "user://saves")
-	set(_value):
-		CoreSystem.logger.error("read-only")
-
-@export var save_group: String:
+		return _active_settings().directory
+var save_group: StringName:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM + "save_group", "saveable")
-	set(_value):
-		CoreSystem.logger.error("read-only")
-
-@export var default_format: String:
+		return _active_settings().group
+var default_format: StringName:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM_DEFAULTS + "serialization_format", "resource")
-	set(_value):
-		CoreSystem.logger.error("read-only")
-
-@export var auto_save_enabled: bool:
+		return _active_settings().format
+var auto_save_enabled: bool:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM_AUTO_SAVE + "enabled", true)
-	set(_value):
-		CoreSystem.logger.error("read-only")
-
-@export var auto_save_interval: float:
+		return _active_settings().auto_save_enabled
+var auto_save_interval: float:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM_AUTO_SAVE + "interval_seconds", 300.0)
-	set(_value):
-		CoreSystem.logger.error("read-only")
-
-@export var auto_save_prefix: String:
+		return _active_settings().auto_save_interval
+var auto_save_prefix: String:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM_AUTO_SAVE + "name_prefix", "auto_save_")
-	set(_value):
-		CoreSystem.logger.error("read-only")
-
-@export var max_auto_saves: int:
+		return _active_settings().auto_save_prefix
+var max_auto_saves: int:
 	get:
-		return ProjectSettings.get_setting(SETTING_SAVE_SYSTEM_AUTO_SAVE + "max_saves", 5)
-	set(_value):
-		CoreSystem.logger.error("read-only")
+		return _active_settings().max_auto_saves
 
-# 私有变量
-var _current_save_id: String = ""
-var _auto_save_timer: float = 0
-var _encryption_key: String = "123456"  # TODO: 从安全的地方获取
-var _save_strategy: SaveFormatStrategy
-var _pending_node_states: Dictionary = {}
-
-var _strategies := {
-	"resource": ResourceSaveStrategy.new(),
-	"binary": BinarySaveStrategy.new(),
-	"json": JSONSaveStrategy.new(),
-}
-var _logger : CoreSystem.CoreLogger = CoreSystem.logger
-
-func _init() -> void:
-	# 设置默认序列化策略
-	_set_save_format(default_format)
-	
-	# 确保存档目录存在
-	_ensure_save_directory_exists()
+func _init(settings: Settings = null, strategy: SaveFormatStrategy = null) -> void:
+	if settings != null:
+		storage_settings = settings
+	_selected_strategy = strategy
 
 func _process(delta: float) -> void:
-	if auto_save_enabled and not _current_save_id.is_empty():
-		_auto_save_timer += delta
-		if _auto_save_timer >= auto_save_interval:
-			_auto_save_timer = 0
-			create_auto_save()
+	if _slots == null or _closed or _busy or not _settings.auto_save_enabled or get_current_save_id().is_empty():
+		return
+	_auto_save_timer += delta
+	if _auto_save_timer >= _settings.auto_save_interval:
+		_auto_save_timer = 0.0
+		create_auto_save()
 
 func _exit_tree() -> void:
-	_close_strategies()
+	close()
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		_close_strategies()
+		close()
 
-func _close_strategies() -> void:
-	for strategy: SaveFormatStrategy in _strategies.values():
-		strategy.close()
+func register_saveable_node(node: Node, save_id: StringName = &"") -> Error:
+	if _busy:
+		return ERR_BUSY
+	if _closed or not Thread.is_main_thread():
+		return ERR_UNAVAILABLE
+	return _restore.register_node(node, save_id)
 
-#region 公共API
+func unregister_saveable_node(node: Node) -> void:
+	_restore.unregister_node(node)
 
-# 注册存档节点
-func register_saveable_node(node: Node) -> void:
-	if not node.is_in_group(save_group):
-		node.add_to_group(save_group)
-		CoreSystem.logger.info("注册存档节点: %s" % node.get_path())
+func get_pending_identities() -> Array[String]:
+	return _restore.get_pending_identities()
 
-	var node_path : String = node.get_path()
-	# 检查是否有待加载的缓存状态
-	if _pending_node_states.has(node_path):
-		_logger.debug("发现节点 %s 的缓存状态，正在应用..." % node_path)
-		var cached_data = _pending_node_states[node_path]
-		if node.has_method("load_data"):
-			#await get_tree().process_frame
-			node.load_data(cached_data)
-			# 加载后从缓存移除
-			_pending_node_states.erase(node_path)
-		else:
-			_logger.warning("节点 %s 缺少 load_data 方法，无法应用缓存状态！" % node_path)
+func clear_pending_states() -> Error:
+	if _busy:
+		return ERR_BUSY
+	_restore.clear_pending()
+	return OK
 
-# 设置存档格式
-func set_save_format(format: StringName) -> void:
-	_set_save_format(format)
+func get_current_save_id() -> String:
+	return _slots.get_current_save_id() if _slots != null else ""
 
-# 创建存档
 func create_save(save_id: String = "") -> bool:
-	var actual_id = _generate_save_id() if save_id.is_empty() else save_id
-	
-	# 收集数据
-	var save_data : Dictionary = {
-		"metadata": {
-			"save_id": actual_id,
-			"timestamp": Time.get_unix_time_from_system(),
-			"save_date": Time.get_datetime_string_from_system(),
-			"game_version": ProjectSettings.get_setting("application/config/version", "1.0.0"),
-			"playtime": 0.0,
-		},
-		"nodes": _collect_node_states(),
-	}
-	
-	# 存储数据
-	var save_path = _get_save_path(actual_id)
-	var success = await _save_strategy.save(save_path, save_data)
-	if success:
-		_current_save_id = actual_id
-		save_created.emit(actual_id, save_data.metadata)
-		return true
-	return false
+	var result: Result = await create_save_result(save_id)
+	return result.error == OK
 
-# 加载存档
+func create_save_result(save_id: String = "") -> Result:
+	var actual_id: String = _generated_id("save_") if save_id.is_empty() else save_id
+	var guard: Result = _begin(actual_id)
+	if guard != null:
+		return guard
+	var registration_error: Error = refresh_scene_registration()
+	if registration_error != OK:
+		return _complete(Result.new(registration_error, "Scene registration failed.", &"capture", actual_id))
+	var metadata: Dictionary = Versions.current_metadata({
+		"save_id": actual_id, "timestamp": Time.get_unix_time_from_system(),
+		"save_date": Time.get_datetime_string_from_system(), "game_version": _settings.game_version,
+		"playtime": 0.0,
+	}, _settings.schema_version)
+	var captured: Result = _restore.capture(metadata)
+	if captured.error != OK:
+		return _complete(captured)
+	var prepared: Restore.Prepared = _restore.prepare(captured.data)
+	if prepared.error != OK:
+		return _complete(Result.new(prepared.error, prepared.message, &"capture", actual_id))
+	var result: Result = await _slots.save_snapshot(actual_id, captured.data)
+	if result.error == OK and not _closed:
+		_restore.retain_unmatched(prepared)
+		save_created.emit(actual_id, metadata.duplicate(true))
+	return _complete(result)
+
 func load_save(save_id: String) -> bool:
-	if save_id.is_empty():
-		return false
-	
-	var save_path = _get_save_path(save_id)
-	
-	var result = await _save_strategy.load_save(save_path)
-	if not result.is_empty():
-		_current_save_id = save_id
-		if result.has("nodes"):
-			_apply_node_states(result.nodes)
-		save_loaded.emit(save_id, result.metadata)
-		return true
-	return false
+	var result: Result = await load_save_result(save_id)
+	return result.error == OK
 
-# 删除存档
+func load_save_result(save_id: String) -> Result:
+	var guard: Result = _begin(save_id)
+	if guard != null:
+		return guard
+	var result: Result = await _slots.load_snapshot(save_id, false)
+	if result.error != OK:
+		return _complete(result)
+	var prepared: Restore.Prepared = _restore.prepare(result.data)
+	if prepared.error != OK:
+		return _complete(Result.new(prepared.error, prepared.message, &"restore", save_id))
+	var registration_error: Error = refresh_scene_registration()
+	if registration_error != OK:
+		return _complete(Result.new(registration_error, "Scene registration failed.", &"restore", save_id))
+	var adopted: Error = _slots.adopt_snapshot(save_id, result.data)
+	if adopted != OK:
+		return _complete(Result.new(adopted, "Snapshot adoption failed.", &"restore", save_id))
+	_restore.commit(prepared, result)
+	if _closed:
+		return _complete(Result.new(ERR_UNAVAILABLE, "Save manager closed during game restore.", &"restore", save_id))
+	save_loaded.emit(save_id, result.data.metadata.duplicate(true))
+	return _complete(result)
+
 func delete_save(save_id: String) -> bool:
-	var save_path = _get_save_path(save_id)
-	var success = _save_strategy.delete_file(save_path)
+	var result: Result = delete_save_result(save_id)
+	return result.error == OK
 
-	if success:
-		if _current_save_id == save_id:
-			_current_save_id = ""
+func delete_save_result(save_id: String) -> Result:
+	var guard: Result = _begin(save_id)
+	if guard != null:
+		return guard
+	var was_current: bool = get_current_save_id() == save_id
+	var result: Result = _slots.delete_slot(save_id)
+	if result.error == OK:
+		if was_current:
+			_restore.clear_pending()
 		save_deleted.emit(save_id)
-		return true
-	_logger.error("删除存档失败：%s" % save_path)
-	return false
+	return _complete(result)
 
-# 创建自动存档
-func create_auto_save() -> String:
-	auto_save_started.emit() # 发出开始信号
-	
-	var auto_save_id = _get_auto_save_id()
-	
-	# 创建新存档
-	var success = await create_save(auto_save_id)
-	if not success:
-		CoreSystem.logger.error("Failed to create auto save: %s" % auto_save_id)
-		auto_save_failed.emit() # 发出失败信号
-		return ""
-	
-	# 清理旧的自动存档
-	var cleanup_success = await _clean_old_auto_saves()
-	if not cleanup_success:
-		CoreSystem.logger.warning("Failed to clean old auto saves")
-	
-	# 发送成功信号
-	auto_save_succeeded.emit(auto_save_id)
-	return auto_save_id
-
-# 获取所有存档列表
 func get_save_list() -> Array[Dictionary]:
-	var saves: Array[Dictionary] = []
-	
-	var files = _save_strategy.list_files(save_directory)
-	for file in files:
-		var save_id = _get_save_id_from_file(file)
-		var save_path = _get_save_path(save_id)
-		
-		var metadata = await _save_strategy.load_metadata(save_path)
-		if not metadata.is_empty():
-			saves.append({
-				"save_id": save_id,
-				"metadata": metadata
-			})
-	
-	# 按时间戳排序
-	saves.sort_custom(func(a, b): 
-		return a.metadata.timestamp > b.metadata.timestamp
-	)
-	
-	return saves
+	var result: Result = await get_save_list_result()
+	return result.saves
 
-# 注册自定义存档格式策略
-func register_save_format_strategy(format: StringName, strategy: SaveFormatStrategy) -> void:
-	_strategies[format] = strategy
+func get_save_list_result() -> Result:
+	var guard: Result = _begin("")
+	if guard != null:
+		return guard
+	var result: Result = await _slots.list_slots()
+	return _complete(result)
 
-#endregion
+func migrate_save(source_id: String, destination_id: String) -> Result:
+	var guard: Result = _begin(source_id)
+	if guard != null:
+		return guard
+	var result: Result = await _slots.migrate_slot(source_id, destination_id)
+	return _complete(result)
 
-#region 辅助方法
+func create_auto_save() -> String:
+	if _busy or _closed or _ensure_slots() != OK:
+		return ""
+	auto_save_started.emit()
+	var save_id: String = _generated_id(_settings.auto_save_prefix)
+	if not await create_save(save_id):
+		auto_save_failed.emit()
+		return ""
+	var listed: Result = await get_save_list_result()
+	if listed.error != OK:
+		auto_save_failed.emit()
+		return ""
+	var retained: int = 0
+	for item: Dictionary in listed.saves:
+		var slot: String = item.save_id
+		if slot.begins_with(_settings.auto_save_prefix):
+			retained += 1
+			if retained > _settings.max_auto_saves and not delete_save(slot):
+				auto_save_failed.emit()
+				return ""
+	auto_save_succeeded.emit(save_id)
+	return save_id
 
-func _get_auto_save_id() -> String:
-	return auto_save_prefix + _get_timestamp()
+func set_save_format(format: StringName) -> Error:
+	if _busy or _closed:
+		return ERR_BUSY if _busy else ERR_UNAVAILABLE
+	if _slots == null:
+		storage_settings = storage_settings.duplicate() as Settings
+		storage_settings.format = format
+		return _ensure_slots()
+	if format == _settings.format and not _custom_strategies.has(format):
+		return OK
+	var strategy: SaveFormatStrategy = _make_strategy(format)
+	if strategy == null:
+		return ERR_UNAVAILABLE
+	var error: Error = _slots.use_strategy(strategy)
+	if error == OK:
+		_selected_strategy = strategy
+		_settings.format = format
+	return error
 
-# 设置当前存档格式
-func _set_save_format(format: StringName) -> void:
-	_save_strategy = _strategies.get(format, "resource")
-	if _save_strategy.has_method("set_encryption_key"):
-		var encryption_key = _get_encryption_key()
-		_save_strategy.set_encryption_key(encryption_key)
+func register_save_format_strategy(format: StringName, strategy: SaveFormatStrategy) -> Error:
+	if _closed or _busy or strategy == null or _custom_strategies.has(format) or strategy == _selected_strategy or _custom_strategies.values().has(strategy):
+		return ERR_ALREADY_IN_USE
+	_custom_strategies[format] = strategy
+	return OK
 
-## 获取加密密钥
-func _get_encryption_key() -> String:
-	# 从配置中获取密钥
-	var key = CoreSystem.config_manager.get_value("save_system", "encryption_key", "")
+func refresh_scene_registration() -> Error:
+	if _settings == null:
+		var error: Error = _ensure_slots()
+		if error != OK:
+			return error
+	if not is_instance_valid(scene_scope):
+		return OK
+	return _register_scope(scene_scope)
 
-	# 如果配置中没有密钥，生成一个默认的
-	if key.is_empty():
-		key = _generate_default_key()
-		CoreSystem.config_manager.set_value("save_system", "encryption_key", key)
-		CoreSystem.config_manager.save_config()
+func close() -> Error:
+	if not Thread.is_main_thread():
+		return ERR_UNAVAILABLE
+	if not _closed:
+		_closed = true
+		if _slots != null:
+			_slots.close()
+		elif _selected_strategy != null:
+			_selected_strategy.close()
+		for strategy: SaveFormatStrategy in _custom_strategies.values():
+			strategy.close()
+		_custom_strategies.clear()
+		_restore.clear()
+		migrations.clear()
+		readonly_resources.clear()
+		encryption_key_provider = Callable()
+		set_process(false)
+	return OK
 
-	return key
+func _ensure_slots() -> Error:
+	if _closed:
+		return ERR_UNAVAILABLE
+	if _slots == null:
+		_settings = storage_settings.duplicate() as Settings
+		if _settings.schema_version < 1 or _settings.legacy_schema_version < 1 or _settings.directory.is_empty() or _settings.max_auto_saves < 1 or _settings.auto_save_interval <= 0.0:
+			return ERR_INVALID_PARAMETER
+		if _selected_strategy == null:
+			_selected_strategy = _make_strategy(_settings.format)
+		if _selected_strategy == null:
+			return ERR_UNAVAILABLE
+		_slots = Slots.new(_settings.directory, _selected_strategy, _settings.schema_version, _settings.legacy_schema_version)
+	_slots.migrations = migrations
+	_slots.legacy_path_ids = legacy_path_ids
+	_slots.readonly_resources = readonly_resources
+	_restore.readonly_resources = readonly_resources
+	return OK
 
-## 生成默认密钥
-func _generate_default_key() -> String:
-	var key = ""
-	for i in range(32):
-		key += str(randi() % 10)
-	return key
-	# return "123456"
+func _make_strategy(format: StringName) -> SaveFormatStrategy:
+	var path: String = ""
+	if not _custom_strategies.has(format):
+		if format != &"resource" and format != &"json" and format != &"binary":
+			return null
+		path = get_script().resource_path.get_base_dir().path_join("save_format_strategy/%s_save_strategy.gd" % format)
+		if not ResourceLoader.exists(path):
+			return null
+	if format == &"binary" and _settings.encryption_key.is_empty():
+		if not encryption_key_provider.is_valid():
+			return null
+		var key: Variant = encryption_key_provider.call()
+		if not key is String or key.is_empty():
+			return null
+		_settings.encryption_key = key
+	var strategy: SaveFormatStrategy
+	if _custom_strategies.has(format):
+		strategy = _custom_strategies[format]
+		_custom_strategies.erase(format)
+	elif format == &"resource" or format == &"json" or format == &"binary":
+		var script: GDScript = load(path) as GDScript
+		strategy = script.new() as SaveFormatStrategy if script != null else null
+	if strategy != null and strategy.has_method("set_encryption_key"):
+		strategy.call("set_encryption_key", _settings.encryption_key)
+	return strategy
 
-# 检查文件是否为有效的存档文件
-func _is_valid_save_file(file_name: String) -> bool:
-	return _save_strategy.is_valid_save_file(file_name)
+func _register_scope(node: Node) -> Error:
+	if node.is_in_group(_settings.group):
+		var save_id: StringName = &""
+		for descriptor: Dictionary in node.get_property_list():
+			if descriptor.name == "save_id":
+				var value: Variant = node.get("save_id")
+				if not value is String and not value is StringName:
+					return ERR_INVALID_DATA
+				save_id = StringName(value)
+		var error: Error = _restore.register_node(node, save_id, false)
+		if error != OK:
+			return error
+	for child: Node in node.get_children():
+		var error: Error = _register_scope(child)
+		if error != OK:
+			return error
+	return OK
 
-# 从文件名获取存档ID
-func _get_save_id_from_file(file_name: String) -> String:
-	return _save_strategy.get_save_id_from_file(file_name)
+func _begin(save_id: String) -> Result:
+	if _busy or not Thread.is_main_thread():
+		return Result.new(ERR_BUSY if _busy else ERR_UNAVAILABLE, "Save manager is unavailable.", &"begin", save_id)
+	_busy = true
+	var error: Error = _ensure_slots()
+	if error != OK:
+		_busy = false
+		return Result.new(error, "Save module configuration is unavailable.", &"begin", save_id)
+	return null
 
-# 确保存档目录存在
-func _ensure_save_directory_exists() -> void:
-	var save_dir = Setting.get_setting_value("save_system/save_directory")
-	if not DirAccess.dir_exists_absolute(save_dir):
-		DirAccess.make_dir_recursive_absolute(save_dir)
+func _complete(result: Result) -> Result:
+	_busy = false
+	operation_finished.emit(result)
+	return result
 
-# 获取存档路径
-func _get_save_path(save_id: String) -> String:
-	return _save_strategy.get_save_path(Setting.get_setting_value("save_system/save_directory"), save_id)
+func _generated_id(prefix: String) -> String:
+	_generated_sequence += 1
+	return "%s%d_%d_%d" % [prefix, int(Time.get_unix_time_from_system()), Time.get_ticks_usec(), _generated_sequence]
 
-# 清理旧的自动存档
-func _clean_old_auto_saves() -> bool:
-	var saves = await get_save_list()
-	var auto_saves = saves.filter(func(save):
-		var save_id = save.get("save_id")
-		return save_id.begins_with(auto_save_prefix)
-	)
-
-	if auto_saves.size() > max_auto_saves:
-		for i in range(max_auto_saves, auto_saves.size()):
-			var sid: String = str(auto_saves[i].get("save_id", ""))
-			if sid.is_empty():
-				continue
-			if not delete_save(sid):
-				return false
-	return true
-
-# 生成时间戳
-func _get_timestamp() -> String:
-	return str(Time.get_unix_time_from_system())
-
-# 生成存档ID
-func _generate_save_id() -> String:
-	return "save_" + _get_timestamp()
-
-# 收集Node状态
-func _collect_node_states() -> Array[Dictionary]:
-	var nodes : Array[Dictionary] = []
-	var saveables = get_tree().get_nodes_in_group(save_group)
-	for saveable in saveables:
-		if saveable.has_method("save"):
-			var node_data : Dictionary = saveable.save()
-			node_data["node_path"] = saveable.get_path()
-			nodes.append(node_data)
-		else:
-			_logger.warning("缺少save方法！%s" % str(saveable))
-	return nodes
-
-# 应用Node状态
-func _apply_node_states(nodes: Array) -> void:
-	for node_data : Dictionary in nodes:
-		var node_path : String = node_data.get("node_path", "")
-		if node_path.is_empty():
-			_logger.error("节点路径为空！%s" % str(node_data))
-			continue
-		var node = get_node_or_null(node_path)
-		if node:
-			if node.has_method("load_data"):
-				node.load_data(node_data)
-			else:
-				_logger.warning("缺少 load_data 方法！%s" % str(node))
-		else:
-			# 节点不存在，缓存数据
-			_logger.debug("节点 %s 尚未加载，缓存其状态数据。" % node_path)
-			_pending_node_states[node_path] = node_data
-
-#endregion
+func _active_settings() -> Settings:
+	return _settings if _settings != null else storage_settings

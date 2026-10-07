@@ -47,18 +47,45 @@ func save_snapshot(save_id: String, snapshot: Dictionary) -> Result:
 		_snapshot = prepared.data
 	return _finish(written)
 
-func load_snapshot(save_id: String) -> Result:
+func load_snapshot(save_id: String, adopt: bool = true) -> Result:
 	var guard: Result = _reserve(save_id)
 	if guard != null:
 		return guard
 	var loaded: Result = await _read(save_id)
-	if loaded.error == OK:
+	if loaded.error == OK and adopt:
 		var owned: SnapshotCopy.CopyResult = SnapshotCopy.copy(loaded.data, readonly_resources)
 		if owned.error != OK:
 			return _finish(Result.new(owned.error, owned.message, &"copy", save_id))
 		_current_save_id = save_id
 		_snapshot = owned.data
 	return _finish(loaded)
+
+## The Node facade prepares every restore payload before adopting this state.
+func adopt_snapshot(save_id: String, data: Dictionary) -> Error:
+	if _closed or _busy or not Thread.is_main_thread():
+		return ERR_UNAVAILABLE
+	if not _valid_id(save_id):
+		return ERR_INVALID_PARAMETER
+	var checked: Records.ReadResult = Records.read(data, _schema, _legacy_schema)
+	if checked.error != OK:
+		return checked.error
+	if checked.converted_legacy or checked.schema_version != _schema:
+		return ERR_INVALID_DATA
+	var owned: SnapshotCopy.CopyResult = SnapshotCopy.copy(checked.data, readonly_resources)
+	if owned.error != OK:
+		return owned.error
+	_snapshot = owned.data
+	_current_save_id = save_id
+	return OK
+
+func use_strategy(strategy: Strategy) -> Error:
+	if _closed or _busy or not Thread.is_main_thread() or strategy == null:
+		return ERR_UNAVAILABLE
+	if strategy != _strategy:
+		if _strategy != null:
+			_strategy.close()
+		_strategy = strategy
+	return OK
 
 ## Upgrade into a different, unused slot. Reading never rewrites the original.
 func migrate_slot(source_id: String, destination_id: String) -> Result:
@@ -106,9 +133,18 @@ func list_slots() -> Result:
 		if not _valid_id(slot):
 			continue
 		var metadata: Dictionary = await _strategy.load_metadata(_path(slot))
+		var valid_metadata: bool = not metadata.is_empty()
+		if not valid_metadata:
+			# Legacy metadata may legitimately be empty. Distinguish that case
+			# from the old strategy API's empty-dictionary failure sentinel.
+			var snapshot: Dictionary = await _strategy.load_save(_path(slot))
+			var fields: Variant = snapshot.get("metadata")
+			if fields is Dictionary:
+				metadata = fields
+				valid_metadata = true
 		if _closed:
 			return _finish(Result.new(ERR_UNAVAILABLE, "Save owner closed.", &"list"))
-		if not metadata.is_empty():
+		if valid_metadata:
 			result.saves.append({"save_id": slot, "metadata": metadata.duplicate(true)})
 	result.saves.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return float(a.metadata.get("timestamp", 0)) > float(b.metadata.get("timestamp", 0)))

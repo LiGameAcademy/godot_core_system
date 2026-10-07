@@ -11,6 +11,7 @@ const ResourceManager = preload("./resource_system/resource_manager.gd")
 const CoreSceneManager = preload("./scene_system/scene_manager.gd")
 const TimeManager = preload("./time_system/time_manager.gd")
 const SaveManager = preload("./save_system/save_manager.gd")
+const SaveLegacyAdapter: GDScript = preload("./save_system/save_legacy_adapter.gd")
 const ConfigManager = preload("./config_system/config_manager.gd")
 const LocalizationManager = preload("./localization_system/localization_manager.gd")
 const StateMachineManager = preload("./state_machine/state_machine_manager.gd")
@@ -151,11 +152,25 @@ func _create_module(module_id: StringName) -> Node:
 		return null
 	_modules[module_id] = module
 	module.name = module_id
+	if module_id == &"save_manager":
+		var save_module: SaveManager = module as SaveManager
+		var configured: Error = SaveLegacyAdapter.configure(save_module, get_tree().root)
+		save_module.encryption_key_provider = _legacy_save_encryption_key
+		if configured != OK:
+			_modules.erase(module_id)
+			module.free()
+			push_error("存档兼容组装失败：%d" % configured)
+			return null
 	if module_id == &"localization_manager" and is_module_enabled(&"config_manager"):
 		var localization: LocalizationManager = module as LocalizationManager
 		localization.configure_persistence(config_manager)
 	add_child(module)
 	return module
+
+func _legacy_save_encryption_key() -> String:
+	if not is_module_enabled(&"config_manager"):
+		return ""
+	return SaveLegacyAdapter.get_encryption_key(config_manager)
 
 ## 获取模块
 func _get_module(module_id: StringName) -> Node:
