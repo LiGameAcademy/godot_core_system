@@ -93,6 +93,17 @@ func _process(delta: float) -> void:
 			_auto_save_timer = 0
 			create_auto_save()
 
+func _exit_tree() -> void:
+	_close_strategies()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_close_strategies()
+
+func _close_strategies() -> void:
+	for strategy: SaveFormatStrategy in _strategies.values():
+		strategy.close()
+
 #region 公共API
 
 # 注册存档节点
