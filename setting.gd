@@ -12,6 +12,16 @@ const SETTING_TRIGGER_SYSTEM: String = "godot_core_system/trigger_system/"
 const SETTING_LOGGER: String = "godot_core_system/logger/"
 
 const SETTING_INFO_DICT: Dictionary[StringName, Dictionary] = {
+	"module_enable/localization_manager":
+	{
+		"name": SETTING_MODULE_ENABLE + "localization_manager",
+		"type": TYPE_BOOL,
+		"hint": PROPERTY_HINT_NONE,
+		"hint_string": "",
+		"basic": true,
+		"default": false,
+	},
+
 	"module_enable/event_bus":
 	{
 		"name": SETTING_MODULE_ENABLE + "event_bus",

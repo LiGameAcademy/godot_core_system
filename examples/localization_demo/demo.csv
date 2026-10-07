@@ -1,0 +1,12 @@
+keys,en,zh_CN,zh_TW
+"LOCALE_DEMO_TITLE","Choose your language","选择你的语言","選擇你的語言"
+"LOCALE_DEMO_HINT","Switch language. Static controls and generated text update together.","切换语言，静态控件和动态文字会一起更新。","切換語言，靜態控制項和動態文字會一起更新。"
+"LOCALE_DEMO_AUTO","Follow system","跟随系统","跟隨系統"
+"LOCALE_DEMO_SAVE","Remember my choice","记住我的选择","記住我的選擇"
+"LOCALE_DEMO_ADD","Collect a coin","收集一枚金币","收集一枚金幣"
+"LOCALE_DEMO_COINS","You have {count} coins.","你拥有 {count} 枚金币。","你擁有 {count} 枚金幣。"
+"LOCALE_DEMO_STATUS","Preference: {preference}    Active locale: {locale}","偏好：{preference}    实际语言：{locale}","偏好：{preference}    實際語言：{locale}"
+"LOCALE_DEMO_SAVED","Language switched and preference saved.","语言已切换，偏好已保存。","語言已切換，偏好已儲存。"
+"LOCALE_DEMO_RUNTIME","Language switched for this session.","语言已切换，仅本次有效。","語言已切換，僅本次有效。"
+"LOCALE_DEMO_ERROR","Result: {error}. Active locale: {locale}","结果：{error}。实际语言：{locale}","結果：{error}。實際語言：{locale}"
+"LOCALE_DEMO_NAME","Player name (kept as entered): Hello","玩家名字（保留原文）：Hello","玩家名字（保留原文）：Hello"
