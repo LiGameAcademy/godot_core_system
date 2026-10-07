@@ -1,5 +1,10 @@
 # Native scene example
 
+To install only the scene module without the full plugin or CoreSystem, see
+[standalone installation and reproducible host](../../docs/systems/standalone_scene_installation.md).
+The minimal automated host copies nine declared module files and uses dedicated
+check fixtures; the interactive example below adds its own explicit owner.
+
 Install the plugin at addons/godot_core_system in a Godot 4.7 project. Register SceneExampleHost as an AutoLoad using this directory's scene_example_host.gd. Run scene_a.tscn or scene_b.tscn; the button switches through a persistent fade between differently colored scenes.
 
 The example host owns CoreScenes and CoreSceneTransition. Main scenes own only their controls and bound completion callbacks. They never await a navigation coroutine that must resume after their own destruction. No game assets, saved data or legacy managers are required.
