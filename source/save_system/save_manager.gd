@@ -164,8 +164,7 @@ func load_save(save_id: String) -> bool:
 	var result = await _save_strategy.load_save(save_path)
 	if not result.is_empty():
 		_current_save_id = save_id
-		if result.has("nodes"):
-			_apply_node_states(result.nodes)
+		_apply_node_states(result.get("nodes", []))
 		save_loaded.emit(save_id, result.metadata)
 		return true
 	return false
@@ -325,6 +324,8 @@ func _collect_node_states() -> Array[Dictionary]:
 
 # 应用Node状态
 func _apply_node_states(nodes: Array) -> void:
+	# Pending states belong only to the newly accepted save, even if it is empty.
+	_pending_node_states.clear()
 	for node_data : Dictionary in nodes:
 		var node_path : String = node_data.get("node_path", "")
 		if node_path.is_empty():
