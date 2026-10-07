@@ -79,7 +79,16 @@ func _connect_signals() -> void:
 	# 	_io_thread.task_error.connect(_on_task_error)
 
 ## Shut down the IO thread manager.
+## Owner calls this on the main thread before releasing the manager.
+## Accepted tasks without delivered results finish as success=false/result=null.
+## A running function is joined; its file operation may already have taken effect.
+func close() -> void:
+	_shutdown()
+
 func _shutdown() -> void:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("AsyncIOManager.close must be called on the main thread.")
+		return
 	# Disconnect signals first to prevent issues during shutdown
 	if _io_thread and is_instance_valid(_io_thread):
 		if _io_thread.task_completed.is_connected(_on_task_completed):
@@ -87,6 +96,11 @@ func _shutdown() -> void:
 		# Disconnect error signal if connected
 		_io_thread.stop()
 	_io_thread = null
+	var canceled_ids: Array[String] = []
+	canceled_ids.assign(_task_id_map.values())
+	_task_id_map.clear()
+	for task_id: String in canceled_ids:
+		io_completed.emit(task_id, false, null)
 #endregion
 
 #region Public API
@@ -95,6 +109,8 @@ func _shutdown() -> void:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func read_file_async(path: String, encryption_key: String = "") -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id := _generate_task_id() # 生成 String ID
 	var key_bytes := encryption_key.to_utf8_buffer()
 
@@ -116,6 +132,8 @@ func read_file_async(path: String, encryption_key: String = "") -> String:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func write_file_async(path: String, data: Variant, encryption_key: String = "") -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id: String = _generate_task_id()
 	var key_bytes: PackedByteArray = encryption_key.to_utf8_buffer()
 
@@ -134,6 +152,8 @@ func write_file_async(path: String, data: Variant, encryption_key: String = "") 
 ## [param path] The path to the file to delete.
 ## [return] A unique task ID string.
 func delete_file_async(path: String) -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id := _generate_task_id()
 
 	# Create the delete task callable
@@ -151,6 +171,8 @@ func delete_file_async(path: String) -> String:
 ## [param path] The directory path.
 ## [return] A unique task ID string.
 func list_files_async(path: String) -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id := _generate_task_id()
 
 	# Create the list task callable

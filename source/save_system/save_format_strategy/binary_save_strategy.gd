@@ -1,11 +1,10 @@
 extends "./async_io_strategy.gd"
 
 func _init() -> void:
-	_io_manager = CoreSystem.AsyncIOManager.new(
-		CoreSystem.AsyncIOManager.JSONSerializationStrategy.new(),
-		CoreSystem.AsyncIOManager.GzipCompressionStrategy.new(),
-		CoreSystem.AsyncIOManager.XOREncryptionStrategy.new()
-		)
+	super()
+	_io_manager.set_serialization_strategy(CoreSystem.AsyncIOManager.JSONSerializationStrategy.new())
+	_io_manager.set_compression_strategy(CoreSystem.AsyncIOManager.GzipCompressionStrategy.new())
+	_io_manager.set_encryption_strategy(CoreSystem.AsyncIOManager.XOREncryptionStrategy.new())
 
 ## 是否为有效存档
 func is_valid_save_file(file_name: String) -> bool:
