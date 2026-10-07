@@ -46,62 +46,51 @@ func push_event(event_name: String, payload : Variant = [], immediate: bool = tr
 		return
 	
 	# 获取所有订阅者
-	var connections = get_signal_connection_list(event_name)
+	var connections: Array[Dictionary] = get_signal_connection_list(event_name)
 	if connections.is_empty():
 		return
 		
 	# 按优先级排序订阅者
-	var ordered_connections = _sort_connections_by_priority(event_name, connections)
+	var ordered_connections: Array[Dictionary] = _sort_connections_by_priority(event_name, connections)
 	
 	# 筛选满足过滤条件的连接
-	var filtered_connections = []
-	var to_disconnect = []
+	var filtered_connections: Array[Callable] = []
 	
-	for conn in ordered_connections:
-		var object = conn["callable"].get_object()
-		var method = conn["callable"].get_method()
-		
-		# 如果对象已被释放，将其标记为需要断开连接
-		if not is_instance_valid(object):
-			to_disconnect.append(conn)
+	for conn: Dictionary in ordered_connections:
+		var callback: Callable = conn["callable"]
+		if not callback.is_valid() or not is_connected(event_name, callback):
 			continue
-			
-		# 检查过滤器
-		var obj_id = _get_object_id(object, method)
-		if _event_metadata.has(event_name) and _event_metadata[event_name].has(obj_id):
-			var metadata = _event_metadata[event_name][obj_id]
-			var filter_callable = metadata["filter"]
-			
-			# 应用过滤器
-			if filter_callable.is_valid() and not filter_callable.call(payload):
+		var object: Object = callback.get_object()
+		var obj_id: String = _get_object_id(object, callback.get_method())
+		var metadata: Dictionary = _event_metadata.get(event_name, {}).get(obj_id, {})
+		var once: bool = metadata.get("once", false)
+		if once:
+			# 过滤器本身也可以重入；先保留本次消费权，拒绝后归还。
+			if metadata.get("once_pending", false):
 				continue
-				
-			# 如果是一次性订阅，标记为需要断开连接
-			if metadata["once"]:
-				to_disconnect.append(conn)
-				
-		filtered_connections.append(conn)
+			metadata["once_pending"] = true
+		var filter_callable: Callable = metadata.get("filter", Callable())
+		var accepted: bool = not filter_callable.is_valid() or bool(filter_callable.call(payload))
+		if not accepted:
+			metadata.erase("once_pending")
+			continue
+		if not callback.is_valid() or not is_connected(event_name, callback):
+			continue
+		# 过滤器可能取消并重新订阅；不得消费新订阅。
+		if once and _event_metadata.get(event_name, {}).get(obj_id, {}) != metadata:
+			continue
+		if once:
+			unsubscribe(event_name, callback)
+		filtered_connections.append(callback)
 	
 	# 发送事件
-	for conn in filtered_connections:
+	for callback: Callable in filtered_connections:
+		if not callback.is_valid():
+			continue
 		if immediate:
-			conn["callable"].callv(payload)
+			callback.callv(payload)
 		else:
-			_schedule_deferred_call(conn["callable"], payload)
-	
-	# 断开一次性连接
-	for conn in to_disconnect:
-		var object = conn["callable"].get_object()
-		var method = conn["callable"].get_method()
-		if is_instance_valid(object):
-			disconnect(event_name, conn["callable"])
-			
-			# 移除元数据
-			var obj_id = _get_object_id(object, method)
-			if _event_metadata.has(event_name) and _event_metadata[event_name].has(obj_id):
-				_event_metadata[event_name].erase(obj_id)
-				if _event_metadata[event_name].is_empty():
-					_event_metadata.erase(event_name)
+			_schedule_deferred_call(callback, payload)
 	
 	event_handled.emit(event_name, payload)
 
@@ -274,23 +263,23 @@ func _get_object_id(object: Object, method: StringName) -> String:
 	return str(object.get_instance_id()) + "_" + method
 
 ## 按优先级排序连接
-func _sort_connections_by_priority(event_name: String, connections: Array) -> Array:
+func _sort_connections_by_priority(event_name: String, connections: Array[Dictionary]) -> Array[Dictionary]:
 	if not _event_metadata.has(event_name):
 		return connections
 		
-	var result = connections.duplicate()
-	result.sort_custom(func(a, b):
-		var a_obj = a["callable"].get_object()
-		var a_method = a["callable"].get_method()
-		var b_obj = b["callable"].get_object()
-		var b_method = b["callable"].get_method()
+	var result: Array[Dictionary] = connections.duplicate()
+	result.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var a_obj: Object = a["callable"].get_object()
+		var a_method: StringName = a["callable"].get_method()
+		var b_obj: Object = b["callable"].get_object()
+		var b_method: StringName = b["callable"].get_method()
 		
-		var a_id = _get_object_id(a_obj, a_method)
-		var b_id = _get_object_id(b_obj, b_method)
+		var a_id: String = _get_object_id(a_obj, a_method)
+		var b_id: String = _get_object_id(b_obj, b_method)
 		
 		# 默认优先级
-		var a_priority = Priority.NORMAL
-		var b_priority = Priority.NORMAL
+		var a_priority: Priority = Priority.NORMAL
+		var b_priority: Priority = Priority.NORMAL
 		
 		if _event_metadata[event_name].has(a_id):
 			a_priority = _event_metadata[event_name][a_id]["priority"]
