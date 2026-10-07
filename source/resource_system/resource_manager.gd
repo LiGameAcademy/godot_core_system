@@ -24,8 +24,11 @@ var _instance_pools: Dictionary = {}
 var _lazy_load_interval: float = 1.0
 ## 当前懒加载时间
 var _lazy_load_time: float = 0.0
-## 待加载资源数量
-var _loading_count: int = 0
+## 每条路径只有一个原生请求；false 表示清缓存后只收尾、不发布。
+var _pending_loads: Dictionary[String, bool] = {}
+## 待收尾请求数，由请求表计算，避免重复计数。
+var _loading_count: int:
+	get: return _pending_loads.size()
 
 var _logger: CoreSystem.CoreLogger:
 	get:
@@ -43,6 +46,11 @@ func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resou
 	if _resource_cache.has(path) and _resource_cache[path] != null:
 		# 如果资源已经加载过了
 		return _resource_cache[path]
+	if _pending_loads.has(path):
+		_pending_loads[path] = true
+		if mode == LOAD_MODE.IMMEDIATE:
+			return _finish_pending_load(path)
+		return null
 	var resource: Resource = null
 	if not ResourceLoader.exists(path):
 		push_error("资源地址无效: " + path)
@@ -51,8 +59,11 @@ func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resou
 		LOAD_MODE.IMMEDIATE:
 			resource = ResourceLoader.load(path)
 		LOAD_MODE.LAZY:
-			ResourceLoader.load_threaded_request(path)
-			_loading_count += 1
+			var error: Error = ResourceLoader.load_threaded_request(path)
+			if error != OK:
+				push_error("Failed to request resource: %s (%d)" % [path, error])
+				return null
+			_pending_loads[path] = true
 	_resource_cache[path] = resource
 	if resource:
 		resource_loaded.emit(path, resource)
@@ -62,9 +73,9 @@ func load_resource(path: String, mode: LOAD_MODE = LOAD_MODE.IMMEDIATE) -> Resou
 ## [param path] 资源路径
 ## [return] 缓存中的资源
 func get_cached_resource(path: String) -> Resource:
-	if _resource_cache.has(path) and _resource_cache[path] == null:
-		# 如果资源正在加载，则这里调用直接加载
-		_loading_count -= 1
+	if _pending_loads.has(path):
+		_pending_loads[path] = true
+		return _finish_pending_load(path)
 	if _resource_cache.get(path, null) == null:
 		_logger.warning("[ResourceManager]cannot get cached resource on {0}, reload it!".format([path]))
 		return load_resource(path)
@@ -74,11 +85,16 @@ func get_cached_resource(path: String) -> Resource:
 ## [param path] 资源路径，如果为空，则清空所有资源
 func clear_resource_cache(path: String = "") -> void:
 	if path.is_empty():
+		for pending_path: String in _pending_loads:
+			_pending_loads[pending_path] = false
 		_resource_cache.clear()
 		resource_unloaded.emit("")
-	elif _resource_cache.has(path):
-		_resource_cache.erase(path)
-		resource_unloaded.emit(path)
+	else:
+		if _pending_loads.has(path):
+			_pending_loads[path] = false
+		if _resource_cache.has(path):
+			_resource_cache.erase(path)
+			resource_unloaded.emit(path)
 
 ## 从对象池获取实例，如果不存在则返回空
 ## [param id] 实例ID
@@ -136,25 +152,31 @@ func _lazy_load(delta: float) -> void:
 	if _lazy_load_time < _lazy_load_interval:
 		return
 	_lazy_load_time -= _lazy_load_interval
-	var loading_paths = []
-	for path in _resource_cache:
-		if _resource_cache[path] == null:
-			loading_paths.append(path)
+	var loading_paths: Array[String] = _pending_loads.keys()
 	
-	for path in loading_paths:
-		var status = ResourceLoader.load_threaded_get_status(path)
-		if status == ResourceLoader.THREAD_LOAD_LOADED:
-			var resource = ResourceLoader.load_threaded_get(path)
-			_resource_cache[path] = resource
-			_loading_count -= 1
-			resource_loaded.emit(path, resource)
-		elif status == ResourceLoader.THREAD_LOAD_FAILED:
-			push_error("Failed to load resource: " + path)
-			_resource_cache.erase(path)
-			_loading_count -= 1
+	for path: String in loading_paths:
+		# 上一个 resource_loaded 回调可能已同步获取其它待加载资源。
+		if not _pending_loads.has(path):
+			continue
+		var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(path)
+		if status == ResourceLoader.THREAD_LOAD_LOADED or status == ResourceLoader.THREAD_LOAD_FAILED:
+			_finish_pending_load(path)
 		elif status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-			push_error("Invalid resource: " + path)
+			_pending_loads.erase(path)
 			_resource_cache.erase(path)
-			_loading_count -= 1
-		elif status == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-			pass
+			push_error("Invalid resource: " + path)
+
+## load_threaded_get 同步等待并消费请求；必须先移除记录，再发用户信号。
+func _finish_pending_load(path: String) -> Resource:
+	var publish: bool = _pending_loads[path]
+	var resource: Resource = ResourceLoader.load_threaded_get(path)
+	_pending_loads.erase(path)
+	if not publish:
+		return null
+	if resource == null:
+		_resource_cache.erase(path)
+		push_error("Failed to load resource: " + path)
+		return null
+	_resource_cache[path] = resource
+	resource_loaded.emit(path, resource)
+	return resource
