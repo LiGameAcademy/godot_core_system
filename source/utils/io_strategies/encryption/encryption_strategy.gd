@@ -3,9 +3,10 @@ extends RefCounted
 ## Abstract method to encrypt byte data.
 ## [param bytes] The data to encrypt.
 ## [param key] The encryption key.
-func encrypt(bytes: PackedByteArray, key: PackedByteArray) -> PackedByteArray:
+## Return PackedByteArray (empty is valid) on success, or null on failure.
+func encrypt(bytes: PackedByteArray, key: PackedByteArray) -> Variant:
 	CoreSystem.logger.error("EncryptionStrategy.encrypt() must be implemented by subclasses.")
-	return PackedByteArray()
+	return null
 
 ## Abstract method to decrypt byte data.
 ## [param bytes] The data to decrypt.
