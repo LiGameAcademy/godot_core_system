@@ -1,6 +1,6 @@
 # 独立存档槽位（#99，继续实施）
 
-当前实现可独立运行槽位与内存快照操作；旧 SaveManager 的节点恢复、自动保存及 CoreSystem 兼容组装尚未接入。依赖 #98 独立策略和 #76 身份/版本/迁移接口，不代表这些前置已合并。
+当前实现可独立运行槽位、节点登记/恢复和自动存档；CoreSystem 已提供显式兼容组装。JSON/Binary 与历史类型矩阵仍待组合验收。依赖 #98 独立策略和 #76 身份/版本/迁移接口，不代表这些前置已合并。
 
 ## 使用
 
@@ -41,4 +41,22 @@ Windows、Godot 4.7.2 stable mono 的独立宿主只安装 Resource 策略、槽
 
 初次运行发现 RefCounted 的 PREDELETE 不能调用自身方法，改为直接关闭所选策略并增加析构回归；初次日志不计验收。沙箱的 user://日志与证书读取限制、空Mono项目程序集诊断单列，不等同功能验证失败，也不当作通过证据。
 
-尚需：接入旧 SaveManager，完成待恢复状态和自动保存/格式切换兼容；真实历史旧档夹具；JSON/Binary与#64/#65/#66/#67关联回归；公开支持类型矩阵和可选CoreSystem组装。原生扩展和导出验收沿用已延后安排，当前测试没有运行导出。PR保持draft，#99不关闭。
+尚需：真实历史旧档夹具；JSON/Binary与#64/#65/#66/#67关联回归；公开支持类型矩阵。原生扩展和导出验收沿用已延后安排，当前测试没有运行导出。PR保持draft，#99不关闭。
+
+## SaveManager 与旧入口兼容
+
+SaveManager现在是独立Node，source/save_system/save_manager.tscn是对应可复用场景。传入SaveSettings和可选的已配置策略；配置在首次操作时复制，后续运行状态不写回配置Resource。只在首次使用时创建所选内置策略，最小Resource宿主不安装JSON/Binary也能运行。选用未安装或未知格式返回错误，保留当前策略；显式注册自定义策略可替换同名当前格式。格式切换关闭旧策略，保留当前ID与待恢复状态；策略实例只交给一个拥有者，不重新使用已关闭的异步策略。
+
+register_saveable_node(node, save_id)显式登记；没有ID保留绝对路径，有ID不受场景改名影响。支持历史仅load_data的恢复对象或仅save的采集对象；两种方法都没有的对象拒绝。没有显式scene_scope时不查找场景、父节点或全局组。需要旧分组行为时由游戏根传入scene_scope，收集范围只在该对象及其子树；save_id属性仅在这个明确的分组适配过程中读取。改变已登记对象身份须先注销。
+
+SaveRestoreState拥有当前pending图。加载先解码/迁移/校验，再为各个对象复制可变资源，然后采用当前槽位、替换pending并调用游戏load_data。失败不改变原槽位/pending；加载空快照也会替换pending。结果有applied_count、pending_count、pending_identities，另可查询/清理未消费身份。延迟注册在回调前删除pending记录，避免重复消费。注册/清理在正在进行的管理器操作中返回ERR_BUSY，游戏回调不得重入新的存档操作；游戏load_data已经发生的副作用无法回滚。
+
+保存时把尚未出现的对象pending负载一同纳入快照，现有对象以当前save返回值覆盖同身份；只有保存成功后更新pending。这样不会因对象暂未创建而另存丢失其状态，也不把失败写入的状态提交到内存。删除当前槽位清理pending；关闭清理登记、pending、回调与策略。
+
+create_save、load_save、delete_save、get_save_list、create_auto_save保留bool/数组/字符串形式。create_save_result、load_save_result、delete_save_result、get_save_list_result提供每请求结果。operation_finished仅通知已接受并结束的操作；开始阶段被拒绝的请求直接返回错误结果。自动存档ID增加时间与实例序号，按元数据时间保留配置数量。旧只读配置属性仍可读取；新的配置修改在首次操作前通过storage_settings进行，不再在运行中隐式读取ProjectSettings。
+
+CoreSystem使用SaveLegacyAdapter传入旧ProjectSettings和明确树根范围；只有选择Binary时才通过显式密钥提供回调访问配置模块。既有encryption_key继续使用，新密钥须持久化成功才允许使用；失败时清除新密钥缓存，不能把未保存密钥用于存档。独立模块不自动生成/读取全局密钥；直接传入已配置策略时使用策略自身配置。XOR能力仍只是混淆，不表述为强加密。
+
+新增独立管理器最终43项、密钥/旧配置适配10项、完整旧CoreSystem组装5项；与槽位32项合计90项。管理器测试使用真实Resource文件与节点，验证稳定ID跨场景改名、对象资源隔离、失败/空存档/切档pending、延迟一次消费、缺失对象另存、load-only兼容、自动存档保留数量、未安装格式与自定义替换、ReusableScene。适配器以真实ConfigFile证明旧密钥不重写、新密钥持久化及失败缓存回滚。CoreSystem宿主按addons路径完整复制source/setting，导入后运行旧分组路径保存/读取/列表/删除5项。各最终日志退出0，无脚本错误或对象/资源保留；沙箱日志/证书/编辑器缓存与空程序集提示另列。
+
+初次管理器检查暴露旧档空元数据被列表误跳过：补完整读取区分有效空metadata与失败哨兵，增加回归；初次失败日志不计验收。旧私有字段_strategies/_pending_node_states等已由明确拥有者取代，依赖它们的历史测试须改为行为与公开结果检查。JSON/Binary及其私有编解码接口的兼容回归尚未完成，PR仍为draft。

@@ -7,6 +7,9 @@ var stage: StringName = &""
 var save_id: String = ""
 var data: Dictionary = {}
 var saves: Array[Dictionary] = []
+var applied_count: int = 0
+var pending_count: int = 0
+var pending_identities: Array[String] = []
 
 func _init(code: Error = OK, detail: String = "", operation: StringName = &"", slot: String = "") -> void:
 	error = code
