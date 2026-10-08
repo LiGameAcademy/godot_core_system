@@ -1,274 +1,64 @@
-# Hierarchical State Machine System
+# State machines
 
-## Overview
-The Hierarchical State Machine System provides a flexible and extensible state management solution. The system supports state nesting, state history, event handling, and variable sharing, making it particularly suitable for game AI, UI interactions, and game flow control.
+Use the smallest state representation that fits the behavior. `CoreStateMachine` is a value-only enum transition helper. `BaseState` and `BaseStateMachine` are for states with independent lifecycle, update or input behavior. They do not require `CoreSystem` or a scene tree. `StateMachineManager` is an optional Godot driver, not the authoritative source of gameplay state.
 
-## Core Concepts
-
-### State
-- Represents a specific behavior or condition
-- Can have entry/exit logic
-- Supports update (per frame) and physics update (fixed rate)
-- Can handle events
-- Can access and modify shared variables
-
-### State Machine
-- Manages transitions between multiple states
-- Maintains current active state
-- Handles state transition logic
-- Supports state history
-- Manages shared variables
-
-### Hierarchical Features
-- States can contain sub-state machines
-- Child states can access parent state variables
-- Events can propagate through state hierarchy
-- Supports state inheritance and reuse
-
-## Usage Examples
-
-### 1. Basic State Machine
-```gdscript
-# Create a simple state
-class_name IdleState extends BaseState
-func enter(msg := {}):
-    super.enter(msg)
-    print("Entering idle state")
-
-func update(delta: float):
-    if agent.is_moving:
-        transition_to("move")
-
-# Use the state machine
-var state_machine = BaseStateMachine.new()
-state_machine.add_state("idle", IdleState)
-state_machine.add_state("move", MoveState)
-state_machine.transition_to("idle")
-```
-
-### 2. Hierarchical State Machine
-```gdscript
-# Create a state with sub-state machine
-class_name CombatState extends BaseState
-var sub_state_machine: BaseStateMachine
-
-func _init():
-    sub_state_machine = BaseStateMachine.new(self)
-    sub_state_machine.add_state("attack", AttackState)
-    sub_state_machine.add_state("defend", DefendState)
-
-func enter(msg := {}):
-    super.enter(msg)
-    sub_state_machine.transition_to("attack")
-
-# Use in main state machine
-main_state_machine.add_state("combat", CombatState)
-main_state_machine.add_state("explore", ExploreState)
-```
-
-### 3. Event Handling
-```gdscript
-# Handle events in state
-class_name PlayerState extends BaseState
-func _on_damage_taken(amount: int):
-    if amount > 50:
-        transition_to("hurt")
-    elif parent_state:
-        parent_state.handle_event("damage_taken", [amount])
-
-# Trigger event
-state_machine.handle_event("damage_taken", [30])
-```
-
-## Best Practices
-
-1. State Organization
-   - Organize related states in the same state machine
-   - Use meaningful state names
-   - Keep state logic simple and clear
-
-2. State Transitions
-   - Switch states at appropriate times
-   - Use msg parameter to pass necessary transition information
-   - Make good use of state history feature
-
-3. Variable Management
-   - Use shared variables appropriately
-   - Pay attention to variable scope
-   - Clean up unnecessary variables
-
-4. Event Handling
-   - Use event propagation mechanism appropriately
-   - Avoid event handling loops
-   - Keep event parameters simple and clear
-
-## Important Notes
-
-1. State Machine Initialization
-   - Ensure proper initialization before use
-   - Set necessary initial states
-   - Configure state machine agent correctly
-
-2. Performance Considerations
-   - Avoid intensive calculations in update
-   - Use physics update appropriately
-   - Clean up unnecessary states and variables
-
-3. Debugging
-   - Use state machine signals for debugging
-   - Monitor state transitions and event propagation
-   - Check variable changes
-
-# State Machine System
-
-The State Machine System provides a robust and flexible way to manage game states and transitions. It's designed to handle complex game logic while maintaining code clarity and maintainability.
-
-## Features
-
-- 🔄 **Hierarchical State Machines**: Support for nested state machines
-- 🎮 **Game-Specific States**: Built-in support for common game states (Menu, Gameplay, Pause)
-- 📊 **State Management**: Clean API for state transitions and updates
-- 🎯 **Input Handling**: Integrated input processing per state
-- 🔍 **Debugging**: Built-in debugging features for state tracking
-
-## Core Components
-
-### BaseState
-
-The foundation class for all states. Provides:
-- State lifecycle methods (enter, exit, update)
-- Input handling
-- State transition management
+## Value-only flow
 
 ```gdscript
-class MyState extends BaseState:
-    func _enter(msg := {}) -> void:
-        # Called when entering the state
-        pass
-        
-    func _exit() -> void:
-        # Called when exiting the state
-        pass
-        
-    func _update(delta: float) -> void:
-        # Called every frame
-        pass
-        
-    func _handle_input(event: InputEvent) -> void:
-        # Handle input events
-        pass
-```
-
-### BaseStateMachine
-
-Manages a collection of states and their transitions:
-- State registration and switching
-- State updates and input propagation
-- Support for hierarchical state machines
-
-```gdscript
-class MyStateMachine extends BaseStateMachine:
-    func _ready() -> void:
-        # Register states
-        add_state("idle", IdleState.new(self))
-        add_state("walk", WalkState.new(self))
-        
-        # Set initial state
-        start("idle")
-```
-
-### StateMachineManager
-
-**Optional**: Central registry for multiple `BaseStateMachine` instances and unified driving of `update` / `physics_update` / `handle_input`. For a single state machine, you can call `state_machine.update(delta)` from the owner's `_process` without registering.
-
-- Central registration of state machines
-- Global updates (per-registration flags can disable physics/input forwarding)
-- Debug information and monitoring (`is_active` / `get_current_state`; pass `root_id` when multiple roots)
-
-```gdscript
-# Default behavior matches older versions (all three drivers enabled)
-CoreSystem.state_machine_manager.register_state_machine("player", player_state_machine)
-
-# Only logic tick: disable physics and input forwarding from the manager
-CoreSystem.state_machine_manager.register_state_machine(
-    "flow", flow_state_machine, self, &"", {}, true, false, false
+enum Phase { IDLE, ACTIVE }
+var flow: CoreStateMachine = CoreStateMachine.new(
+    Phase.IDLE, [Phase.IDLE, Phase.ACTIVE],
+    func(from: int, to: int) -> bool: return from == Phase.IDLE and to == Phase.ACTIVE
 )
-CoreSystem.state_machine_manager.set_registration_drive_flags("flow", true, false, false)
+
+func activate() -> bool:
+    return flow.try_transition(Phase.ACTIVE)
 ```
 
-## Usage Example
+Use explicit enum values. Same-state, undefined-target and rejected transitions leave the current value unchanged. The rule must be a synchronous pure predicate. Reentrant transitions return false. Invalid construction reports an English error and creates an inert helper. This validation also runs in release builds.
 
-Here's a simple example of a character state machine:
+## Behavior flow
 
-```gdscript
-# Character state machine
-class CharacterStateMachine extends BaseStateMachine:
-    func _ready() -> void:
-        add_state("idle", IdleState.new(self))
-        add_state("walk", WalkState.new(self))
-        add_state("jump", JumpState.new(self))
-        start("idle")
+Create state instances, add them, then call `ready()` or `start(initial_id)`. Override `_ready`, `_enter`, `_exit`, `_update`, `_physics_update`, `_handle_input`, and `_dispose` as needed. All signatures use explicit types. The complete runnable implementation is in [the example](../../examples/state_machine/example_game_state_machine.gd); it is the source of truth instead of hypothetical APIs.
 
-# Idle state
-class IdleState extends BaseState:
-    func _enter(msg := {}) -> void:
-        owner.play_animation("idle")
-    
-    func _handle_input(event: InputEvent) -> void:
-        if event.is_action_pressed("move"):
-            transition_to("walk")
-        elif event.is_action_pressed("jump"):
-            transition_to("jump")
+- Preparation runs once before first entry. Restarting a stopped machine does not prepare again.
+- Start enters once. A repeated start or same-state transition returns false.
+- `transition_local` exits the old state before entering the new one. Optional `can_transition(from_id, to_id)` rejects before exit.
+- `pause` suppresses update, physics and input, without exiting the active state. Paused transitions return false; resume does not enter again.
+- `stop` exits once and stores `previous_state`. `start(initial_id, {}, true)` explicitly resumes it, falling back to the supplied initial ID.
+- Lifecycle and predicate callbacks cannot mutate the same machine. Requests return false/no-op, without an implicit transition queue. Updates and input may request transitions.
+- Registration cannot replace, add or remove states while running. A state belongs to one machine, with a weak owner reference. Cyclic nesting is rejected.
+- `dispose` stops, disposes prepared states, detaches ownership and clears compatibility storage. Cleanup is idempotent and disposal is terminal. New runs create new machines and states. Disposed instances cannot be registered again.
+- Owners should not write `current_state`, `states`, `is_active` or other lifecycle fields directly. These public legacy fields remain for compatibility.
 
-# Register with manager
-func _ready() -> void:
-    var character_sm = CharacterStateMachine.new(self)
-    CoreSystem.state_machine_manager.register_state_machine("character", character_sm)
+Nested machines remain supported because the example uses them. `transition_local` always selects the current machine's own table. A leaf state's `transition_to` requests a sibling in its owner. To change an outer layer, explicitly call the owning machine. Child input runs first; if it changes the child state, the same input is not also passed to that machine's parent-level handler. Child-first update continues to allow parent behavior when still running.
+
+`agent`, the variable dictionary and old `switch`/`switch_to` aliases remain compatibility conveniences. Prefer explicit typed context and `transition_local`/`transition_to` in new code. There are no built-in menu states, generic event bubbling, state factories or animation ownership.
+
+## Optional Godot driver
+
+The manager forwards frame, physics and input callbacks with registration flags. Unregister from the owner's `_exit_tree`; the manager also clears registrations when it exits. Registry iteration uses snapshots so update callbacks can unregister safely.
+
+`unregister_state_machine` returns false during preparation, entry, exit or transition notification, preserving the registration. Retry after the callback returns. It does not silently detach a still-running machine. Cleanup finishes before stop/unregister notifications, and the closing ID cannot be re-registered inside those notifications. With multiple registered roots, `get_current_state` requires a root ID rather than returning an arbitrary last root.
+
+## C# alignment
+
+The C# plugin provides the same two use cases: `CoreStateMachine<TState>` and `CoreBehaviorStateMachine<TState,TContext,TInput>` with `CoreState<TContext,TInput>`. Behavior lifecycle, pause, driving, transition ordering, history and instance ownership align. C# nesting uses a state that owns and forwards to a child machine; different enum types may be used at each level. It does not copy the legacy global registry or untyped variable bag.
+
+C# validates with exceptions and uses `IDisposable`. GDScript reports/rejects invalid operations; it cannot offer C# exception rollback. C# predicate exceptions preserve the old state. Entry or exit exceptions stop the behavior machine; cleanup errors propagate. Neither language can undo side effects inside user callbacks or make asynchronous behavior atomic. Cancel user-created async operations in exit/dispose and check ownership before making delayed transition requests.
+
+## Checks
+
+Install the plugin at `res://addons/godot_core_system` in a Godot 4 project, import it, then run:
+
+```powershell
+godot --headless --path <host> --script res://addons/godot_core_system/test/unit/state_time_checks.gd
 ```
 
-## Best Practices
+The checks run without the CoreSystem Autoload. They cover value transitions, lifecycle, pause, reentry, nested driving, weak ownership, callback-time unregister and independent timers. Success requires an explicit PASS line and exit code zero.
 
-1. **State Organization**
-   - Keep states small and focused
-   - Use hierarchical state machines for complex behaviors
-   - Consider using state factories for dynamic state creation
+For the real hierarchical example scene, enable CoreSystem and run test/unit/state_machine_example_checks.gd with the same --script command. It checks input consumption, nested history and owner exit. Full original CoreSystem startup currently also reports existing SingleThread leaks at shutdown; standalone state/time checks do not instantiate that module and exit without this leak. Thread utilities were outside this change. Invalid-input checks intentionally emit error diagnostics; their final PASS and exit code are the verdict.
 
-2. **State Transitions (hierarchical)**
-   - `BaseState.transition_to`: transition within the layer owned by `state_machine` (call on `state_machine` when you mean “my owner’s table”).
-   - `BaseStateMachine.transition_local`: transition **only** inside this machine’s `states` (prefer this name in nested state-machine scripts when you mean “inner only”).
-   - `BaseStateMachine.transition_to` is equivalent to `transition_local` on this class (leaf `transition_to` eventually reaches `transition_local`).
-   - Use message passing for state communication
-   - Validate state transitions
-   - Handle cleanup in _exit()
+The manager retains transition_state_machine(id, state_id, msg) for external callers. It starts a stopped machine and emits started only on success, or forwards to transition_local for a running machine. Its bool reflects real acceptance: paused, same-state and predicate-rejected requests return false. The example retains the Shift+Tab shortcut.
 
-3. **Driving**
-   - When using `StateMachineManager`, turn off `run_physics` / `run_input` if unused to avoid per-frame overhead
-   - For a single machine, you may skip the manager and call `update` from the owner `_process`
-
-4. **Debugging**
-   - Enable debug logging for state transitions
-   - Use the built-in state monitoring tools
-   - Add state validation checks
-
-## API Reference
-
-### BaseState
-- `enter(msg: Dictionary)`: Enter the state
-- `exit()`: Exit the state
-- `update(delta: float)`: Update state logic
-- `handle_input(event: InputEvent)`: Process input
-- `transition_to(state_id: StringName, msg: Dictionary = {})`: Transition within the layer managed by `state_machine` (implemented via `BaseStateMachine.transition_local`)
-
-### BaseStateMachine
-- `add_state(name: String, state: BaseState)`: Register a new state
-- `remove_state(name: String)`: Remove a registered state
-- `start(initial_state: String)`: Start the state machine
-- `stop()`: Stop the state machine
-- `transition_local(state_id: StringName, msg: Dictionary = {})`: Transition only within this machine’s `states` (explicit “inner only” API)
-- `transition_to(state_id: StringName, msg: Dictionary = {})`: Equivalent to `transition_local` on this class; leaf `transition_to` dispatches here
-
-### StateMachineManager
-- `register_state_machine(id, state_machine, agent = null, initial_state = &"", msg = {}, run_update = true, run_physics = true, run_input = true)`: Register; the three booleans control forwarding from `_process` / `_physics_process` / `_input` (defaults preserve legacy behavior)
-- `set_registration_drive_flags(id, run_update, run_physics, run_input)`: Change drive flags at runtime
-- `unregister_state_machine(name: String)`: Unregister a state machine
-- `get_state_machine(name: String) -> BaseStateMachine`: Get a registered state machine
+Merge verification: 61 standalone checks and the actual hierarchical example scene passed on Godot 4.7.2, including the retained external transition API and Shift+Tab shortcut.

@@ -79,7 +79,16 @@ func _connect_signals() -> void:
 	# 	_io_thread.task_error.connect(_on_task_error)
 
 ## Shut down the IO thread manager.
+## Owner calls this on the main thread before releasing the manager.
+## Accepted tasks without delivered results finish as success=false/result=null.
+## A running function is joined; its file operation may already have taken effect.
+func close() -> void:
+	_shutdown()
+
 func _shutdown() -> void:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("AsyncIOManager.close must be called on the main thread.")
+		return
 	# Disconnect signals first to prevent issues during shutdown
 	if _io_thread and is_instance_valid(_io_thread):
 		if _io_thread.task_completed.is_connected(_on_task_completed):
@@ -87,6 +96,11 @@ func _shutdown() -> void:
 		# Disconnect error signal if connected
 		_io_thread.stop()
 	_io_thread = null
+	var canceled_ids: Array[String] = []
+	canceled_ids.assign(_task_id_map.values())
+	_task_id_map.clear()
+	for task_id: String in canceled_ids:
+		io_completed.emit(task_id, false, null)
 #endregion
 
 #region Public API
@@ -95,6 +109,8 @@ func _shutdown() -> void:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func read_file_async(path: String, encryption_key: String = "") -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id := _generate_task_id() # 生成 String ID
 	var key_bytes := encryption_key.to_utf8_buffer()
 
@@ -116,16 +132,18 @@ func read_file_async(path: String, encryption_key: String = "") -> String:
 ## [param encryption_key] 加密密钥
 ## [return] 唯一任务ID字符串
 func write_file_async(path: String, data: Variant, encryption_key: String = "") -> String:
-	var public_task_id := _generate_task_id()
-	var key_bytes := encryption_key.to_utf8_buffer()
+	if _io_thread == null:
+		return ""
+	var public_task_id: String = _generate_task_id()
+	var key_bytes: PackedByteArray = encryption_key.to_utf8_buffer()
 
 	# Create the write task callable
-	var write_task := func() -> Dictionary:
-		var success = _execute_write_operation(path, data, key_bytes)
+	var write_task: Callable = func() -> Dictionary:
+		var success: bool = _execute_write_operation(path, data, key_bytes)
 		return { "success": success, "result": null } # Write result is just success/fail
 
 	# Submit the task to the IO thread
-	var internal_task_id = _io_thread.add_task(write_task)
+	var internal_task_id: int = _io_thread.add_task(write_task)
 	# 存储映射
 	_task_id_map[internal_task_id] = public_task_id
 	return public_task_id
@@ -134,6 +152,8 @@ func write_file_async(path: String, data: Variant, encryption_key: String = "") 
 ## [param path] The path to the file to delete.
 ## [return] A unique task ID string.
 func delete_file_async(path: String) -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id := _generate_task_id()
 
 	# Create the delete task callable
@@ -151,6 +171,8 @@ func delete_file_async(path: String) -> String:
 ## [param path] The directory path.
 ## [return] A unique task ID string.
 func list_files_async(path: String) -> String:
+	if _io_thread == null:
+		return ""
 	var public_task_id := _generate_task_id()
 
 	# Create the list task callable
@@ -191,27 +213,35 @@ func _execute_read_operation(path: String, key_bytes: PackedByteArray) -> Varian
 ## [param key_bytes] 密钥
 ## [return] 是否写入成功
 func _execute_write_operation(path: String, data: Variant, key_bytes: PackedByteArray) -> bool:
-	var processed_bytes: PackedByteArray = _process_data_for_write(data, key_bytes)
+	# Validate every strategy before WRITE can truncate an existing file.
+	var processed: Variant = _process_data_for_write(data, key_bytes)
+	if not processed is PackedByteArray:
+		return false
+	var processed_bytes: PackedByteArray = processed
 
-	var dir_path = path.get_base_dir()
-	var dir = DirAccess.open(dir_path.get_base_dir())
-	if not dir.dir_exists(dir_path):
-		var err = DirAccess.make_dir_recursive_absolute(dir_path)
+	var dir_path: String = path.get_base_dir()
+	if not dir_path.is_empty() and not DirAccess.dir_exists_absolute(dir_path):
+		var err: Error = DirAccess.make_dir_recursive_absolute(dir_path)
 		if err != OK:
 			_logger.error("AsyncIO: Failed to create directory: %s, Error code: %d" % [dir_path, err])
 			return false
 	
 	# Open and write file
-	var file = FileAccess.open(path, FileAccess.WRITE)
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if not file:
 		_logger.error("AsyncIO: Failed to open file for writing: %s, Error: %s" % [path, FileAccess.get_open_error()])
 		return false
 
-	var ok := file.store_buffer(processed_bytes)
+	var ok: bool = _write_buffer(file, processed_bytes)
 	if not ok:
 		_logger.error("AsyncIO: Failed to write file: %s" % path)
 	file.close()
-	return true
+	return ok
+
+## Return the storage status before the file handle is closed.
+func _write_buffer(file: FileAccess, bytes: PackedByteArray) -> bool:
+	var stored: bool = file.store_buffer(bytes)
+	return stored and file.get_error() == OK
 
 ## 执行删除操作
 ## [param path] 路径
@@ -258,21 +288,32 @@ func _get_file_list(directory_path: String) -> Array:
 ## 处理数据写入
 ## [param data] 数据
 ## [param key_bytes] 密钥
-## [return] 处理后的数据
-func _process_data_for_write(data: Variant, key_bytes: PackedByteArray) -> PackedByteArray:
-	var current_bytes: PackedByteArray
+## [return] PackedByteArray (including empty bytes) on success, null on failure.
+func _process_data_for_write(data: Variant, key_bytes: PackedByteArray) -> Variant:
 	
 	if not _serializer:
 		_logger.error("AsyncIO: No serialization strategy set.")
-		return PackedByteArray() # Or raise exception
+		return null
 		
-	current_bytes = _serializer.serialize(data)
+	var serialized: Variant = _serializer.serialize(data)
+	if not serialized is PackedByteArray:
+		_logger.error("AsyncIO: Serialization failed or returned invalid bytes.")
+		return null
+	var current_bytes: PackedByteArray = serialized
 	
 	if _compressor:
-		current_bytes = _compressor.compress(current_bytes)
+		var compressed: Variant = _compressor.compress(current_bytes)
+		if not compressed is PackedByteArray:
+			_logger.error("AsyncIO: Compression failed or returned invalid bytes.")
+			return null
+		current_bytes = compressed
 	
 	if _encryptor:
-		current_bytes = _encryptor.encrypt(current_bytes, key_bytes)
+		var encrypted: Variant = _encryptor.encrypt(current_bytes, key_bytes)
+		if not encrypted is PackedByteArray:
+			_logger.error("AsyncIO: Encryption failed or returned invalid bytes.")
+			return null
+		current_bytes = encrypted
 		
 	return current_bytes
 

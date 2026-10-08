@@ -4,11 +4,12 @@ extends "./serialization_strategy.gd"
 var indent: String = "\t"
 var sort_keys: bool = false
 
-func serialize(data: Variant) -> PackedByteArray:
+func serialize(data: Variant) -> Variant:
 	last_error = ""
 	var json_str: String = JSON.stringify(data, indent, sort_keys)
 	if json_str.is_empty() and data != null:
 		last_error = "Failed to serialize data to JSON."
+		return null
 	return json_str.to_utf8_buffer()
 
 func deserialize(bytes: PackedByteArray) -> Variant:

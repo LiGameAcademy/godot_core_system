@@ -12,6 +12,8 @@ extends Node
 signal scene_loading_started(scene_path: String)
 ## 结束加载场景
 signal scene_loading_finished()
+## 加载请求失败；此时切换锁已释放，当前场景保持不变。
+signal scene_loading_failed(scene_path: String, reason: String)
 ## 场景切换
 signal scene_changed(old_scene: Node, new_scene: Node)
 ## 场景预加载完成
@@ -113,10 +115,15 @@ func change_scene_async(
 
 	_is_switching = true
 	scene_loading_started.emit(scene_path)
+	if effect == TransitionEffect.CUSTOM:
+		var transition: BaseTransition = _custom_transitions.get(custom_transition_name)
+		if not is_instance_valid(transition):
+			_fail_scene_load(scene_path, "Custom transition is not registered: %s" % custom_transition_name)
+			return
 
 	# 检查场景栈中是否已存在该场景
-	var stack_index := -1
-	for i in _scene_stack.size():
+	var stack_index: int = -1
+	for i: int in _scene_stack.size():
 		if _scene_stack[i].scene_path == scene_path:
 			stack_index = i
 			break
@@ -124,25 +131,39 @@ func change_scene_async(
 	var new_scene : Node
 	if stack_index >= 0:
 		# 如果场景在栈中存在，重用该场景
-		var stack_data = _scene_stack[stack_index]
+		var stack_data: Dictionary = _scene_stack[stack_index]
 		new_scene = stack_data.scene
+		if not is_instance_valid(new_scene) or new_scene.is_queued_for_deletion():
+			_fail_scene_load(scene_path, "Stored scene is no longer valid")
+			return
 		# 从栈中移除该场景（因为它将成为当前场景）
 		_scene_stack.remove_at(stack_index)
-		new_scene.move_to_front()
+		if new_scene.get_parent() != null:
+			new_scene.move_to_front()
 	else:
 		# 加载新场景
 		new_scene = _resource_manager.get_instance(scene_path)
-		if not new_scene:
-			var scene_resource : PackedScene = _resource_manager.load_resource(scene_path)
+		if not is_instance_valid(new_scene):
+			var scene_resource: PackedScene = _resource_manager.load_resource(scene_path) as PackedScene
+			if scene_resource == null or not scene_resource.can_instantiate():
+				_fail_scene_load(scene_path, "Resource is not an instantiable PackedScene")
+				return
 			new_scene = scene_resource.instantiate()
 
-		if not new_scene:
-			_logger.error("Failed to load scene: %s" % scene_path)
-			_is_switching = false
+		if not is_instance_valid(new_scene) or new_scene.is_queued_for_deletion():
+			_fail_scene_load(scene_path, "Failed to obtain a valid scene instance")
 			return
 	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition_name, push_to_stack, scene_data)
 	await get_tree().process_frame
 	_is_switching = false
+
+func _fail_scene_load(scene_path: String, reason: String) -> void:
+	_is_switching = false
+	if is_instance_valid(_transition_rect):
+		_transition_rect.visible = false
+	_logger.error("Failed to load scene %s: %s" % [scene_path, reason])
+	scene_loading_finished.emit()
+	scene_loading_failed.emit(scene_path, reason)
 
 ## 返回上一个场景
 ## [param effect] 转场效果
@@ -180,11 +201,16 @@ func add_sub_scene(
 		parent_node: Node,
 		scene_path: String,
 		scene_data: Dictionary = {}) -> Node:
-	var scene_resource = _resource_manager.load_resource(scene_path)
-	var sub_scene = scene_resource.instantiate()
+	# init_state可以使用@onready节点，父节点必须已经入树。
+	if not is_instance_valid(parent_node) or not parent_node.is_inside_tree() or parent_node.is_queued_for_deletion():
+		return null
+	var scene_resource: PackedScene = _resource_manager.load_resource(scene_path) as PackedScene
+	if scene_resource == null or not scene_resource.can_instantiate():
+		return null
+	var sub_scene: Node = scene_resource.instantiate()
+	parent_node.add_child(sub_scene)
 	if sub_scene.has_method("init_state"):
 		sub_scene.init_state(scene_data)
-	parent_node.add_child(sub_scene)
 	return sub_scene
 
 ## 获取当前场景
@@ -325,7 +351,8 @@ func _do_scene_switch(
 			CoreSystem.logger.warning("Scene %s does not have an init_state method" % new_scene.get_name())
 	
 	await get_tree().process_frame
-	scene_changed.emit(old_scene, new_scene)
+	# 普通切换已释放旧场景；信号不能传递失效实例。
+	scene_changed.emit(old_scene if is_instance_valid(old_scene) else null, new_scene)
 
 	# 回调
 	if callback.is_valid():

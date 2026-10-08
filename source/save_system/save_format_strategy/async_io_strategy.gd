@@ -9,6 +9,11 @@ func _init() -> void:
 	_io_manager = CoreSystem.AsyncIOManager.new()
 
 
+## 终止后台工作；关闭后此策略不再接受存取请求。
+func close() -> void:
+	_io_manager.close()
+
+
 ## 设置加密密钥
 func set_encryption_key(key: String) -> void:
 	_encryption_key = key
@@ -18,17 +23,28 @@ func set_encryption_key(key: String) -> void:
 func save(path: String, data: Dictionary) -> bool:
 	var processed_data: Dictionary = _process_data_for_save(data)
 	var task_id: String = _io_manager.write_file_async(path, processed_data, _encryption_key)
-	var result: Array = await _io_manager.io_completed
-	return result[1] if result[0] == task_id else false
+	if task_id.is_empty():
+		return false
+	var result: Array = await _wait_for_task(task_id)
+	return result[1]
 
 
 ## 加载数据
 func load_save(path: String) -> Dictionary:
 	var task_id: String = _io_manager.read_file_async(path, _encryption_key)
-	var result: Array = await _io_manager.io_completed
-	if result[0] == task_id and result[1]:
+	if task_id.is_empty():
+		return {}
+	var result: Array = await _wait_for_task(task_id)
+	if result[1]:
 		return _process_data_for_load(result[2])
 	return {}
+
+## Other requests may complete first; only consume this request's result.
+func _wait_for_task(task_id: String) -> Array:
+	var result: Array = await _io_manager.io_completed
+	while result[0] != task_id:
+		result = await _io_manager.io_completed
+	return result
 
 
 ## 加载元数据
@@ -68,7 +84,7 @@ func _process_variant_for_save(value: Variant) -> Variant:
 			return _process_array_for_save(value)
 		TYPE_OBJECT:
 			return _process_object_for_save(value)
-		TYPE_INT, TYPE_NODE_PATH:
+		TYPE_INT, TYPE_NODE_PATH, TYPE_STRING_NAME:
 			return {"v": value}.merged(value_dict)
 		TYPE_VECTOR2, TYPE_VECTOR2I:
 			return {"x": value.x, "y": value.y}.merged(value_dict)
@@ -83,7 +99,7 @@ func _process_variant_for_save(value: Variant) -> Variant:
 		TYPE_RECT2, TYPE_RECT2I:
 			return {
 				"x": value.position.x, "w": value.size.x,
-				"y": value.position.y, "h": value.size.x,
+				"y": value.position.y, "h": value.size.y,
 			}.merged(value_dict)
 		TYPE_AABB:
 			return {
@@ -123,10 +139,25 @@ func _process_variant_for_save(value: Variant) -> Variant:
 
 ## 处理字典保存
 func _process_dictionary_for_save(dict: Dictionary) -> Dictionary:
-	if not dict.is_typed():
+	var encode_keys: bool = false
+	for key: Variant in dict:
+		if typeof(key) != TYPE_STRING:
+			encode_keys = true
+			break
+	if not dict.is_typed() and not encode_keys:
 		return _process_dictionary(dict, _process_variant_for_save)
 
-	var value_dict: Dictionary = {}
+	var value_dict: Dictionary = {"_type_": TYPE_DICTIONARY}
+	if encode_keys:
+		var entries: Array[Array] = []
+		for key: Variant in dict:
+			entries.append([_process_variant_for_save(key), _process_variant_for_save(dict[key])])
+		value_dict["entries"] = entries
+		value_dict["dictionary_format"] = 2
+	else:
+		value_dict["dictionary"] = _process_dictionary(dict, _process_variant_for_save)
+	if not dict.is_typed():
+		return value_dict
 	value_dict["key_type"] = dict.get_typed_key_builtin()
 	value_dict["key_class"] = dict.get_typed_key_class_name()
 
@@ -139,8 +170,6 @@ func _process_dictionary_for_save(dict: Dictionary) -> Dictionary:
 	var typed_value_script: Script = dict.get_typed_value_script() as Script
 	value_dict["value_script"] = typed_value_script.get_path() if typed_value_script != null else ""
 
-	value_dict["dictionary"] = _process_dictionary(dict, _process_variant_for_save)
-	value_dict["_type_"] = TYPE_DICTIONARY
 	return value_dict
 
 
@@ -224,6 +253,8 @@ func _process_object_for_save(value: Object) -> Dictionary:
 #region process for load
 ## 处理数据加载
 func _process_data_for_load(data: Dictionary) -> Dictionary:
+	if data.get("_type_") == TYPE_DICTIONARY and (data.has("entries") or data.has("dictionary")):
+		return _process_dictionary_for_load(data)
 	return _process_dictionary(data, _process_variant_for_load)
 
 
@@ -296,6 +327,8 @@ func _process_dictionary_for_load(dict: Dictionary) -> Variant:
 			return Color(dict.r, dict.g, dict.b, dict.a)
 		TYPE_NODE_PATH:
 			return NodePath(dict.v)
+		TYPE_STRING_NAME:
+			return StringName(dict.v)
 		TYPE_OBJECT:
 			return _process_object_for_load(dict)
 		TYPE_DICTIONARY:
@@ -307,7 +340,22 @@ func _process_dictionary_for_load(dict: Dictionary) -> Variant:
 
 ## 处理类型字典加载
 func _process_typed_dictionary_for_load(dict: Dictionary) -> Dictionary:
-	var dict_value: Dictionary = _process_dictionary_for_load(dict.dictionary)
+	var dict_value: Dictionary = {}
+	if dict.has("entries"):
+		if dict.get("dictionary_format") != 2 or not dict.entries is Array:
+			CoreSystem.logger.error("Unsupported dictionary key format.")
+			return {}
+		for entry: Variant in dict.entries:
+			if not entry is Array or entry.size() != 2:
+				CoreSystem.logger.error("Invalid dictionary key/value entry.")
+				return {}
+			var key: Variant = _process_variant_for_load(entry[0])
+			dict_value[key] = _process_variant_for_load(entry[1])
+		if not dict.has("key_type"):
+			return dict_value
+	else:
+		# Legacy typed dictionaries stored only string keys in a JSON object.
+		dict_value = _process_dictionary_for_load(dict.dictionary)
 	var dict_key_type: int = int(dict.key_type)
 	var dict_key_class: StringName = ""
 	var dict_key_script: Script = null
@@ -355,7 +403,15 @@ func _process_object_for_load(value: Dictionary) -> Object:
 	if value.has("script"):
 		object = ResourceLoader.load(value.script, "Script").new()
 	if value.has("resource_path"):
-		object = ResourceLoader.load(value.resource_path, "Resource")
+		# Saved mutable properties must not overwrite cached templates or dependencies.
+		var cache_mode: ResourceLoader.CacheMode = ResourceLoader.CACHE_MODE_REUSE
+		if not value.get("props", {}).is_empty():
+			cache_mode = ResourceLoader.CACHE_MODE_IGNORE_DEEP
+		object = ResourceLoader.load(value.resource_path, "Resource", cache_mode)
+
+	if not is_instance_valid(object):
+		CoreSystem.logger.error("Could not restore saved object: %s" % str(value))
+		return null
 
 	var prop_dict: Dictionary = value.props
 	for prop_key in prop_dict:

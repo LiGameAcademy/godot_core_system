@@ -95,7 +95,7 @@ func play_music(path: String, fade_duration: float = 1.0, loop: bool = true) -> 
 		_current_music = _get_audio_player(AudioType.MUSIC)
 		_current_music.stream = audio_resource
 		_current_music.bus = DEFAULT_BUSES[AudioType.MUSIC]
-		_current_music.volume_db = linear_to_db(_volumes[AudioType.MUSIC])
+		_current_music.volume_db = 0.0
 		_current_music.play()
 		
 		# 连接循环信号
@@ -112,10 +112,10 @@ func play_music(path: String, fade_duration: float = 1.0, loop: bool = true) -> 
 func play_sound(path: String, volume: float = 1.0) -> AudioStreamPlayer:
 	var audio_resource = _get_audio_resource(path)
 	if audio_resource:
-		var player = _get_audio_player(AudioType.SOUND_EFFECT)
+		var player: AudioStreamPlayer = _get_audio_player(AudioType.SOUND_EFFECT)
 		player.stream = audio_resource
 		player.bus = DEFAULT_BUSES[AudioType.SOUND_EFFECT]
-		player.volume_db = linear_to_db(_volumes[AudioType.SOUND_EFFECT] * volume)
+		player.volume_db = linear_to_db(volume)
 		player.play()
 		return player
 	return null
@@ -127,10 +127,10 @@ func play_sound(path: String, volume: float = 1.0) -> AudioStreamPlayer:
 func play_voice(path: String, volume: float = 1.0) -> AudioStreamPlayer:
 	var audio_resource = _get_audio_resource(path)
 	if audio_resource:
-		var player = _get_audio_player(AudioType.VOICE)
+		var player: AudioStreamPlayer = _get_audio_player(AudioType.VOICE)
 		player.stream = audio_resource
 		player.bus = DEFAULT_BUSES[AudioType.VOICE]
-		player.volume_db = linear_to_db(_volumes[AudioType.VOICE] * volume)
+		player.volume_db = linear_to_db(volume)
 		player.play()
 		return player
 	return null
@@ -234,9 +234,8 @@ func _fade_out_music(duration: float) -> void:
 func _fade_in_music(duration: float) -> void:
 	if _current_music:
 		_current_music.volume_db = -80.0
-		var tween = audio_node_root.create_tween()
-		tween.tween_property(_current_music, "volume_db", 
-			linear_to_db(_volumes[AudioType.MUSIC]), duration)
+		var tween: Tween = audio_node_root.create_tween()
+		tween.tween_property(_current_music, "volume_db", 0.0, duration)
 
 ## 设置音频扬声器
 func _setup_audio_buses():
