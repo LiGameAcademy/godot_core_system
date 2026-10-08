@@ -96,6 +96,12 @@ func _on_area_entered(body: Node) -> void:
 
 ## API 参考
 
+### Resource配置与局内条件复用
+
+`EventTypeTriggerCondition.event_type`可在编辑器配置。将具体条件Resource填入`CompositeTriggerCondition.conditions`，再填入`GameplayTrigger.conditions`即可组合；条件数组默认全部满足。`should_trigger(context)`只判断条件，不匹配trigger_event、不检查次数/概率，也不发信号；这些责任须由调用者明确承担。
+
+如果多个能力共享只读GameplayTrigger配置，不要调用其activate/execute/reset来写共同次数。确定性玩法可只复用should_trigger，事件类型、实例次数及随机策略由局内适配层处理；全局TriggerManager的事件/周期注册是另一种使用方式，不必同时采用。这里不改变现有execute的全局随机与计数语义。
+
 ### TriggerManager
 
 全局触发器管理器，负责触发器注册和事件处理。

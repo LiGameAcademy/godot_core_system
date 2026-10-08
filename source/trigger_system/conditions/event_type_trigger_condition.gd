@@ -1,7 +1,7 @@
 extends TriggerCondition
 class_name EventTypeTriggerCondition
 
-var event_type : StringName
+@export var event_type: StringName = &""
 
 func _init(config : Dictionary = {}) -> void:
 	event_type = config.get("event_type", "")
