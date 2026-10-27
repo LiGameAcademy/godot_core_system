@@ -1,12 +1,14 @@
 extends "./save_format_strategy.gd"
 
 
-var _io_manager: CoreSystem.AsyncIOManager
+const AsyncIOManager = preload("../../utils/async_io_manager.gd")
+
+var _io_manager: AsyncIOManager
 var _encryption_key: String = ""
 
 
-func _init() -> void:
-	_io_manager = CoreSystem.AsyncIOManager.new()
+func _init(diagnostic: Callable = Callable()) -> void:
+	_io_manager = AsyncIOManager.new(null, null, null, diagnostic)
 
 
 ## 终止后台工作；关闭后此策略不再接受存取请求。

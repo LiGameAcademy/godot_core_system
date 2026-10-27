@@ -10,6 +10,7 @@ var _threads: Dictionary[StringName, SingleThread] = {}
 var _task_ids: Dictionary[StringName, Dictionary] = {}
 var _next_task_id: int = 0
 var _mutex: Mutex = Mutex.new()
+var _closed: bool = false
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
@@ -20,8 +21,14 @@ func submit_task(thread_name: StringName, task_func: Callable) -> String:
 	if not task_func.is_valid():
 		return ""
 	_mutex.lock()
+	if _closed:
+		_mutex.unlock()
+		return ""
 	var thread: SingleThread = _ensure_thread_exists_internal(thread_name)
 	var internal_id: int = thread.add_task(task_func)
+	if internal_id < 0:
+		_mutex.unlock()
+		return ""
 	var public_id: String = str(_next_task_id)
 	_next_task_id += 1
 	_task_ids[thread_name][internal_id] = public_id
@@ -31,6 +38,9 @@ func submit_task(thread_name: StringName, task_func: Callable) -> String:
 ## 返回线程仅供诊断；直接 add_task 的任务不产生管理器的聚合完成通知。
 func create_thread(thread_name: StringName) -> SingleThread:
 	_mutex.lock()
+	if _closed:
+		_mutex.unlock()
+		return null
 	var thread: SingleThread = _ensure_thread_exists_internal(thread_name)
 	_mutex.unlock()
 	return thread
@@ -43,6 +53,9 @@ func has_thread(thread_name: StringName) -> bool:
 
 ## 取消尚未报告的完成通知。stop 等待运行中的任务，但不能终止其函数。
 func unload_thread(thread_name: StringName) -> void:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("ModuleThread shutdown must run on the main thread.")
+		return
 	_mutex.lock()
 	var thread: SingleThread = _threads.get(thread_name)
 	if thread != null:
@@ -55,6 +68,9 @@ func unload_thread(thread_name: StringName) -> void:
 		thread.stop()
 
 func clear_threads() -> void:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("ModuleThread shutdown must run on the main thread.")
+		return
 	var detached: Array[SingleThread] = []
 	_mutex.lock()
 	for thread_name: StringName in _threads:
@@ -66,6 +82,16 @@ func clear_threads() -> void:
 	_mutex.unlock()
 	for thread: SingleThread in detached:
 		thread.stop()
+
+## Terminal close. clear_threads remains the existing reusable reset operation.
+func close() -> void:
+	if OS.get_thread_caller_id() != OS.get_main_thread_id():
+		push_error("ModuleThread shutdown must run on the main thread.")
+		return
+	_mutex.lock()
+	_closed = true
+	_mutex.unlock()
+	clear_threads()
 
 ## 必须持有 _mutex。
 func _ensure_thread_exists_internal(thread_name: StringName) -> SingleThread:
