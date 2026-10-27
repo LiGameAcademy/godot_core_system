@@ -105,6 +105,8 @@ func _report(message: String) -> void:
 		push_error(message)
 
 func _is_value_modified(current: Variant, value: Variant) -> bool:
+	if typeof(current) != typeof(value):
+		return true
 	if current is float and value is float:
 		return not is_equal_approx(current, value)
 	if current is Array and value is Array:

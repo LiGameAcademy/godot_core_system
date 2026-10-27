@@ -164,3 +164,7 @@ The [character tag demo](examples/tag_demo/README.md) also uses local CoreTags w
 Local [CoreTrigger](docs/systems/core_trigger.md) adds explicit condition/quota evaluation with a [standalone example](examples/triggers/README.md); event and timer ownership remain with the caller.
 
 Caller-owned [CoreGameSession](docs/systems/core_game_session.md) adds a fixed identity, lifecycle phases, commit-before-notification and optional pause/resume adapters. The [count/timer example](examples/game_session/README.md) uses two independent end rules without a global manager or game assets.
+
+Caller-owned [CoreEntities](docs/systems/entities.md) composes a loaded scene and an exclusive instance pool. [entities](examples/entities/README.md) demonstrates per-activation leases, reset and mutable Resource isolation without AutoLoad.
+
+Independent audio now provides scene-owned CoreAudio/CoreMusic, exclusive CoreAudioBusScope and optional explicit CoreAudioPreferences. No CoreSystem AutoLoad is required; see [audio contracts](docs/systems/audio_system.md) and [minimal example](examples/audio/README.md). Legacy AudioManager migration changes are recorded in the contract.
