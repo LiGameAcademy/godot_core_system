@@ -4,14 +4,16 @@
 
 English | [简体中文](README_zh.md)
 
-![Godot v4.4](https://img.shields.io/badge/Godot-v4.4-478cbf?logo=godot-engine&logoColor=white)
+![Godot v4.7.2](https://img.shields.io/badge/Godot-v4.7.2-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/issues)
 [![GitHub forks](https://img.shields.io/github/forks/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/network)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-A highly modular and extensible core system framework designed for Godot 4.4+
+A highly modular and extensible core system framework designed for Godot 4.7.2
+
+Godot 4.7.2 is the currently verified supported version. Compatibility with older releases will be verified separately.
 
 [Getting Started](#-getting-started) •
 [Documentation](docs/) •
@@ -41,7 +43,7 @@ A highly modular and extensible core system framework designed for Godot 4.4+
 
 ### System Requirements
 
-- Godot Engine 4.4+
+- Godot Engine 4.7.2
 - Basic knowledge of GDScript and Godot Engine
 
 ### Installation Steps

@@ -1,0 +1,21 @@
+msgid ""
+msgstr ""
+"Language: fr\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+msgctxt "action"
+msgid "Open"
+msgstr "Ouvrir"
+
+msgctxt "state"
+msgid "Open"
+msgstr "Ouvert"
+
+msgid "%d apple"
+msgid_plural "%d apples"
+msgstr[0] "%d pomme"
+msgstr[1] "%d pommes"
+
+msgid "NATIVE_STATUS"
+msgstr "Prêt"

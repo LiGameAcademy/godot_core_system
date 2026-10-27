@@ -29,10 +29,14 @@ Standalone use: instantiate `source/localization_system/localization_manager.tsc
 
 The module never clears or unloads host translations and never restores a previous global locale on exit. Static controls use native automatic translation; their owning UI refreshes cached dynamic text on NOTIFICATION_TRANSLATION_CHANGED. Disable automatic translation for player input. Native missing-message fallback, contexts, plural rules and formatting remain native responsibilities.
 
+After replacing a resource without changing the locale, its owner should explicitly broadcast `get_tree().root.propagate_notification(NOTIFICATION_TRANSLATION_CHANGED)`. Do not rely on setting the same locale again to refresh cached text. This is a native scene-tree refresh and does not emit a business locale change; resource replacement and multi-domain isolation are outside the module's responsibilities.
+
 Run `examples/localization_demo/localization_demo.tscn` with the CoreSystem localization switch disabled: the example owns a standalone service. Try English, simplified/traditional Chinese, auto, coins, editable player name, and preference restoration after restart. ConfigManager is optional. The demo preserves an already registered copy of its translation resource.
 
 `demo.csv` is the editable source; the three committed .translation resources are native generated outputs. Reimport after CSV edits. Godot may automatically register these demo translations in project settings: remove the demo entries when integrating your own game. The example uses a SystemFont; ship appropriate fonts in a real export.
 
-Tested with Godot 4.7.2 Mono, using GDScript and an actual OpenGL render. Unit scenes require an isolated host with no global translation resources and localization disabled; startup checks use the fixture modes documented in the [Chinese guide](localization_system_zh.md). Older engines, exported builds, PO contexts/plurals, pseudolocalization and a real game integration remain unverified. Existing typed dictionaries prevent assuming repository-wide 4.2 compatibility from plugin.cfg. Existing module shutdown/dependency issues remain outside this change.
+Godot 4.7.2 is the currently verified supported version; older compatibility is deferred. The native boundary scene additionally passes 19 checks in a Mono development host and 19 in a standard Windows debug export, covering PO contexts/plurals, fallback, input protection, pseudolocalization and same-locale resource replacement notifications. This does not verify C# exports, Web, mobile platforms or a complete game export.
 
-This introduces a public API and global locale behavior; retain the PR for user acceptance and manual merge. Refs #92.
+Unit scenes require an isolated host with no global translation resources and localization disabled; startup checks use the fixture modes documented in the [Chinese guide](localization_system_zh.md). Tower defense language assertions pass, but the full game host has existing missing-resource/node errors; the ARPG host is blocked by unresolved resource merge markers. Neither complete game is accepted. See the [acceptance record](localization_acceptance_zh.md). Existing module shutdown/dependency issues remain outside this change.
+
+The trial implementation was merged in PR #93. Refs #92.

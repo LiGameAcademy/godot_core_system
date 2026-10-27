@@ -4,14 +4,16 @@
 
 简体中文 | [English](README.md)
 
-![Godot v4.4](https://img.shields.io/badge/Godot-v4.4-478cbf?logo=godot-engine&logoColor=white)
+![Godot v4.7.2](https://img.shields.io/badge/Godot-v4.7.2-478cbf?logo=godot-engine&logoColor=white)
 [![GitHub license](https://img.shields.io/github/license/Liweimin0512/godot_core_system)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/stargazers)
 [![GitHub issues](https://img.shields.io/github/issues/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/issues)
 [![GitHub forks](https://img.shields.io/github/forks/Liweimin0512/godot_core_system)](https://github.com/Liweimin0512/godot_core_system/network)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-一个为 Godot 4.4+ 设计的高度模块化、易扩展的核心系统框架
+一个为 Godot 4.7.2 设计的高度模块化、易扩展的核心系统框架
+
+当前明确支持并验证 Godot 4.7.2，旧版本兼容性留待后续验证。
 
 [快速开始](#-快速开始) •
 [文档](docs/) •
@@ -44,7 +46,7 @@
 
 ### 系统要求
 
-- Godot Engine 4.4+
+- Godot Engine 4.7.2
 - 基本的 GDScript 和 Godot 引擎知识
 
 ### 安装步骤

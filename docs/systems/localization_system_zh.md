@@ -35,7 +35,16 @@ func choose_language(preference: String) -> void:
 
 `set_preferred_locale(preference, persist=false)` 先校验、切换，再按需调用 ConfigManager 的 `set_value()` 和 `save_config()`。没有配置服务返回 ERR_UNCONFIGURED，磁盘失败返回 ERR_FILE_CANT_WRITE，旧配置键不是字符串返回 ERR_INVALID_DATA；这三种保存失败不会撤销已完成的切换，并发出 `preference_save_failed(preference, error)`。
 
-`preference_changed` 只表示选择改变，`locale_changed` 只表示实际语言改变。重复选择相同语言不会重复发实际语言事件。信号回调里再次调用切换 API 返回 ERR_BUSY；需要再次选择时延后到本次调用结束。原生加载/变更翻译资源但 locale 不变时，仍由原生翻译通知刷新控件。
+`preference_changed` 只表示选择改变，`locale_changed` 只表示实际语言改变。重复选择相同语言不会重复发实际语言事件。信号回调里再次调用切换 API 返回 ERR_BUSY；需要再次选择时延后到本次调用结束。
+
+同一语言下替换翻译资源，不会成为业务语言改变。资源拥有方应在完成资源增删后广播原生刷新通知，不能依赖再次设置相同 locale 自动刷新已缓存的文字：
+
+```gdscript
+func refresh_replaced_translations() -> void:
+    get_tree().root.propagate_notification(NOTIFICATION_TRANSLATION_CHANGED)
+```
+
+这会通知当前场景树的控件和动态文字拥有者；多场景树/翻译域隔离并非本版承诺。模块不管理资源替换，也不额外发送 `locale_changed`。
 
 静态 Label / Button 使用原生自动翻译即可；动态的金币文字等缓存结果，由所属界面响应 `NOTIFICATION_TRANSLATION_CHANGED` 后重新执行 `tr()`。模块不扫描 UI。玩家名字等输入内容应关闭自动翻译。占位符格式化、上下文和复数规则沿用原生接口，本模块不引入第二套插值器或字典。
 
@@ -51,4 +60,6 @@ func choose_language(preference: String) -> void:
 
 单元场景是 `test/unit/localization_checks.tscn` 和 `localization_demo_checks.tscn`，需要没有全局翻译资源且语言模块关闭的隔离宿主。启动场景 `localization_module_checks.tscn` 通过项目自定义 `issue92/mode` 选择 disabled（默认）、runtime 或 persist；runtime 开启语言模块、关闭 ConfigManager，persist 开启两者并用配置文件预置 zh_TW。两种启用模式均预先在项目列表加载三份演示翻译；覆盖模式额外设置 locale/test=en 或启动参数 `--language en`。通过标志应为 PASS，不能只检查引擎退出码。
 
-尚未验证旧版 Godot、导出包及真实游戏长流程；本仓库现有 typed Dictionary 也不能据 plugin.cfg 的旧版描述认定兼容 4.2。PO 上下文/复数、伪本地化和资源替换流程留给后续接入验收。旧模块的关闭依赖和线程退出诊断属于既有问题，此试用未重构它们。方案涉及公开 API、全局语言和跨模块配置，保留 PR 供人工测试后合并；Refs #92。
+当前明确支持并实测 Godot 4.7.2，旧版兼容后续验证。补充的 `localization_native_checks.tscn` 在 4.7.2 Mono 宿主和标准版 Windows 调试导出包中各通过 19 项检查，覆盖 PO 上下文、英法复数规则（含 0）、缺失文本回退、输入保护、同 locale 资源替换刷新和伪本地化。导出测试使用纯 GDScript 的标准 Windows 模板；不代表 C#、Web、移动端或完整游戏导出已验收。
+
+两个真实工程的隔离副本接入尝试尚未完成完整验收：塔防有缺失纹理与 SpriteTower 节点错误，ARPG 的资源有未解决 Git 冲突。塔防的 11 项语言断言通过，仍不能将带启动错误的整工程算作通过。详见 [验收记录与复现步骤](localization_acceptance_zh.md)。本次未修改原游戏工程，旧模块依赖和退出诊断也未重构。试用实现已在 PR #93 合并；Refs #92。
