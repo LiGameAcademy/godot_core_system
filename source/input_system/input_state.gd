@@ -39,15 +39,15 @@ class ActionState:
 	## [param input_strength] 输入强度
 	## [param debounce_ms] 若 >0，忽略与上一边沿间隔小于该毫秒的 just 边沿（机械键盘抖动 #50）
 	func update(is_pressed: bool, input_strength: float, debounce_ms: float = 0.0) -> void:
-		var current_time = Time.get_ticks_msec() / 1000.0
+		var current_time: float = Time.get_ticks_msec() / 1000.0
 		
 		# 更新按下/释放状态
-		var would_just_pressed := is_pressed and not pressed
-		var would_just_released := not is_pressed and pressed
+		var would_just_pressed: bool = is_pressed and not pressed
+		var would_just_released: bool = not is_pressed and pressed
 		just_pressed = would_just_pressed
 		just_released = would_just_released
 		if debounce_ms > 0.0 and (would_just_pressed or would_just_released):
-			var now_msec := Time.get_ticks_msec()
+			var now_msec: int = Time.get_ticks_msec()
 			if now_msec - _last_edge_tick_msec < debounce_ms:
 				just_pressed = false
 				just_released = false
@@ -66,7 +66,7 @@ class ActionState:
 			last_release_time = current_time
 
 ## 动作状态字典
-var _action_states: Dictionary = {}
+var _action_states: Dictionary[String, ActionState] = {}
 
 ## 边沿防抖（毫秒）。>0 时压缩过密的 just_pressed/just_released（如机械键盘触点抖动，#50）。默认 0 关闭。
 var edge_debounce_ms: float = 0.0
@@ -136,7 +136,7 @@ func get_last_release_time(action_name: String) -> float:
 ## [param action_name] 动作名称，如果为空则重置所有
 func reset_action(action_name: String = "") -> void:
 	if action_name.is_empty():
-		for state in _action_states.values():
+		for state: ActionState in _action_states.values():
 			state.reset()
 	elif _action_states.has(action_name):
 		_action_states[action_name].reset()
@@ -144,7 +144,7 @@ func reset_action(action_name: String = "") -> void:
 ## 获取所有动作状态
 ## [return] 动作状态字典
 func get_all_states() -> Dictionary:
-	var states = {}
-	for action_name in _action_states:
+	var states: Dictionary[String, ActionState] = {}
+	for action_name: String in _action_states:
 		states[action_name] = get_action_state(action_name)
 	return states

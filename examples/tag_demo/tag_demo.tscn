@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://ndhkmmfbele4"]
 
-[ext_resource type="Script" uid="uid://b261f8dk00dww" path="res://addons/godot_core_system/examples/tag_demo/tag_character.gd" id="1_5lwci"]
+[ext_resource type="PackedScene" path="res://addons/godot_core_system/examples/tag_demo/tag_character.tscn" id="1_5lwci"]
 [ext_resource type="Script" uid="uid://xonpuf6mmtlm" path="res://addons/godot_core_system/examples/tag_demo/tag_demo.gd" id="1_mwg5h"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_zzzzz"]
@@ -13,43 +13,17 @@ corner_radius_bottom_left = 8
 [node name="TagDemo" type="Node2D"]
 script = ExtResource("1_mwg5h")
 
-[node name="Player" type="Node2D" parent="."]
+[node name="Player" parent="." instance=ExtResource("1_5lwci")]
 position = Vector2(300, 300)
-script = ExtResource("1_5lwci")
+category = "character.player"
+display_name = "Player"
+base_color = Color(0.2, 0.6, 1, 1)
 
-[node name="ColorRect" type="ColorRect" parent="Player"]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-color = Color(0.2, 0.6, 1, 1)
-
-[node name="Label" type="Label" parent="Player"]
-offset_left = -20.0
-offset_top = 25.0
-offset_right = 20.0
-offset_bottom = 51.0
-text = "Player"
-horizontal_alignment = 1
-
-[node name="Enemy" type="Node2D" parent="."]
+[node name="Enemy" parent="." instance=ExtResource("1_5lwci")]
 position = Vector2(500, 300)
-script = ExtResource("1_5lwci")
-
-[node name="ColorRect" type="ColorRect" parent="Enemy"]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
-color = Color(1, 0.2, 0.2, 1)
-
-[node name="Label" type="Label" parent="Enemy"]
-offset_left = -20.0
-offset_top = 25.0
-offset_right = 20.0
-offset_bottom = 51.0
-text = "Enemy"
-horizontal_alignment = 1
+category = "character.enemy"
+display_name = "Enemy"
+base_color = Color(1, 0.2, 0.2, 1)
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 3

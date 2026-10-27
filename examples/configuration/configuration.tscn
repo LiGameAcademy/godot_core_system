@@ -1,0 +1,39 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/configuration/configuration.gd" id="1"]
+
+[node name="Configuration" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="Panel" type="VBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 650.0
+offset_bottom = 260.0
+
+[node name="Instructions" type="Label" parent="Panel"]
+layout_mode = 2
+text = "Edit changes memory. Save persists. Reload discards unsaved changes."
+
+[node name="Edit" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Increment count"
+
+[node name="Save" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Save configuration"
+
+[node name="Reload" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Reload configuration"
+
+[node name="Reset" type="Button" parent="Panel"]
+layout_mode = 2
+text = "Reset memory (save explicitly to persist)"
+
+[node name="Status" type="Label" parent="Panel"]
+layout_mode = 2

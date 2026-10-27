@@ -22,7 +22,7 @@ class AxisMapping:
 		value = 0.0
 
 ## 轴映射字典
-var _axis_mappings: Dictionary = {}
+var _axis_mappings: Dictionary[String, Dictionary] = {}
 ## 灵敏度
 var _sensitivity: float = 1.0
 ## 死区
@@ -62,11 +62,11 @@ func update_axis(axis_name: String) -> void:
 	if not _axis_mappings.has(axis_name):
 		return
 	
-	var mapping = _axis_mappings[axis_name]
-	var x_value = _calculate_axis_value(mapping.x)
-	var y_value = _calculate_axis_value(mapping.y)
+	var mapping: Dictionary = _axis_mappings[axis_name]
+	var x_value: float = _calculate_axis_value(mapping.x)
+	var y_value: float = _calculate_axis_value(mapping.y)
 	
-	var axis_value = Vector2(x_value, y_value)
+	var axis_value: Vector2 = Vector2(x_value, y_value)
 	if not axis_value.is_equal_approx(_get_axis_value(axis_name)):
 		_set_axis_value(axis_name, axis_value)
 		axis_changed.emit(axis_name, axis_value)
@@ -82,7 +82,7 @@ func get_axis_value(axis_name: String) -> Vector2:
 ## [return] 轴映射字典
 func get_axis_mapping(axis_name: String) -> Dictionary:
 	if _axis_mappings.has(axis_name):
-		var mapping = _axis_mappings[axis_name]
+		var mapping: Dictionary = _axis_mappings[axis_name]
 		return {
 			"positive_x": mapping.x.positive,
 			"negative_x": mapping.x.negative,
@@ -94,8 +94,8 @@ func get_axis_mapping(axis_name: String) -> Dictionary:
 ## 获取所有轴映射
 ## [return] 所有轴映射字典
 func get_axis_mappings() -> Dictionary:
-	var result = {}
-	for axis_name in _axis_mappings:
+	var result: Dictionary = {}
+	for axis_name: String in _axis_mappings:
 		result[axis_name] = get_axis_mapping(axis_name)
 	return result
 
@@ -104,7 +104,7 @@ func get_axis_mappings() -> Dictionary:
 ## [param mapping] 轴映射字典
 func set_axis_mapping(axis_name: String, mapping: Dictionary) -> void:
 	if _axis_mappings.has(axis_name):
-		var axis_mapping = _axis_mappings[axis_name]
+		var axis_mapping: Dictionary = _axis_mappings[axis_name]
 		axis_mapping.x.positive = mapping.get("positive_x", "")
 		axis_mapping.x.negative = mapping.get("negative_x", "")
 		axis_mapping.y.positive = mapping.get("positive_y", "")
@@ -142,7 +142,7 @@ func _calculate_axis_value(mapping: AxisMapping) -> float:
 	if mapping.positive.is_empty() and mapping.negative.is_empty():
 		return 0.0
 	
-	var value = 0.0
+	var value: float = 0.0
 	if not mapping.positive.is_empty():
 		value += 1.0 if Input.is_action_pressed(mapping.positive) else 0.0
 	if not mapping.negative.is_empty():

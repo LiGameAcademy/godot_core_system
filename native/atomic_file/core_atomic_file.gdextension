@@ -1,0 +1,6 @@
+[configuration]
+entry_symbol = "core_atomic_file_init"
+compatibility_minimum = "4.7"
+reloadable = false
+[libraries]
+windows.x86_64 = "res://addons/godot_core_system/native/atomic_file/bin/core_atomic_file.windows.x86_64.dll"

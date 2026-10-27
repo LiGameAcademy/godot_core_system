@@ -1,0 +1,49 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/game_session/game_session_example.gd" id="1"]
+[node name="GameSessionExample" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+[node name="Layout" type="VBoxContainer" parent="."]
+offset_left = 32.0
+offset_top = 32.0
+offset_right = 850.0
+offset_bottom = 690.0
+theme_override_constants/separation = 10
+[node name="Title" type="Label" parent="Layout"]
+layout_mode = 2
+text = "Caller-owned game session"
+theme_override_font_sizes/font_size = 28
+[node name="Status" type="Label" parent="Layout"]
+layout_mode = 2
+[node name="Start" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Start"
+[node name="Pause" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Pause"
+[node name="Resume" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Resume"
+[node name="Progress" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Add one point"
+[node name="Step" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Advance local time by one second"
+[node name="End" type="Button" parent="Layout"]
+layout_mode = 2
+text = "End manually"
+[node name="Close" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Close"
+[node name="CountRun" type="Button" parent="Layout"]
+layout_mode = 2
+text = "New count run"
+[node name="TimedRun" type="Button" parent="Layout"]
+layout_mode = 2
+text = "New timed run"

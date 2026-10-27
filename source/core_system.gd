@@ -4,7 +4,8 @@ extends Node
 
 # 系统类
 const AudioManager = preload("./audio_system/audio_manager.gd")
-const CoreEventBus = preload("./event_system/event_bus.gd")
+const LegacyEventBus = preload("./event_system/event_bus.gd")
+const CoreEventBus = LegacyEventBus
 const InputManager = preload("./input_system/input_manager.gd")
 const CoreLogger = preload("./logger/core_logger.gd")
 const ResourceManager = preload("./resource_system/resource_manager.gd")
@@ -41,7 +42,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not audio_manager:
 			audio_manager = _get_module("audio_manager")
 		return audio_manager
-@onready var event_bus : CoreEventBus = _get_module("event_bus"):						## 事件总线
+@onready var event_bus : LegacyEventBus = _get_module("event_bus"):						## Legacy event node
 	get:
 		if not event_bus:
 			event_bus = _get_module("event_bus")
@@ -86,7 +87,7 @@ const CoreGameplayTag = preload("./tag_system/gameplay_tag.gd")
 		if not trigger_manager:
 			trigger_manager = _get_module("trigger_manager")
 		return trigger_manager
-@onready var tag_manager : GameplayTagManager = _get_module("tag_manager"):							## 标签管理器
+var tag_manager : GameplayTagManager:							## Deprecated lazy tag compatibility adapter
 	get:
 		if not tag_manager:
 			tag_manager = _get_module("tag_manager")

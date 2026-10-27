@@ -4,55 +4,57 @@ extends RefCounted
 ## 配置更新信号
 signal config_updated(config: Dictionary)
 
-## 配置管理器
-var _config_manager: CoreSystem.ConfigManager
-## 输入配置
-var _input_config: InputConfig
+const Config = preload("./input_config.gd")
+var _input_config: Config
+var _read_section: Callable
+var _write_section: Callable
+var _save_file: Callable
+var _closed: bool = false
 
-## 配置节名称
-const INPUT_CONFIG_SECTION = "input"
-
-## 初始化适配器
-## [param config_manager] 配置管理器实例
-func _init() -> void:
-	_config_manager = CoreSystem.config_manager
-	_input_config = InputConfig.new()
-	
-	# 连接信号
-	_config_manager.config_loaded.connect(_on_config_loaded)
-	_config_manager.config_saved.connect(_on_config_saved)
+## Optional callbacks operate on the input section; persistence is never discovered.
+func _init(config: Config = null, read_section: Callable = Callable(), write_section: Callable = Callable(), save_file: Callable = Callable()) -> void:
+	_input_config = config if config != null else Config.new()
+	_read_section = read_section
+	_write_section = write_section
+	_save_file = save_file
 	_input_config.config_changed.connect(_on_input_config_changed)
-	
-	# 如果配置管理器已经加载了配置，立即更新输入配置
-	if _config_manager.is_loaded():
-		_on_config_loaded()
 
-## 获取输入配置实例
-## [return] 输入配置实例
-func get_input_config() -> InputConfig:
+func get_input_config() -> Config:
 	return _input_config
 
-## 配置加载回调
-func _on_config_loaded() -> void:
-	var input_section = _config_manager.get_section(INPUT_CONFIG_SECTION)
-	if input_section.is_empty():
+## Read callback returns a section Dictionary. Load the external file before calling.
+func reload_config() -> Error:
+	if _closed or not _read_section.is_valid():
+		return ERR_UNCONFIGURED
+	var section: Variant = _read_section.call()
+	if not section is Dictionary:
+		return ERR_INVALID_DATA
+	if section.is_empty():
 		_input_config.reset_to_default()
-	else:
-		_input_config.update_config(input_section)
+		return OK
+	return _input_config.update_config(section)
 
-## 配置保存回调
-func _on_config_saved() -> void:
-	_config_manager.set_section(INPUT_CONFIG_SECTION, _input_config.get_config())
-
-## 输入配置变更回调
-## [param config] 新配置
 func _on_input_config_changed(config: Dictionary) -> void:
-	_config_manager.set_section(INPUT_CONFIG_SECTION, config)
-	config_updated.emit(config)
+	if not _closed:
+		config_updated.emit(config)
 
-## 保存当前配置
-func save_config() -> void:
-	_config_manager.save_config()
+## Stage the latest section before saving. Save callback returns an Error.
+func save_config() -> Error:
+	if _closed or not _write_section.is_valid() or not _save_file.is_valid():
+		return ERR_UNCONFIGURED
+	_write_section.call(_input_config.get_config())
+	var result: Variant = _save_file.call()
+	return result as Error if result is int else ERR_INVALID_DATA
+
+func close() -> void:
+	if _closed:
+		return
+	_closed = true
+	if _input_config.config_changed.is_connected(_on_input_config_changed):
+		_input_config.config_changed.disconnect(_on_input_config_changed)
+	_read_section = Callable()
+	_write_section = Callable()
+	_save_file = Callable()
 
 ## 重置为默认配置
 func reset_to_default() -> void:

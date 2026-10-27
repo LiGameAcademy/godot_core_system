@@ -47,7 +47,7 @@ func add_buffer(action: String, strength: float = 1.0, duration: float = -1.0) -
 ## [return] 是否在缓冲中
 func has_buffer(action: String) -> bool:
 	clean_expired_buffers()
-	for buffer in _buffers:
+	for buffer: BufferData in _buffers:
 		if buffer.action == action:
 			return true
 	return false
@@ -57,7 +57,7 @@ func has_buffer(action: String) -> bool:
 ## [return] 输入强度，如果不在缓冲中则返回0
 func get_buffer_strength(action: String) -> float:
 	clean_expired_buffers()
-	for buffer in _buffers:
+	for buffer: BufferData in _buffers:
 		if buffer.action == action:
 			return buffer.strength
 	return 0.0
@@ -65,7 +65,7 @@ func get_buffer_strength(action: String) -> float:
 ## 清除指定动作的缓冲
 ## [param action] 动作名称
 func clear_buffer(action: String) -> void:
-	for i in range(_buffers.size() - 1, -1, -1):
+	for i: int in range(_buffers.size() - 1, -1, -1):
 		if _buffers[i].action == action:
 			_buffers.remove_at(i)
 
@@ -75,9 +75,9 @@ func clear_all_buffers() -> void:
 
 ## 清理过期的缓冲
 func clean_expired_buffers() -> void:
-	var current_time = Time.get_ticks_msec() / 1000.0
-	for i in range(_buffers.size() - 1, -1, -1):
-		var buffer = _buffers[i]
+	var current_time: float = Time.get_ticks_msec() / 1000.0
+	for i: int in range(_buffers.size() - 1, -1, -1):
+		var buffer: BufferData = _buffers[i]
 		if current_time - buffer.creation_time > buffer.duration:
 			_buffers.remove_at(i)
 
@@ -85,8 +85,8 @@ func clean_expired_buffers() -> void:
 ## [return] 缓冲数据字典
 func get_all_buffers() -> Dictionary:
 	clean_expired_buffers()
-	var buffers = {}
-	for buffer in _buffers:
+	var buffers: Dictionary = {}
+	for buffer: BufferData in _buffers:
 		buffers[buffer.action] = {
 			"strength": buffer.strength,
 			"creation_time": buffer.creation_time,

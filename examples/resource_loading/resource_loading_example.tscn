@@ -1,0 +1,70 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="Script" path="res://addons/godot_core_system/examples/resource_loading/resource_loading_example.gd" id="1"]
+[ext_resource type="PackedScene" path="res://addons/godot_core_system/source/resource_system/core_resources.tscn" id="2"]
+[node name="ResourceLoadingExample" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+[node name="Resources" parent="." instance=ExtResource("2")]
+[node name="Layout" type="VBoxContainer" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 920.0
+offset_bottom = 690.0
+theme_override_constants/separation = 8
+[node name="Title" type="Label" parent="Layout"]
+layout_mode = 2
+text = "Caller-owned resource loading"
+theme_override_font_sizes/font_size = 26
+[node name="Status" type="Label" parent="Layout"]
+layout_mode = 2
+autowrap_mode = 2
+[node name="Counts" type="Label" parent="Layout"]
+layout_mode = 2
+[node name="Progress" type="ProgressBar" parent="Layout"]
+layout_mode = 2
+[node name="Preview" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+[node name="Template" type="ColorRect" parent="Layout/Preview"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+color = Color(0.2, 0.2, 0.2, 1)
+[node name="Clone" type="ColorRect" parent="Layout/Preview"]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+color = Color(0.2, 0.2, 0.2, 1)
+[node name="LoadNow" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Load now"
+
+[node name="Request" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Request twice (one pending handle)"
+
+[node name="Cancel" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Cancel interested request"
+
+[node name="ClearCache" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Clear completed cache"
+
+[node name="Missing" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Request missing resource"
+
+[node name="Clone" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Clone template and edit only the copy"
+
+[node name="NewOwner" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Close and create a fresh owner"
+
+[node name="Leave" type="Button" parent="Layout"]
+layout_mode = 2
+text = "Leave example (F6 to restart)"

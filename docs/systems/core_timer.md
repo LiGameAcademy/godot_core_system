@@ -16,3 +16,5 @@ Duration must be finite and positive. Delta must be finite and nonnegative. One-
 Pass the owner's Godot delta once; it is already affected by engine speed. Do not multiply it by Engine.time_scale again. An independent clock requires the owner to supply a different elapsed-time source. This helper does not change the legacy TimeManager or register named timers.
 
 C# `CoreTimer` has matching `Advance`, `Paused`, `Reset`, `Remaining`, `Elapsed`, `Completed`, `Duration`, and `Repeating` behavior, with argument/overflow exceptions. Floating-point boundary precision is inherited from double/GDScript float; it is not a fixed-point simulation clock. Checks are in `test/unit/state_time_checks.gd`.
+
+For exclusive SceneTree pause/speed ownership with snapshot restoration, see [CoreTime scopes](core_time_scope.md). This separate service does not add a clock to CoreTimer.
