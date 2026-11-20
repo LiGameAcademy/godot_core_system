@@ -154,8 +154,6 @@ func change_scene_async(
 			_fail_scene_load(scene_path, "Failed to obtain a valid scene instance")
 			return
 	await _do_scene_switch(new_scene, effect, duration, callback, custom_transition_name, push_to_stack, scene_data)
-	await get_tree().process_frame
-	_is_switching = false
 
 func _fail_scene_load(scene_path: String, reason: String) -> void:
 	_is_switching = false
@@ -190,7 +188,6 @@ func pop_scene_async(effect: TransitionEffect = TransitionEffect.NONE,
 		prev_scene.restore_state(prev_scene_data.data)
 
 	await _do_scene_switch(prev_scene, effect, duration, callback, custom_transition_name)
-	_is_switching = false
 
 ## 子场景管理
 ## [param parent_node] 父节点
@@ -365,6 +362,8 @@ func _do_scene_switch(
 
 	## 场景切换后强制更新新场景的相机
 	call_deferred("_update_new_scene_camera",new_scene)
+	# Finished listeners may immediately start another switch and own its lock.
+	_is_switching = false
 	scene_loading_finished.emit()
 
 ## 资源加载完成回调
