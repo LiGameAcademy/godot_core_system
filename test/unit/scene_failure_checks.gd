@@ -43,6 +43,13 @@ func _ready() -> void:
 	await manager.change_scene_async(valid_path)
 	_check(not manager._is_switching and tree.current_scene.name == "ReplacementScene", "Valid retry succeeds after rejected switches")
 	_check(_changed == 1 and _started == 5 and _finished == 5, "Started and finished notifications are balanced")
+	var before: int = _changed
+	manager.scene_loading_finished.connect(func() -> void: manager.pop_scene_async(), CONNECT_ONE_SHOT)
+	await manager.change_scene_async(valid_path, {}, true)
+	for frame: int in range(12):
+		if _changed == before + 2: break
+		await tree.process_frame
+	_check(_changed == before + 2, "A finished listener can immediately return to the previous scene")
 	CoreSystem.resource_manager._resource_cache.erase(empty_path)
 	manager.clear_scene_stack()
 	for path: String in [valid_path, resource_path]:
